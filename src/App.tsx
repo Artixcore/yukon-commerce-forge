@@ -18,6 +18,16 @@ import Banners from "./pages/admin/Banners";
 import Login from "./pages/admin/Login";
 import Setup from "./pages/Setup";
 import NotFound from "./pages/NotFound";
+import SearchResults from "./pages/SearchResults";
+import BestSelling from "./pages/BestSelling";
+import CategoriesPage from "./pages/Categories";
+import FlashSelling from "./pages/FlashSelling";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Track from "./pages/Track";
+import Reviews from "./pages/Reviews";
+import Returns from "./pages/Returns";
+import Shipping from "./pages/Shipping";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +44,16 @@ const App = () => (
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/best-selling" element={<BestSelling />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/flash-selling" element={<FlashSelling />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/track" element={<Track />} />
+          <Route path="/reviews" element={<Reviews />} />
+          <Route path="/returns" element={<Returns />} />
+          <Route path="/shipping" element={<Shipping />} />
           <Route path="/setup" element={<Setup />} />
           <Route path="/admin/login" element={<Login />} />
           <Route path="/admin" element={<Admin />}>

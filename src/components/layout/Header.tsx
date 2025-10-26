@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Menu, X, Search, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
@@ -8,7 +8,18 @@ import logo from "@/assets/logo.png";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { items } = useCart();
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setMobileMenuOpen(false);
+      setSearchQuery("");
+    }
+  };
   const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -23,19 +34,22 @@ export const Header = () => {
 
           {/* Search Bar - Desktop */}
           <div className="hidden md:flex flex-1 max-w-2xl mx-8">
-            <div className="relative w-full">
+            <form onSubmit={handleSearch} className="relative w-full">
               <Input
                 type="text"
                 placeholder="Search product"
                 className="w-full pr-12 h-11 rounded-r-none border-r-0"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Button
+                type="submit"
                 size="icon"
                 className="absolute right-0 top-0 h-11 rounded-l-none"
               >
                 <Search className="h-4 w-4" />
               </Button>
-            </div>
+            </form>
           </div>
 
           {/* Phone and Cart */}
@@ -102,19 +116,22 @@ export const Header = () => {
       {mobileMenuOpen && (
         <div className="md:hidden bg-background border-t">
           <div className="container mx-auto px-4 py-4 space-y-4">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <Input
                 type="text"
                 placeholder="Search product"
                 className="w-full pr-12"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Button
+                type="submit"
                 size="icon"
                 className="absolute right-0 top-0"
               >
                 <Search className="h-4 w-4" />
               </Button>
-            </div>
+            </form>
             <nav className="flex flex-col space-y-3">
               <Link to="/" className="text-foreground hover:text-primary transition-colors font-medium py-2">
                 Home

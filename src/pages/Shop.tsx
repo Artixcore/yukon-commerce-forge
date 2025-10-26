@@ -28,7 +28,7 @@ const Shop = () => {
   });
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products", searchQuery, selectedCategory],
+    queryKey: ["products", searchQuery, selectedCategory, priceRange],
     queryFn: async () => {
       let query = supabase
         .from("products")
@@ -41,6 +41,16 @@ const Shop = () => {
 
       if (selectedCategory !== "all") {
         query = query.eq("category_id", selectedCategory);
+      }
+
+      if (priceRange !== "all") {
+        if (priceRange.includes("+")) {
+          const min = parseFloat(priceRange.replace("+", ""));
+          query = query.gte("price", min);
+        } else {
+          const [min, max] = priceRange.split("-").map(p => parseFloat(p));
+          query = query.gte("price", min).lte("price", max);
+        }
       }
 
       const { data, error } = await query.order("created_at", { ascending: false });
