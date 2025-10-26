@@ -4,9 +4,9 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 
-export const FeaturedProducts = () => {
+export const BestSelling = () => {
   const { data: products, isLoading } = useQuery({
-    queryKey: ["featured-products"],
+    queryKey: ["best-selling-products"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
@@ -24,7 +24,7 @@ export const FeaturedProducts = () => {
     <section className="py-12 bg-background">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-foreground">New Arrivals</h2>
+          <h2 className="text-3xl font-bold text-foreground">Best Selling</h2>
           <Link to="/shop" className="text-foreground hover:text-primary transition-colors font-medium">
             Product
           </Link>

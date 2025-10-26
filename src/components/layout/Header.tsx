@@ -1,105 +1,147 @@
-import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Menu, X } from "lucide-react";
-import { useCart } from "@/hooks/useCart";
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ShoppingCart, Menu, X, Search, Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useCart } from "@/hooks/useCart";
+import { Input } from "@/components/ui/input";
 
 export const Header = () => {
-  const { items } = useCart();
-  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+  const { items } = useCart();
   const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  
-  const isActive = (path: string) => location.pathname === path;
-  
-  const navLinks = [
-    { name: "Home", path: "/" },
-    { name: "Shop", path: "/shop" },
-  ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full bg-background border-b">
+      {/* Top bar with logo, search, phone, and cart */}
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="text-2xl font-bold text-primary">
-            YukonStore
+          <Link to="/" className="flex items-center">
+            <div className="bg-primary px-6 py-3 rounded">
+              <span className="text-primary-foreground font-bold text-xl tracking-wider">YUKON</span>
+            </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isActive(link.path) ? "text-primary" : "text-foreground/80"
-                }`}
+          {/* Search Bar - Desktop */}
+          <div className="hidden md:flex flex-1 max-w-2xl mx-8">
+            <div className="relative w-full">
+              <Input
+                type="text"
+                placeholder="Search product"
+                className="w-full pr-12 h-11 rounded-r-none border-r-0"
+              />
+              <Button
+                size="icon"
+                className="absolute right-0 top-0 h-11 rounded-l-none"
               >
-                {link.name}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right Actions */}
-          <div className="flex items-center gap-2">
-            <Link to="/admin/login">
-              <Button variant="ghost" size="icon" className="hidden md:flex">
-                <User className="h-5 w-5" />
+                <Search className="h-4 w-4" />
               </Button>
-            </Link>
-            
+            </div>
+          </div>
+
+          {/* Phone and Cart */}
+          <div className="flex items-center gap-4">
+            <Button variant="destructive" className="hidden lg:flex items-center gap-2 h-11">
+              <Phone className="h-4 w-4" />
+              <span>+880 1906-192164</span>
+            </Button>
+
             <Link to="/cart">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button size="icon" variant="destructive" className="relative h-11 w-11">
                 <ShoppingCart className="h-5 w-5" />
                 {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-background text-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-primary">
                     {cartItemCount}
                   </span>
                 )}
               </Button>
             </Link>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile menu toggle */}
             <Button
               variant="ghost"
               size="icon"
               className="md:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <nav className="md:hidden py-4 border-t">
-            <div className="flex flex-col gap-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`text-sm font-medium transition-colors hover:text-primary ${
-                    isActive(link.path) ? "text-primary" : "text-foreground/80"
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              ))}
-              <Link
-                to="/admin/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-foreground/80 hover:text-primary"
-              >
-                Admin
-              </Link>
-            </div>
-          </nav>
-        )}
       </div>
+
+      {/* Navigation Bar */}
+      <nav className="bg-secondary border-t">
+        <div className="container mx-auto px-4">
+          <div className="hidden md:flex items-center justify-center gap-8 h-12">
+            <Link to="/" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+              Home
+            </Link>
+            <Link to="/shop" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+              Product
+            </Link>
+            <Link to="/about" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+              About Us
+            </Link>
+            <Link to="/reviews" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+              Reviews
+            </Link>
+            <Link to="/categories" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+              Categories
+            </Link>
+            <Link to="/best-selling" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+              Best Selling
+            </Link>
+            <Link to="/flash-selling" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+              Flash Selling
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-background border-t">
+          <div className="container mx-auto px-4 py-4 space-y-4">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Search product"
+                className="w-full pr-12"
+              />
+              <Button
+                size="icon"
+                className="absolute right-0 top-0"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+            <nav className="flex flex-col space-y-3">
+              <Link to="/" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+                Home
+              </Link>
+              <Link to="/shop" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+                Product
+              </Link>
+              <Link to="/about" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+                About Us
+              </Link>
+              <Link to="/reviews" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+                Reviews
+              </Link>
+              <Link to="/categories" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+                Categories
+              </Link>
+              <Link to="/best-selling" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+                Best Selling
+              </Link>
+              <Link to="/flash-selling" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+                Flash Selling
+              </Link>
+            </nav>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

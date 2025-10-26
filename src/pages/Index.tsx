@@ -2,8 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSection } from "@/components/home/HeroSection";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
-import { CategoryGrid } from "@/components/home/CategoryGrid";
-import { Features } from "@/components/home/Features";
+import { BestSelling } from "@/components/home/BestSelling";
 
 const Index = () => {
   return (
@@ -11,8 +10,7 @@ const Index = () => {
       <Header />
       <HeroSection />
       <FeaturedProducts />
-      <CategoryGrid />
-      <Features />
+      <BestSelling />
       <Footer />
     </div>
   );
