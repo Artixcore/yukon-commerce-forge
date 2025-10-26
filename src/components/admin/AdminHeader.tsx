@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { LogOut, Store, Plus, User, Search, Phone } from "lucide-react";
-import { toast } from "sonner";
+import { showSuccess, showError, showConfirmation } from "@/lib/sweetalert";
 import logo from "@/assets/logo.png";
 
 export const AdminHeader = () => {
@@ -28,11 +28,19 @@ export const AdminHeader = () => {
   });
 
   const handleLogout = async () => {
+    const confirmed = await showConfirmation(
+      'Logout?',
+      'Are you sure you want to logout?',
+      'Yes, logout'
+    );
+    
+    if (!confirmed) return;
+    
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast.error("Error logging out");
+      showError("Logout Failed", "Error logging out");
     } else {
-      toast.success("Logged out successfully");
+      showSuccess("Logged Out", "You have been logged out successfully");
       navigate("/admin/login");
     }
   };

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { toast } from "sonner";
+import { showError } from "@/lib/sweetalert";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -26,7 +26,7 @@ const Login = () => {
     setIsLoading(false);
     
     if (error) {
-      toast.error(error.message);
+      showError("Login Failed", error.message);
       return;
     }
     

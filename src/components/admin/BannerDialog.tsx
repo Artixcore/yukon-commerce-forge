@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+import { showSuccess } from "@/lib/sweetalert";
 import { ImageUpload } from "./ImageUpload";
 
 const bannerSchema = z.object({
@@ -111,7 +111,10 @@ export const BannerDialog = ({ open, onOpenChange, banner }: BannerDialogProps) 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-banners"] });
       queryClient.invalidateQueries({ queryKey: ["hero-banners"] });
-      toast.success(banner ? "Banner updated" : "Banner created");
+      showSuccess(
+        banner ? "Updated!" : "Created!",
+        banner ? "Banner updated successfully" : "Banner created successfully"
+      );
       onOpenChange(false);
       form.reset();
     },

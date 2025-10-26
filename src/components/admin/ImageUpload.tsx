@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { showSuccess, showError } from "@/lib/sweetalert";
 
 interface ImageUploadProps {
   value?: string;
@@ -20,13 +20,13 @@ export const ImageUpload = ({ value, onChange, folder, label, required }: ImageU
   const uploadImage = async (file: File) => {
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+      showError('Invalid File', 'Please upload an image file');
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
+      showError('File Too Large', 'Image must be less than 5MB');
       return;
     }
 
@@ -54,10 +54,10 @@ export const ImageUpload = ({ value, onChange, folder, label, required }: ImageU
         .getPublicUrl(filename);
 
       onChange(publicUrl);
-      toast.success('Image uploaded successfully');
+      showSuccess('Uploaded!', 'Image uploaded successfully');
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error(error.message || 'Failed to upload image');
+      showError('Upload Failed', error.message || 'Failed to upload image');
     } finally {
       setIsUploading(false);
     }

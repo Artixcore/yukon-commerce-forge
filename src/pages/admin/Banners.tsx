@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BannerDialog } from "@/components/admin/BannerDialog";
-import { toast } from "sonner";
+import { showSuccess, showConfirmation } from "@/lib/sweetalert";
 import { Pencil, Trash2, Plus } from "lucide-react";
 
 const Banners = () => {
@@ -31,7 +31,7 @@ const Banners = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-banners"] });
-      toast.success("Banner deleted successfully");
+      showSuccess("Deleted!", "Banner deleted successfully");
     },
   });
 
@@ -40,8 +40,13 @@ const Banners = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this banner?")) {
+  const handleDelete = async (id: string) => {
+    const confirmed = await showConfirmation(
+      'Delete Banner?',
+      'This banner will be removed from the homepage.',
+      'Yes, delete it!'
+    );
+    if (confirmed) {
       deleteMutation.mutate(id);
     }
   };

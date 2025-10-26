@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { toast } from "sonner";
+import { showSuccess } from "@/lib/sweetalert";
 import { ImageUpload } from "./ImageUpload";
 import { X, GripVertical, Plus } from "lucide-react";
 
@@ -132,7 +132,10 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast.success(product ? "Product updated" : "Product created");
+      showSuccess(
+        product ? "Updated!" : "Created!",
+        product ? "Product updated successfully" : "Product created successfully"
+      );
       onOpenChange(false);
       form.reset();
     },

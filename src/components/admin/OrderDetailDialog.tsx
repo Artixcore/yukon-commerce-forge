@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { showSuccess, showError } from "@/lib/sweetalert";
 import { useState } from "react";
 import { Phone, MapPin, MessageSquare } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
@@ -80,16 +80,16 @@ export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDi
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       queryClient.invalidateQueries({ queryKey: ["order-detail", orderId] });
-      toast.success("Order status updated successfully");
+      showSuccess("Updated!", "Order status updated successfully");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to update status");
+      showError("Update Failed", error.message || "Failed to update status");
     },
   });
 
   const handleStatusUpdate = () => {
     if (!newStatus) {
-      toast.error("Please select a status");
+      showError("Invalid Selection", "Please select a status before updating");
       return;
     }
     updateStatusMutation.mutate(newStatus);

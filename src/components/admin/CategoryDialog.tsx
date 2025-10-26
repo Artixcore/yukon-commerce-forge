@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { toast } from "sonner";
+import { showSuccess } from "@/lib/sweetalert";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -49,7 +49,10 @@ export const CategoryDialog = ({ open, onOpenChange, category }: any) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
-      toast.success(category ? "Category updated" : "Category created");
+      showSuccess(
+        category ? "Updated!" : "Created!",
+        category ? "Category updated successfully" : "Category created successfully"
+      );
       onOpenChange(false);
     },
   });

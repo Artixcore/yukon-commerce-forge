@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "sonner";
+import { showSuccess, showConfirmation, showInfo } from "@/lib/sweetalert";
 
 const Products = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -38,7 +38,7 @@ const Products = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast.success("Product deleted successfully");
+      showSuccess("Deleted!", "Product has been deleted successfully");
     },
   });
 
@@ -47,8 +47,13 @@ const Products = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this product?")) {
+  const handleDelete = async (id: string) => {
+    const confirmed = await showConfirmation(
+      'Delete Product?',
+      'This action cannot be undone. The product will be permanently deleted.',
+      'Yes, delete it!'
+    );
+    if (confirmed) {
       deleteMutation.mutate(id);
     }
   };
@@ -93,9 +98,9 @@ const Products = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
-                          navigator.clipboard.writeText(product.slug);
-                          toast.success("Product ID copied!");
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(product.slug);
+                          showInfo("Copied!", "Product ID copied to clipboard");
                         }}
                       >
                         <Copy className="h-4 w-4" />

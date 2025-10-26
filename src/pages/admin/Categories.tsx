@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CategoryDialog } from "@/components/admin/CategoryDialog";
-import { toast } from "sonner";
+import { showSuccess, showConfirmation } from "@/lib/sweetalert";
 
 const Categories = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -28,9 +28,20 @@ const Categories = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
-      toast.success("Category deleted");
+      showSuccess("Deleted!", "Category deleted successfully");
     },
   });
+
+  const handleDelete = async (id: string) => {
+    const confirmed = await showConfirmation(
+      'Delete Category?',
+      'This action cannot be undone. The category will be permanently deleted.',
+      'Yes, delete it!'
+    );
+    if (confirmed) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   return (
     <div className="p-8">
@@ -61,7 +72,7 @@ const Categories = () => {
                   <Button variant="ghost" size="icon" onClick={() => { setSelectedCategory(cat); setIsDialogOpen(true); }}>
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(cat.id)}>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(cat.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </TableCell>
