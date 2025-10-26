@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 interface Order {
   id: string;
@@ -62,8 +64,10 @@ const OrderConfirmation = () => {
   const estimatedDays = (order as any).delivery_location === "inside_dhaka" ? "3-5" : "5-7";
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <div className="max-w-2xl mx-auto text-center">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-2xl mx-auto text-center">
         <div className="mb-6 flex justify-center">
           <CheckCircle2 className="w-20 h-20 text-green-500" />
         </div>
@@ -124,6 +128,8 @@ const OrderConfirmation = () => {
           <p>For any queries, please contact us with your order number</p>
         </div>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 };

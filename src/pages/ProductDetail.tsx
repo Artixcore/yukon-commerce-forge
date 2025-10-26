@@ -6,6 +6,8 @@ import { ArrowLeft, ShoppingCart, Minus, Plus } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -55,6 +57,7 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <Link to="/shop">
           <Button variant="ghost" className="mb-6">
@@ -138,6 +141,7 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

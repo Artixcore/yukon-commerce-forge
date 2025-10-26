@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { Card } from "@/components/ui/card";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <Link to="/shop">
           <Button variant="ghost" className="mb-6">
@@ -123,6 +126,7 @@ const Cart = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
