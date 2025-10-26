@@ -6,27 +6,46 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
+import * as z from "zod";
+
+const searchQuerySchema = z.string()
+  .trim()
+  .min(1, "Search query is required")
+  .max(100, "Search query is too long")
+  .regex(/^[\p{L}\p{N}\s\-_.,&]+$/u, "Search contains invalid characters");
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
-  const searchQuery = searchParams.get("q") || "";
+  const rawSearchQuery = searchParams.get("q") || "";
+  
+  // Validate search query
+  const searchQuery = (() => {
+    try {
+      return searchQuerySchema.parse(rawSearchQuery);
+    } catch {
+      return "";
+    }
+  })();
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["search-products", searchQuery],
     queryFn: async () => {
-      if (!searchQuery.trim()) return [];
+      if (!searchQuery) return [];
+      
+      // Escape special characters for SQL LIKE
+      const sanitizedQuery = searchQuery.replace(/[%_]/g, '\\$&');
       
       const { data, error } = await supabase
         .from("products")
         .select("*, categories(name)")
         .eq("is_active", true)
-        .or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
+        .or(`name.ilike.%${sanitizedQuery}%,description.ilike.%${sanitizedQuery}%`)
         .order("created_at", { ascending: false });
       
       if (error) throw error;
       return data;
     },
-    enabled: !!searchQuery.trim(),
+    enabled: !!searchQuery,
   });
 
   return (
@@ -47,7 +66,7 @@ const SearchResults = () => {
           )}
         </div>
 
-        {!searchQuery.trim() ? (
+        {!searchQuery ? (
           <div className="text-center py-12">
             <Search className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-2xl font-semibold mb-2">No search query</h2>

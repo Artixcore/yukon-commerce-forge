@@ -9,10 +9,30 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Package, CheckCircle, Truck, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const trackOrderSchema = z.object({
+  orderNumber: z.string()
+    .trim()
+    .min(5, "Order number is too short")
+    .max(50, "Order number is too long")
+    .regex(/^ORD-[0-9a-zA-Z-]+$/, "Invalid order number format")
+});
+
+type TrackOrderForm = z.infer<typeof trackOrderSchema>;
 
 const Track = () => {
-  const [orderNumber, setOrderNumber] = useState("");
   const [searchOrderNumber, setSearchOrderNumber] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<TrackOrderForm>({
+    resolver: zodResolver(trackOrderSchema),
+  });
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["track-order", searchOrderNumber],
@@ -23,22 +43,25 @@ const Track = () => {
         .from("orders")
         .select("*")
         .eq("order_number", searchOrderNumber)
-        .single();
+        .maybeSingle();
       
       if (error) {
-        toast.error("Order not found");
+        toast.error("Error fetching order");
         throw error;
       }
+      
+      if (!data) {
+        toast.error("Order not found");
+        return null;
+      }
+      
       return data;
     },
     enabled: !!searchOrderNumber,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (orderNumber.trim()) {
-      setSearchOrderNumber(orderNumber.trim());
-    }
+  const onSubmit = (data: TrackOrderForm) => {
+    setSearchOrderNumber(data.orderNumber.trim());
   };
 
   const getStatusIcon = (status: string) => {
@@ -72,16 +95,17 @@ const Track = () => {
 
         <div className="max-w-2xl mx-auto">
           <Card className="p-8 mb-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
                 <Label htmlFor="orderNumber">Order Number</Label>
                 <Input
                   id="orderNumber"
-                  value={orderNumber}
-                  onChange={(e) => setOrderNumber(e.target.value)}
+                  {...register("orderNumber")}
                   placeholder="Enter your order number (e.g., ORD-12345)"
-                  required
                 />
+                {errors.orderNumber && (
+                  <p className="text-sm text-destructive mt-1">{errors.orderNumber.message}</p>
+                )}
               </div>
               <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
                 {isLoading ? "Searching..." : "Track Order"}

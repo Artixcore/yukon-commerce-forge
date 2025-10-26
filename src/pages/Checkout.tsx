@@ -15,12 +15,26 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
 const checkoutSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  phone: z.string().regex(/^(\+8801|01)[3-9]\d{8}$/, "Please enter a valid Bangladesh phone number (e.g., 01XXXXXXXXX)"),
-  city: z.string().min(2, "City is required"),
+  name: z.string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be less than 100 characters")
+    .regex(/^[\p{L}\s'-]+$/u, "Name contains invalid characters"),
+  phone: z.string()
+    .regex(/^(\+8801|01)[3-9]\d{8}$/, "Please enter a valid Bangladesh phone number (e.g., 01XXXXXXXXX)"),
+  city: z.string()
+    .trim()
+    .min(2, "City is required")
+    .max(100, "City name is too long"),
   deliveryLocation: z.enum(["inside_dhaka", "outside_dhaka"]),
-  address: z.string().min(10, "Please provide a complete address"),
-  message: z.string().optional(),
+  address: z.string()
+    .trim()
+    .min(10, "Please provide a complete address")
+    .max(500, "Address is too long"),
+  message: z.string()
+    .trim()
+    .max(1000, "Message is too long")
+    .optional(),
 });
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;

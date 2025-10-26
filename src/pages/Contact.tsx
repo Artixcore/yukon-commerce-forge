@@ -6,29 +6,50 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useState } from "react";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const contactSchema = z.object({
+  name: z.string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be less than 100 characters")
+    .regex(/^[\p{L}\s'-]+$/u, "Name contains invalid characters"),
+  
+  email: z.string()
+    .trim()
+    .email("Invalid email address")
+    .max(255, "Email must be less than 255 characters"),
+  
+  subject: z.string()
+    .trim()
+    .min(3, "Subject must be at least 3 characters")
+    .max(200, "Subject must be less than 200 characters"),
+  
+  message: z.string()
+    .trim()
+    .min(10, "Message must be at least 10 characters")
+    .max(2000, "Message must be less than 2000 characters")
+});
+
+type ContactForm = z.infer<typeof contactSchema>;
 
 const Contact = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ContactForm>({
+    resolver: zodResolver(contactSchema),
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = (data: ContactForm) => {
     // In a real app, this would send the data to a backend
     toast.success("Message sent successfully! We'll get back to you soon.");
-    setFormData({ name: "", email: "", subject: "", message: "" });
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+    reset();
   };
 
   const contactInfo = [
@@ -95,30 +116,29 @@ const Contact = () => {
           <div className="lg:col-span-2">
             <Card className="p-8">
               <h2 className="text-2xl font-bold mb-6">Send us a Message</h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label htmlFor="name">Name *</Label>
                     <Input
                       id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
+                      {...register("name")}
                       placeholder="Your name"
                     />
+                    {errors.name && (
+                      <p className="text-sm text-destructive mt-1">{errors.name.message}</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="email">Email *</Label>
                     <Input
                       id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
+                      {...register("email")}
                       placeholder="your@email.com"
                     />
+                    {errors.email && (
+                      <p className="text-sm text-destructive mt-1">{errors.email.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -126,25 +146,25 @@ const Contact = () => {
                   <Label htmlFor="subject">Subject *</Label>
                   <Input
                     id="subject"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    required
+                    {...register("subject")}
                     placeholder="How can we help?"
                   />
+                  {errors.subject && (
+                    <p className="text-sm text-destructive mt-1">{errors.subject.message}</p>
+                  )}
                 </div>
 
                 <div>
                   <Label htmlFor="message">Message *</Label>
                   <Textarea
                     id="message"
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    required
+                    {...register("message")}
                     placeholder="Tell us more about your inquiry..."
                     rows={6}
                   />
+                  {errors.message && (
+                    <p className="text-sm text-destructive mt-1">{errors.message.message}</p>
+                  )}
                 </div>
 
                 <Button type="submit" size="lg" className="w-full md:w-auto">
