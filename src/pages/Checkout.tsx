@@ -92,18 +92,8 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError;
 
-      // Update product stock
-      for (const item of items) {
-        const { error: stockError } = await supabase
-          .from("products")
-          .update({
-            stock_quantity: item.product.stock_quantity - item.quantity,
-          })
-          .eq("id", item.product.id);
-
-        if (stockError) throw stockError;
-      }
-
+      // Stock is automatically updated by database trigger
+      
       clearCart();
       toast.success("Order placed successfully!");
       navigate(`/order-confirmation/${order.id}`);
