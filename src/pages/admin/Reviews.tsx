@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const Reviews = () => {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
+  
+  // Reviews management component
 
   const { data: reviews, isLoading } = useQuery({
     queryKey: ["admin-reviews", filter],
