@@ -4,6 +4,7 @@ import { ShoppingCart, Menu, X, Search, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
+import logo from "@/assets/logo.png";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,9 +18,7 @@ export const Header = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <div className="bg-primary px-6 py-3 rounded">
-              <span className="text-primary-foreground font-bold text-xl tracking-wider">YUKON</span>
-            </div>
+            <img src={logo} alt="Yukon Lifestyle" className="h-12 w-auto" />
           </Link>
 
           {/* Search Bar - Desktop */}
