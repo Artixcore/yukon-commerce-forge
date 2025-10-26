@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { X, Plus } from "lucide-react";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -23,7 +24,18 @@ const productSchema = z.object({
   is_featured: z.boolean(),
   is_active: z.boolean(),
   image_url: z.string().optional(),
+  images: z.array(z.string().url()).optional(),
 });
+
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
 
 type ProductForm = z.infer<typeof productSchema>;
 
@@ -35,6 +47,7 @@ interface ProductDialogProps {
 
 export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProps) => {
   const queryClient = useQueryClient();
+  const [additionalImages, setAdditionalImages] = useState<string[]>([]);
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -57,8 +70,17 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
       is_featured: false,
       is_active: true,
       image_url: "",
+      images: [],
     },
   });
+
+  // Watch name field to auto-generate slug
+  const watchName = form.watch("name");
+  useEffect(() => {
+    if (!product && watchName) {
+      form.setValue("slug", generateSlug(watchName));
+    }
+  }, [watchName, product, form]);
 
   useEffect(() => {
     if (product) {
@@ -72,9 +94,12 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
         is_featured: product.is_featured,
         is_active: product.is_active,
         image_url: product.image_url || "",
+        images: product.images || [],
       });
+      setAdditionalImages(product.images || []);
     } else {
       form.reset();
+      setAdditionalImages([]);
     }
   }, [product, form]);
 
@@ -90,6 +115,7 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
         is_featured: data.is_featured,
         is_active: data.is_active,
         image_url: data.image_url || null,
+        images: additionalImages.filter(img => img.trim() !== ""),
       };
 
       if (product) {
@@ -226,7 +252,7 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
               name="image_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image URL</FormLabel>
+                  <FormLabel>Featured Image URL</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="https://..." />
                   </FormControl>
@@ -234,6 +260,46 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                 </FormItem>
               )}
             />
+
+            <div className="space-y-2">
+              <FormLabel>Additional Images</FormLabel>
+              {additionalImages.map((img, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <Input
+                    value={img}
+                    onChange={(e) => {
+                      const newImages = [...additionalImages];
+                      newImages[index] = e.target.value;
+                      setAdditionalImages(newImages);
+                    }}
+                    placeholder="https://..."
+                  />
+                  {img && (
+                    <img src={img} alt="" className="w-12 h-12 object-cover rounded" />
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      const newImages = additionalImages.filter((_, i) => i !== index);
+                      setAdditionalImages(newImages);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setAdditionalImages([...additionalImages, ""])}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Image
+              </Button>
+            </div>
 
             <div className="flex gap-4">
               <FormField

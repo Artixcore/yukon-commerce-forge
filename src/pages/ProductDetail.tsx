@@ -3,16 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingCart, Minus, Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import useEmblaCarousel from "embla-carousel-react";
+import { ProductCard } from "@/components/shop/ProductCard";
 
 const ProductDetail = () => {
   const { slug } = useParams();
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", slug],
@@ -26,6 +30,42 @@ const ProductDetail = () => {
       return data;
     },
   });
+
+  const { data: relatedProducts } = useQuery({
+    queryKey: ["related-products", product?.category_id, product?.id],
+    queryFn: async () => {
+      if (!product?.category_id) return [];
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("category_id", product.category_id)
+        .eq("is_active", true)
+        .neq("id", product.id)
+        .limit(4);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!product,
+  });
+
+  const allImages = product ? [
+    ...(product.image_url ? [product.image_url] : []),
+    ...(product.images || [])
+  ] : [];
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi, onSelect]);
 
   const handleAddToCart = () => {
     if (product) {
@@ -66,80 +106,123 @@ const ProductDetail = () => {
         </Link>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Image */}
-          <div className="bg-muted rounded-lg aspect-square flex items-center justify-center">
-            {product.image_url ? (
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="w-full h-full object-cover rounded-lg"
-              />
-            ) : (
-              <div className="text-muted-foreground">No image</div>
+          {/* Image Gallery */}
+          <div className="space-y-4">
+            <div className="bg-muted rounded-lg aspect-square overflow-hidden" ref={emblaRef}>
+              <div className="flex h-full">
+                {allImages.length > 0 ? (
+                  allImages.map((img, index) => (
+                    <div key={index} className="flex-[0_0_100%] min-w-0 flex items-center justify-center">
+                      <img
+                        src={img}
+                        alt={`${product.name} - ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex-[0_0_100%] flex items-center justify-center text-muted-foreground">
+                    No image
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {allImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto">
+                {allImages.map((img, index) => (
+                  <button
+                    key={index}
+                    onClick={() => emblaApi?.scrollTo(index)}
+                    className={`flex-shrink-0 w-20 h-20 rounded border-2 overflow-hidden transition-all ${
+                      selectedIndex === index ? "border-primary" : "border-transparent"
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
           {/* Details */}
-          <div className="flex flex-col">
-            <div className="mb-2">
-              <span className="text-sm text-primary font-medium">
+          <div className="flex flex-col space-y-6">
+            <div>
+              <span className="inline-block px-3 py-1 text-sm bg-primary/10 text-primary font-medium rounded-full mb-4">
                 {product.categories?.name}
               </span>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">{product.name}</h1>
             </div>
             
-            <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
-            
-            <div className="text-3xl font-bold text-primary mb-6">
-              ${product.price}
-            </div>
-
-            <p className="text-muted-foreground mb-6 leading-relaxed">
-              {product.description || "No description available"}
-            </p>
-
-            <div className="mb-6">
-              <p className="text-sm text-muted-foreground mb-2">
-                Stock: {product.stock_quantity > 0 ? (
-                  <span className="text-primary font-medium">{product.stock_quantity} available</span>
-                ) : (
-                  <span className="text-destructive font-medium">Out of stock</span>
-                )}
+            <div>
+              <div className="text-4xl font-bold text-primary mb-2">
+                ৳{product.price}
+              </div>
+              <p className="text-muted-foreground text-lg leading-relaxed">
+                {product.description || "No description available"}
               </p>
             </div>
 
+            <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
+              <span className="text-sm font-medium">Stock:</span>
+              {product.stock_quantity > 0 ? (
+                <span className="text-primary font-bold">{product.stock_quantity} available</span>
+              ) : (
+                <span className="text-destructive font-bold">Out of stock</span>
+              )}
+            </div>
+
             {product.stock_quantity > 0 && (
-              <>
-                <div className="flex items-center gap-4 mb-6">
-                  <span className="text-sm font-medium">Quantity:</span>
-                  <div className="flex items-center border rounded-lg">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <span className="text-base font-medium">Quantity:</span>
+                  <div className="flex items-center border-2 rounded-lg">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       disabled={quantity <= 1}
+                      className="h-12 w-12"
                     >
-                      <Minus className="h-4 w-4" />
+                      <Minus className="h-5 w-5" />
                     </Button>
-                    <span className="px-6 font-medium">{quantity}</span>
+                    <span className="px-8 font-bold text-lg">{quantity}</span>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
                       disabled={quantity >= product.stock_quantity}
+                      className="h-12 w-12"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
 
-                <Button onClick={handleAddToCart} size="lg" className="w-full md:w-auto">
-                  <ShoppingCart className="mr-2 h-5 w-5" />
+                <Button onClick={handleAddToCart} size="lg" className="w-full text-lg h-14">
+                  <ShoppingCart className="mr-2 h-6 w-6" />
                   Add to Cart
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>
+
+        {/* Related Products */}
+        {relatedProducts && relatedProducts.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-3xl font-bold mb-8">You May Also Like</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 overflow-x-auto">
+              {relatedProducts.map((relatedProduct) => (
+                <ProductCard key={relatedProduct.id} product={relatedProduct} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <Footer />
     </div>

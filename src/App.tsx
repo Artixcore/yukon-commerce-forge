@@ -14,6 +14,7 @@ import Dashboard from "./pages/admin/Dashboard";
 import Products from "./pages/admin/Products";
 import Categories from "./pages/admin/Categories";
 import Orders from "./pages/admin/Orders";
+import Banners from "./pages/admin/Banners";
 import Login from "./pages/admin/Login";
 import Setup from "./pages/Setup";
 import NotFound from "./pages/NotFound";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="products" element={<Products />} />
             <Route path="categories" element={<Categories />} />
             <Route path="orders" element={<Orders />} />
+            <Route path="banners" element={<Banners />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
