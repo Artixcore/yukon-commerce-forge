@@ -7,6 +7,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Phone, MapPin, MessageSquare } from "lucide-react";
+import { Database } from "@/integrations/supabase/types";
+
+type OrderStatus = Database["public"]["Enums"]["order_status"];
 
 interface OrderDetailDialogProps {
   orderId: string | null;
@@ -34,7 +37,7 @@ const statusLabels: Record<string, string> = {
 
 export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDialogProps) => {
   const queryClient = useQueryClient();
-  const [newStatus, setNewStatus] = useState<string>("");
+  const [newStatus, setNewStatus] = useState<OrderStatus | "">("");
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["order-detail", orderId],
@@ -66,7 +69,7 @@ export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDi
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async (status: string) => {
+    mutationFn: async (status: OrderStatus) => {
       if (!orderId) return;
       const { error } = await supabase
         .from("orders")
@@ -221,7 +224,7 @@ export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDi
             
             <div className="space-y-3">
               <div className="flex gap-2">
-                <Select value={newStatus} onValueChange={setNewStatus}>
+                <Select value={newStatus} onValueChange={(value) => setNewStatus(value as OrderStatus)}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Select new status" />
                   </SelectTrigger>
