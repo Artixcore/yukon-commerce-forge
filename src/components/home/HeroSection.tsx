@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 export const HeroSection = () => {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 5000 })]);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: false })]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const { data: banners, isLoading } = useQuery({
