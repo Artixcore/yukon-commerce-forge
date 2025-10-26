@@ -24,14 +24,14 @@ const menuItems = [
 
 export function AdminSidebar() {
   return (
-    <Sidebar className="bg-white border-r">
+    <Sidebar>
       <div className="p-4 border-b">
-        <h2 className="text-xl font-bold text-gray-900">YukonStore Admin</h2>
+        <h2 className="text-xl font-bold text-foreground">YukonStore Admin</h2>
       </div>
       
-      <SidebarContent className="bg-white">
+      <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-700">Management</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-muted-foreground">Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -42,8 +42,8 @@ export function AdminSidebar() {
                       end 
                       className={({ isActive }) =>
                         cn(
-                          "text-gray-900 hover:bg-gray-100 hover:text-primary transition-colors",
-                          isActive && "bg-primary/10 text-primary font-semibold"
+                          "text-foreground hover:bg-accent hover:text-accent-foreground transition-colors",
+                          isActive && "bg-accent text-accent-foreground font-semibold"
                         )
                       }
                     >
