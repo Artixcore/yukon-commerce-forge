@@ -67,6 +67,7 @@ const Banners = () => {
             <TableRow>
               <TableHead>Image</TableHead>
               <TableHead>Title</TableHead>
+              <TableHead>Linked To</TableHead>
               <TableHead>Order</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
@@ -83,6 +84,21 @@ const Banners = () => {
                   />
                 </TableCell>
                 <TableCell>{banner.title}</TableCell>
+                <TableCell>
+                  {banner.link_url ? (
+                    banner.link_url.startsWith('/product/') ? (
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                        Product: {banner.link_url.replace('/product/', '')}
+                      </span>
+                    ) : (
+                      <span className="text-xs bg-muted px-2 py-1 rounded">
+                        External Link
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-xs text-muted-foreground">No link</span>
+                  )}
+                </TableCell>
                 <TableCell>{banner.display_order}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded text-xs ${banner.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>

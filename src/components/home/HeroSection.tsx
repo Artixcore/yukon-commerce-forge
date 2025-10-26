@@ -5,6 +5,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export const HeroSection = () => {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 5000 })]);
@@ -90,7 +91,13 @@ export const HeroSection = () => {
                     )}
                     {banner.button_text && banner.link_url && (
                       <Button asChild size="lg">
-                        <a href={banner.link_url}>{banner.button_text}</a>
+                        {banner.link_url.startsWith('http') ? (
+                          <a href={banner.link_url} target="_blank" rel="noopener noreferrer">
+                            {banner.button_text}
+                          </a>
+                        ) : (
+                          <Link to={banner.link_url}>{banner.button_text}</Link>
+                        )}
                       </Button>
                     )}
                   </div>

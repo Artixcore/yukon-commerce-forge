@@ -2,14 +2,15 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ImageUpload } from "./ImageUpload";
 
@@ -17,7 +18,7 @@ const bannerSchema = z.object({
   title: z.string().min(1, "Title is required"),
   subtitle: z.string().optional(),
   image_url: z.string().url("Must be a valid URL"),
-  link_url: z.string().url().optional().or(z.literal("")),
+  link_url: z.string().optional().or(z.literal("")),
   button_text: z.string().optional(),
   display_order: z.string().min(0, "Order must be positive"),
   is_active: z.boolean(),
@@ -33,6 +34,19 @@ interface BannerDialogProps {
 
 export const BannerDialog = ({ open, onOpenChange, banner }: BannerDialogProps) => {
   const queryClient = useQueryClient();
+
+  const { data: products } = useQuery({
+    queryKey: ["products-for-banner"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, slug")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const form = useForm<BannerForm>({
     resolver: zodResolver(bannerSchema),
@@ -172,10 +186,49 @@ export const BannerDialog = ({ open, onOpenChange, banner }: BannerDialogProps) 
               name="link_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Link URL (Optional)</FormLabel>
+                  <FormLabel>Link to Product (Optional)</FormLabel>
+                  <Select
+                    onValueChange={(slug) => {
+                      form.setValue("link_url", `/product/${slug}`);
+                    }}
+                    value={field.value?.startsWith('/product/') ? field.value.replace('/product/', '') : ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a product to link" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {products?.map((product) => (
+                        <SelectItem key={product.id} value={product.slug}>
+                          {product.name}
+                          <span className="text-xs text-muted-foreground ml-2">
+                            ({product.slug})
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select a product to auto-fill the link URL
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="link_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Or Enter Custom URL</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://..." />
+                    <Input {...field} placeholder="/product/slug or https://..." />
                   </FormControl>
+                  <FormDescription>
+                    Auto-filled when you select a product above
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
