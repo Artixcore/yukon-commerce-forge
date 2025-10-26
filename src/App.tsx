@@ -15,6 +15,7 @@ import Products from "./pages/admin/Products";
 import Categories from "./pages/admin/Categories";
 import Orders from "./pages/admin/Orders";
 import Login from "./pages/admin/Login";
+import Setup from "./pages/Setup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+          <Route path="/setup" element={<Setup />} />
           <Route path="/admin/login" element={<Login />} />
           <Route path="/admin" element={<Admin />}>
             <Route index element={<Dashboard />} />
