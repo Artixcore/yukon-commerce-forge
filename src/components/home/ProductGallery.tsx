@@ -11,7 +11,7 @@ export const ProductGallery = () => {
         .select("id, name, slug, image_url, images")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
-        .limit(6);
+        .limit(12);
       
       if (error) throw error;
       return data;
@@ -23,7 +23,7 @@ export const ProductGallery = () => {
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
         <div className="grid grid-cols-3 gap-2 md:gap-6 lg:gap-8">
-            {[...Array(6)].map((_, i) => (
+            {[...Array(12)].map((_, i) => (
               <div key={i} className="aspect-square bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
