@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ShoppingCart, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Minus, Plus, Star } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
@@ -10,10 +10,14 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import useEmblaCarousel from "embla-carousel-react";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { Card, CardContent } from "@/components/ui/card";
+import { ReviewDialog } from "@/components/product/ReviewDialog";
+import { format } from "date-fns";
 
 const ProductDetail = () => {
   const { slug } = useParams();
   const [quantity, setQuantity] = useState(1);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
   const { addItem } = useCart();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -25,10 +29,26 @@ const ProductDetail = () => {
         .from("products")
         .select("*, categories(name)")
         .eq("slug", slug)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
+  });
+
+  const { data: reviews } = useQuery({
+    queryKey: ["reviews", product?.id],
+    queryFn: async () => {
+      if (!product?.id) return [];
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("product_id", product.id)
+        .eq("is_approved", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!product,
   });
 
   const { data: relatedProducts } = useQuery({
@@ -212,11 +232,86 @@ const ProductDetail = () => {
           </div>
         </div>
 
+        {/* Reviews Section */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold mb-6">Customer Reviews</h2>
+          
+          {/* Review Summary */}
+          <div className="flex items-center gap-6 mb-8 p-6 bg-muted rounded-lg">
+            <div className="text-center">
+              <div className="text-4xl font-bold mb-2">{product.rating?.toFixed(1) || "0.0"}</div>
+              <div className="flex items-center gap-1 justify-center mb-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-5 w-5 ${
+                      i < Math.floor(product.rating || 0)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {product.review_count || 0} reviews
+              </div>
+            </div>
+          </div>
+
+          {/* Review List */}
+          {reviews && reviews.length > 0 ? (
+            <div className="space-y-4 mb-6">
+              {reviews.map((review) => (
+                <Card key={review.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="font-medium">{review.customer_name}</div>
+                        <div className="flex items-center gap-1 mt-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i < review.rating
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {format(new Date(review.created_at), "MMM d, yyyy")}
+                      </div>
+                    </div>
+                    {review.review_text && (
+                      <p className="text-sm text-muted-foreground mt-2">{review.review_text}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No reviews yet. Be the first to review this product!
+            </div>
+          )}
+
+          {/* Add Review Button */}
+          <Button 
+            onClick={() => setShowReviewDialog(true)}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
+            Write a Review
+          </Button>
+        </div>
+
         {/* Related Products */}
         {relatedProducts && relatedProducts.length > 0 && (
           <div className="mt-16">
             <h2 className="text-3xl font-bold mb-8">You May Also Like</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 overflow-x-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => (
                 <ProductCard key={relatedProduct.id} product={relatedProduct} />
               ))}
@@ -224,6 +319,13 @@ const ProductDetail = () => {
           </div>
         )}
       </div>
+      
+      <ReviewDialog 
+        open={showReviewDialog} 
+        onOpenChange={setShowReviewDialog} 
+        productId={product.id}
+      />
+      
       <Footer />
     </div>
   );

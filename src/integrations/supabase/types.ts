@@ -184,13 +184,17 @@ export type Database = {
           category_id: string | null
           created_at: string
           description: string | null
+          discount_percentage: number | null
           id: string
           image_url: string | null
           images: string[] | null
           is_active: boolean | null
           is_featured: boolean | null
           name: string
+          original_price: number | null
           price: number
+          rating: number | null
+          review_count: number
           slug: string
           stock_quantity: number
           updated_at: string
@@ -199,13 +203,17 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          discount_percentage?: number | null
           id?: string
           image_url?: string | null
           images?: string[] | null
           is_active?: boolean | null
           is_featured?: boolean | null
           name: string
+          original_price?: number | null
           price: number
+          rating?: number | null
+          review_count?: number
           slug: string
           stock_quantity?: number
           updated_at?: string
@@ -214,13 +222,17 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          discount_percentage?: number | null
           id?: string
           image_url?: string | null
           images?: string[] | null
           is_active?: boolean | null
           is_featured?: boolean | null
           name?: string
+          original_price?: number | null
           price?: number
+          rating?: number | null
+          review_count?: number
           slug?: string
           stock_quantity?: number
           updated_at?: string
@@ -231,6 +243,50 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          id: string
+          is_approved: boolean
+          product_id: string
+          rating: number
+          review_text: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          id?: string
+          is_approved?: boolean
+          product_id: string
+          rating: number
+          review_text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          id?: string
+          is_approved?: boolean
+          product_id?: string
+          rating?: number
+          review_text?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]

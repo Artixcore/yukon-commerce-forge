@@ -20,6 +20,8 @@ const productSchema = z.object({
   slug: z.string().min(1, "Slug is required"),
   description: z.string().optional(),
   price: z.string().min(1, "Price is required"),
+  original_price: z.string().optional(),
+  discount_percentage: z.string().optional(),
   category_id: z.string().min(1, "Category is required"),
   stock_quantity: z.string().min(0, "Stock quantity must be positive"),
   is_featured: z.boolean(),
@@ -66,6 +68,8 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
       slug: "",
       description: "",
       price: "",
+      original_price: "",
+      discount_percentage: "",
       category_id: "",
       stock_quantity: "0",
       is_featured: false,
@@ -90,6 +94,8 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
         slug: product.slug,
         description: product.description || "",
         price: product.price.toString(),
+        original_price: product.original_price?.toString() || "",
+        discount_percentage: product.discount_percentage?.toString() || "",
         category_id: product.category_id,
         stock_quantity: product.stock_quantity.toString(),
         is_featured: product.is_featured,
@@ -111,6 +117,8 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
         slug: data.slug,
         description: data.description || null,
         price: parseFloat(data.price),
+        original_price: data.original_price ? parseFloat(data.original_price) : null,
+        discount_percentage: data.discount_percentage ? parseInt(data.discount_percentage) : null,
         category_id: data.category_id,
         stock_quantity: parseInt(data.stock_quantity),
         is_featured: data.is_featured,
@@ -202,9 +210,39 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                 name="price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Price</FormLabel>
+                    <FormLabel>Current Price</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="original_price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Original Price (Optional)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" {...field} placeholder="Before discount" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="discount_percentage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Discount % (Optional)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" max="100" {...field} placeholder="0-100" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -225,6 +263,23 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                 )}
               />
             </div>
+
+            {product && (
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+                <div>
+                  <div className="text-sm text-muted-foreground">Rating</div>
+                  <div className="text-lg font-semibold">
+                    {product.rating?.toFixed(1) || "No ratings"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Reviews</div>
+                  <div className="text-lg font-semibold">
+                    {product.review_count || 0}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <FormField
               control={form.control}

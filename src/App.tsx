@@ -15,6 +15,7 @@ import Products from "./pages/admin/Products";
 import Categories from "./pages/admin/Categories";
 import Orders from "./pages/admin/Orders";
 import Banners from "./pages/admin/Banners";
+import AdminReviews from "./pages/admin/Reviews";
 import Login from "./pages/admin/Login";
 import NotFound from "./pages/NotFound";
 import SearchResults from "./pages/SearchResults";
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="products" element={<Products />} />
             <Route path="categories" element={<Categories />} />
             <Route path="orders" element={<Orders />} />
+            <Route path="reviews" element={<AdminReviews />} />
             <Route path="banners" element={<Banners />} />
           </Route>
           <Route path="*" element={<NotFound />} />
