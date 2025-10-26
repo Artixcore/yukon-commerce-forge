@@ -89,8 +89,10 @@ export type Database = {
           id: string
           order_id: string
           price: number
+          product_color: string | null
           product_id: string | null
           product_name: string
+          product_size: string | null
           quantity: number
         }
         Insert: {
@@ -98,8 +100,10 @@ export type Database = {
           id?: string
           order_id: string
           price: number
+          product_color?: string | null
           product_id?: string | null
           product_name: string
+          product_size?: string | null
           quantity: number
         }
         Update: {
@@ -107,8 +111,10 @@ export type Database = {
           id?: string
           order_id?: string
           price?: number
+          product_color?: string | null
           product_id?: string | null
           product_name?: string
+          product_size?: string | null
           quantity?: number
         }
         Relationships: [
@@ -182,6 +188,7 @@ export type Database = {
       products: {
         Row: {
           category_id: string | null
+          colors: Json | null
           created_at: string
           description: string | null
           discount_percentage: number | null
@@ -195,12 +202,15 @@ export type Database = {
           price: number
           rating: number | null
           review_count: number
+          size_chart: Json | null
+          sizes: Json | null
           slug: string
           stock_quantity: number
           updated_at: string
         }
         Insert: {
           category_id?: string | null
+          colors?: Json | null
           created_at?: string
           description?: string | null
           discount_percentage?: number | null
@@ -214,12 +224,15 @@ export type Database = {
           price: number
           rating?: number | null
           review_count?: number
+          size_chart?: Json | null
+          sizes?: Json | null
           slug: string
           stock_quantity?: number
           updated_at?: string
         }
         Update: {
           category_id?: string | null
+          colors?: Json | null
           created_at?: string
           description?: string | null
           discount_percentage?: number | null
@@ -233,6 +246,8 @@ export type Database = {
           price?: number
           rating?: number | null
           review_count?: number
+          size_chart?: Json | null
+          sizes?: Json | null
           slug?: string
           stock_quantity?: number
           updated_at?: string

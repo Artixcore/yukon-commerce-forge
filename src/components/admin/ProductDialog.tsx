@@ -28,6 +28,17 @@ const productSchema = z.object({
   is_active: z.boolean(),
   image_url: z.string().optional(),
   images: z.array(z.string().url()).optional(),
+  colors: z.array(z.object({
+    name: z.string(),
+    hex: z.string()
+  })).optional(),
+  sizes: z.array(z.string()).optional(),
+  size_chart: z.array(z.object({
+    size: z.string(),
+    length: z.string(),
+    chest: z.string(),
+    sleeve: z.string()
+  })).optional(),
 });
 
 const generateSlug = (name: string): string => {
@@ -51,6 +62,9 @@ interface ProductDialogProps {
 export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProps) => {
   const queryClient = useQueryClient();
   const [additionalImages, setAdditionalImages] = useState<string[]>([]);
+  const [colors, setColors] = useState<Array<{name: string, hex: string}>>([]);
+  const [sizes, setSizes] = useState<string[]>([]);
+  const [sizeChart, setSizeChart] = useState<Array<{size: string, length: string, chest: string, sleeve: string}>>([]);
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -76,6 +90,9 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
       is_active: true,
       image_url: "",
       images: [],
+      colors: [],
+      sizes: [],
+      size_chart: [],
     },
   });
 
@@ -102,11 +119,20 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
         is_active: product.is_active,
         image_url: product.image_url || "",
         images: product.images || [],
+        colors: product.colors || [],
+        sizes: product.sizes || [],
+        size_chart: product.size_chart || [],
       });
       setAdditionalImages(product.images || []);
+      setColors(product.colors || []);
+      setSizes(product.sizes || []);
+      setSizeChart(product.size_chart || []);
     } else {
       form.reset();
       setAdditionalImages([]);
+      setColors([]);
+      setSizes([]);
+      setSizeChart([]);
     }
   }, [product, form]);
 
@@ -125,6 +151,9 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
         is_active: data.is_active,
         image_url: data.image_url || null,
         images: additionalImages.filter(img => img.trim() !== ""),
+        colors: colors.length > 0 ? colors : [],
+        sizes: sizes.length > 0 ? sizes : [],
+        size_chart: sizeChart.length > 0 ? sizeChart : [],
       };
 
       if (product) {
@@ -363,6 +392,121 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                 Add Image
               </Button>
             </div>
+
+            {/* Color Selector */}
+            <div className="space-y-3">
+              <FormLabel>Colors (Optional)</FormLabel>
+              <div className="space-y-2">
+                {colors.map((color, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={color.name}
+                      onChange={(e) => {
+                        const newColors = [...colors];
+                        newColors[index].name = e.target.value;
+                        setColors(newColors);
+                      }}
+                      placeholder="Color name"
+                      className="flex-1"
+                    />
+                    <input
+                      type="color"
+                      value={color.hex}
+                      onChange={(e) => {
+                        const newColors = [...colors];
+                        newColors[index].hex = e.target.value;
+                        setColors(newColors);
+                      }}
+                      className="w-12 h-10 rounded border cursor-pointer"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setColors(colors.filter((_, i) => i !== index))}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setColors([...colors, { name: "", hex: "#000000" }])}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Color
+                </Button>
+              </div>
+            </div>
+
+            {/* Size Selector */}
+            <div className="space-y-3">
+              <FormLabel>Sizes (Optional)</FormLabel>
+              <div className="flex flex-wrap gap-2">
+                {["XS", "S", "M", "L", "XL", "2XL", "3XL"].map((size) => (
+                  <Button
+                    key={size}
+                    type="button"
+                    variant={sizes.includes(size) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      if (sizes.includes(size)) {
+                        setSizes(sizes.filter(s => s !== size));
+                        setSizeChart(sizeChart.filter(sc => sc.size !== size));
+                      } else {
+                        setSizes([...sizes, size]);
+                        setSizeChart([...sizeChart, { size, length: "", chest: "", sleeve: "" }]);
+                      }
+                    }}
+                  >
+                    {size}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Size Chart */}
+            {sizes.length > 0 && (
+              <div className="space-y-3">
+                <FormLabel>Size Chart (inches)</FormLabel>
+                <div className="border rounded-lg p-4 space-y-3">
+                  {sizeChart.map((chart, index) => (
+                    <div key={index} className="grid grid-cols-4 gap-2 items-center">
+                      <div className="font-medium">{chart.size}</div>
+                      <Input
+                        placeholder="Length"
+                        value={chart.length}
+                        onChange={(e) => {
+                          const newChart = [...sizeChart];
+                          newChart[index].length = e.target.value;
+                          setSizeChart(newChart);
+                        }}
+                      />
+                      <Input
+                        placeholder="Chest"
+                        value={chart.chest}
+                        onChange={(e) => {
+                          const newChart = [...sizeChart];
+                          newChart[index].chest = e.target.value;
+                          setSizeChart(newChart);
+                        }}
+                      />
+                      <Input
+                        placeholder="Sleeve"
+                        value={chart.sleeve}
+                        onChange={(e) => {
+                          const newChart = [...sizeChart];
+                          newChart[index].sleeve = e.target.value;
+                          setSizeChart(newChart);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-4">
               <FormField

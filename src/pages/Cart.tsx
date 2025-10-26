@@ -37,8 +37,8 @@ const Cart = () => {
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
-            {items.map((item) => (
-              <Card key={item.product.id} className="p-4">
+            {items.map((item, index) => (
+              <Card key={`${item.product.id}-${item.variants?.color}-${item.variants?.size}-${index}`} className="p-4">
                 <div className="flex gap-4">
                   <div className="w-24 h-24 bg-muted rounded-lg flex-shrink-0">
                     {item.product.image_url && (
@@ -53,13 +53,19 @@ const Cart = () => {
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg mb-1">{item.product.name}</h3>
                     <p className="text-primary font-medium">৳{item.product.price}</p>
+                    {item.variants && (
+                      <div className="flex gap-3 mt-1 text-sm text-muted-foreground">
+                        {item.variants.color && <span>Color: {item.variants.color}</span>}
+                        {item.variants.size && <span>Size: {item.variants.size}</span>}
+                      </div>
+                    )}
                     
                     <div className="flex items-center gap-4 mt-3">
                       <div className="flex items-center border rounded-lg">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => updateQuantity(item.product.id, Math.max(0, item.quantity - 1))}
+                          onClick={() => updateQuantity(item.product.id, Math.max(0, item.quantity - 1), item.variants)}
                         >
                           -
                         </Button>
@@ -67,7 +73,7 @@ const Cart = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variants)}
                         >
                           +
                         </Button>
@@ -76,7 +82,7 @@ const Cart = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeItem(item.product.id)}
+                        onClick={() => removeItem(item.product.id, item.variants)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

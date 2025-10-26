@@ -84,6 +84,8 @@ const Checkout = () => {
           product_name: item.product.name,
           quantity: item.quantity,
           price: item.product.price,
+          product_color: item.variants?.color || null,
+          product_size: item.variants?.size || null,
         })),
       };
 
@@ -230,13 +232,15 @@ const Checkout = () => {
         {/* Order Summary */}
         <div>
           <h2 className="text-2xl font-semibold mb-6">Order Summary</h2>
-          <div className="bg-muted rounded-lg p-6 space-y-4">
-            {items.map((item) => (
-              <div key={item.product.id} className="flex justify-between">
+            <div className="bg-muted rounded-lg p-6 space-y-4">
+            {items.map((item, index) => (
+              <div key={`${item.product.id}-${item.variants?.color}-${item.variants?.size}-${index}`} className="flex justify-between">
                 <div>
                   <p className="font-medium">{item.product.name}</p>
                   <p className="text-sm text-muted-foreground">
                     Quantity: {item.quantity}
+                    {item.variants?.color && ` • Color: ${item.variants.color}`}
+                    {item.variants?.size && ` • Size: ${item.variants.size}`}
                   </p>
                 </div>
                 <p className="font-medium">৳{(Number(item.product.price) * item.quantity).toFixed(2)}</p>

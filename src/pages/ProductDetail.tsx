@@ -1,9 +1,11 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingCart, Minus, Plus, Star } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
@@ -16,8 +18,11 @@ import { format } from "date-fns";
 
 const ProductDetail = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const { addItem } = useCart();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -87,10 +92,33 @@ const ProductDetail = () => {
     };
   }, [emblaApi, onSelect]);
 
+  // Auto-select first available color and size
+  useEffect(() => {
+    if (product?.colors && Array.isArray(product.colors) && product.colors.length > 0 && !selectedColor) {
+      setSelectedColor((product.colors as any)[0].name);
+    }
+    if (product?.sizes && Array.isArray(product.sizes) && product.sizes.length > 0 && !selectedSize) {
+      setSelectedSize((product.sizes as any)[0]);
+    }
+  }, [product, selectedColor, selectedSize]);
+
   const handleAddToCart = () => {
     if (product) {
-      addItem(product, quantity);
+      addItem(product, quantity, {
+        color: selectedColor,
+        size: selectedSize,
+      });
       toast.success(`Added ${quantity} ${product.name} to cart`);
+    }
+  };
+
+  const handleBuyNow = () => {
+    if (product) {
+      addItem(product, quantity, {
+        color: selectedColor,
+        size: selectedSize,
+      });
+      navigate('/checkout');
     }
   };
 
@@ -172,20 +200,62 @@ const ProductDetail = () => {
           {/* Details */}
           <div className="flex flex-col space-y-6">
             <div>
-              <span className="inline-block px-3 py-1 text-sm bg-primary/10 text-primary font-medium rounded-full mb-4">
-                {product.categories?.name}
-              </span>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">{product.name}</h1>
+              <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+              <div className="text-3xl font-bold mb-4">৳{product.price} USD</div>
             </div>
-            
-            <div>
-              <div className="text-4xl font-bold text-primary mb-2">
-                ৳{product.price}
+
+            {/* Color Selector */}
+            {product.colors && Array.isArray(product.colors) && product.colors.length > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-2">Color:</div>
+                <div className="flex gap-2">
+                  {(product.colors as any[]).map((color: any) => (
+                    <button
+                      key={color.name}
+                      onClick={() => setSelectedColor(color.name)}
+                      className={`w-8 h-8 rounded-full border-2 transition-all ${
+                        selectedColor === color.name
+                          ? 'border-foreground ring-2 ring-offset-2 ring-foreground'
+                          : 'border-border'
+                      }`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+                {selectedColor && (
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Selected: {selectedColor}
+                  </div>
+                )}
               </div>
-              <p className="text-muted-foreground text-lg leading-relaxed">
-                {product.description || "No description available"}
-              </p>
-            </div>
+            )}
+
+            {/* Size Selector */}
+            {product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-2">Size:</div>
+                <div className="flex flex-wrap gap-2">
+                  {(product.sizes as string[]).map((size: string) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`px-4 py-2 border rounded transition-all ${
+                        selectedSize === size
+                          ? 'bg-foreground text-background border-foreground'
+                          : 'bg-background text-foreground border-border hover:border-foreground'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <p className="text-muted-foreground leading-relaxed">
+              {product.description || "No description available"}
+            </p>
 
             <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
               <span className="text-sm font-medium">Stock:</span>
@@ -198,36 +268,69 @@ const ProductDetail = () => {
 
             {product.stock_quantity > 0 && (
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <span className="text-base font-medium">Quantity:</span>
-                  <div className="flex items-center border-2 rounded-lg">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      disabled={quantity <= 1}
-                      className="h-12 w-12"
-                    >
-                      <Minus className="h-5 w-5" />
-                    </Button>
-                    <span className="px-8 font-bold text-lg">{quantity}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
-                      disabled={quantity >= product.stock_quantity}
-                      className="h-12 w-12"
-                    >
-                      <Plus className="h-5 w-5" />
-                    </Button>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                    className="h-10 w-10"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="w-12 text-center font-medium">{quantity}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
+                    disabled={quantity >= product.stock_quantity}
+                    className="h-10 w-10"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
 
-                <Button onClick={handleAddToCart} size="lg" className="w-full text-lg h-14">
-                  <ShoppingCart className="mr-2 h-6 w-6" />
+                <Button onClick={handleAddToCart} size="lg" className="w-full h-12 bg-muted text-foreground hover:bg-muted/80">
                   Add to Cart
                 </Button>
+                
+                <Button onClick={handleBuyNow} size="lg" className="w-full h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Buy Now
+                </Button>
               </div>
+            )}
+
+            {/* Size Chart */}
+            {product.size_chart && Array.isArray(product.size_chart) && product.size_chart.length > 0 && (
+              <Collapsible>
+                <CollapsibleTrigger className="text-sm font-medium underline">
+                  Size Chart
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Size</TableHead>
+                          <TableHead>Length (in)</TableHead>
+                          <TableHead>Chest (in)</TableHead>
+                          <TableHead>Sleeve (in)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(product.size_chart as any[]).map((row: any) => (
+                          <TableRow key={row.size}>
+                            <TableCell className="font-medium">{row.size}</TableCell>
+                            <TableCell>{row.length}</TableCell>
+                            <TableCell>{row.chest}</TableCell>
+                            <TableCell>{row.sleeve}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </div>
         </div>
