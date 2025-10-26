@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Store, Plus, User } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { LogOut, Store, Plus, User, Search, Phone } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -41,20 +43,49 @@ export const AdminHeader = () => {
 
   return (
     <header className="h-16 border-b bg-background sticky top-0 z-50">
-      <div className="h-full px-6 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="Yukon Admin" className="h-8 w-auto" />
-          <span className="text-lg font-semibold">Admin Panel</span>
+      <div className="h-full px-4 flex items-center justify-between gap-2">
+        {/* Mobile: Sidebar Trigger + Logo */}
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Mobile Sidebar Trigger */}
+          <SidebarTrigger className="md:hidden" />
+          
+          {/* Logo with Primary Background on Mobile */}
+          <div className="flex items-center gap-2 md:gap-3 bg-primary md:bg-transparent px-3 py-2 md:p-0 rounded">
+            <img 
+              src={logo} 
+              alt="Yukon Admin" 
+              className="h-6 md:h-8 w-auto brightness-0 invert md:brightness-100 md:invert-0" 
+            />
+            <span className="hidden md:inline text-lg font-semibold">Admin Panel</span>
+          </div>
+        </div>
+
+        {/* Mobile: Compact Search Bar */}
+        <div className="flex-1 max-w-md mx-2 md:hidden">
+          <div className="relative">
+            <Input
+              type="search"
+              placeholder="Search..."
+              className="pr-10 h-9"
+            />
+            <Button
+              size="sm"
+              className="absolute right-0 top-0 h-9 px-3 rounded-l-none"
+              variant="default"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
+          {/* Desktop Only Buttons */}
           <Button
             variant="outline"
             size="sm"
             onClick={handleViewStore}
-            className="hidden sm:flex"
+            className="hidden md:flex"
           >
             <Store className="h-4 w-4 mr-2" />
             View Store
@@ -64,18 +95,32 @@ export const AdminHeader = () => {
             variant="outline"
             size="sm"
             onClick={() => navigate("/admin/products")}
-            className="hidden sm:flex"
+            className="hidden md:flex"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Product
           </Button>
 
-          {/* User Dropdown */}
+          {/* Mobile: Phone Icon Button */}
+          <Button
+            size="icon"
+            className="md:hidden h-9 w-9"
+            variant="default"
+            onClick={handleViewStore}
+          >
+            <Phone className="h-4 w-4" />
+          </Button>
+
+          {/* User Dropdown - Both Mobile & Desktop */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <User className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">{adminEmail || "Admin"}</span>
+              <Button 
+                variant="default" 
+                size="sm"
+                className="md:bg-transparent md:text-foreground md:hover:bg-accent md:hover:text-accent-foreground h-9"
+              >
+                <User className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">{adminEmail || "Admin"}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

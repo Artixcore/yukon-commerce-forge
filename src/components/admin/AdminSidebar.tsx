@@ -1,5 +1,5 @@
-import { LayoutDashboard, Package, FolderTree, ShoppingBag, LogOut, Image } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Package, FolderTree, ShoppingBag, Image } from "lucide-react";
+import { NavLink } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -11,8 +11,7 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -23,51 +22,43 @@ const menuItems = [
 ];
 
 export function AdminSidebar() {
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logged out successfully");
-    navigate("/admin/login");
-  };
-
   return (
-    <Sidebar>
-      <div className="p-4">
-        <h2 className="text-xl font-bold text-sidebar-foreground">YukonStore Admin</h2>
+    <Sidebar className="bg-white border-r">
+      <div className="p-4 border-b">
+        <h2 className="text-xl font-bold text-gray-900">YukonStore Admin</h2>
       </div>
       
-      <SidebarContent>
+      <SidebarContent className="bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-gray-700">Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={({ isActive }) =>
-                      isActive ? "bg-sidebar-accent" : ""
-                    }>
+                    <NavLink 
+                      to={item.url} 
+                      end 
+                      className={({ isActive }) =>
+                        cn(
+                          "text-gray-900 hover:bg-gray-100 hover:text-primary transition-colors",
+                          isActive && "bg-primary/10 text-primary font-semibold"
+                        )
+                      }
+                    >
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout}>
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
       
-      <div className="p-4">
-        <SidebarTrigger />
+      <div className="p-4 border-t bg-white">
+        <SidebarTrigger className="text-gray-900" />
       </div>
     </Sidebar>
   );
