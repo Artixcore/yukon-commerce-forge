@@ -15,6 +15,7 @@ import Products from "./pages/admin/Products";
 import Categories from "./pages/admin/Categories";
 import Orders from "./pages/admin/Orders";
 import Banners from "./pages/admin/Banners";
+import Gallery from "./pages/admin/Gallery";
 import AdminReviews from "./pages/admin/Reviews";
 import Login from "./pages/admin/Login";
 import NotFound from "./pages/NotFound";
@@ -59,10 +60,11 @@ const App = () => (
             <Route index element={<Dashboard />} />
             <Route path="products" element={<Products />} />
             <Route path="categories" element={<Categories />} />
-            <Route path="orders" element={<Orders />} />
-            <Route path="reviews" element={<AdminReviews />} />
-            <Route path="banners" element={<Banners />} />
-          </Route>
+          <Route path="orders" element={<Orders />} />
+          <Route path="reviews" element={<AdminReviews />} />
+          <Route path="banners" element={<Banners />} />
+          <Route path="gallery" element={<Gallery />} />
+        </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

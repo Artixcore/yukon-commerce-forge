@@ -1,18 +1,20 @@
-import { useNavigate } from "react-router-dom";
-import { useCart } from "@/hooks/useCart";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
+import bkashLogo from "@/assets/bkash.svg";
+import nagadLogo from "@/assets/nagad.png";
 
 const checkoutSchema = z.object({
   name: z.string()
@@ -43,6 +45,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("cod");
 
   const {
     register,
@@ -262,9 +265,31 @@ const Checkout = () => {
               </div>
             </div>
 
-            <div className="bg-background rounded p-4 text-sm">
+            {/* Payment Method */}
+            <div className="bg-background rounded p-4 space-y-3">
               <p className="font-semibold mb-2">Payment Method:</p>
-              <p className="text-muted-foreground">Cash on Delivery (COD)</p>
+              <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                <div className="flex items-center space-x-3 border rounded p-3 cursor-pointer hover:bg-muted/50">
+                  <RadioGroupItem value="cod" id="cod" />
+                  <Label htmlFor="cod" className="cursor-pointer flex-1">
+                    Cash on Delivery (COD)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 border rounded p-3 opacity-60">
+                  <RadioGroupItem value="bkash" id="bkash" disabled />
+                  <img src={bkashLogo} alt="bKash" className="h-6" />
+                  <Label htmlFor="bkash" className="cursor-not-allowed flex-1">
+                    bKash <span className="text-xs text-muted-foreground">(Coming Soon)</span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 border rounded p-3 opacity-60">
+                  <RadioGroupItem value="nagad" id="nagad" disabled />
+                  <img src={nagadLogo} alt="Nagad" className="h-6" />
+                  <Label htmlFor="nagad" className="cursor-not-allowed flex-1">
+                    Nagad <span className="text-xs text-muted-foreground">(Coming Soon)</span>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
         </div>

@@ -3,14 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 
 export const ProductGallery = () => {
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["gallery-products"],
+  const { data: galleryImages, isLoading } = useQuery({
+    queryKey: ["gallery-images"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("products")
-        .select("id, name, slug, image_url, images")
+        .from("gallery_images")
+        .select("*")
         .eq("is_active", true)
-        .order("created_at", { ascending: false })
+        .order("display_order")
         .limit(12);
       
       if (error) throw error;
@@ -32,7 +32,7 @@ export const ProductGallery = () => {
     );
   }
 
-  if (!products || products.length === 0) {
+  if (!galleryImages || galleryImages.length === 0) {
     return null;
   }
 
@@ -40,40 +40,22 @@ export const ProductGallery = () => {
     <section className="py-12 bg-background">
       <div className="container mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 text-foreground">
-          New Arrivals Gallery
+          Gallery
         </h2>
         
         <div className="grid grid-cols-3 gap-2 md:gap-6 lg:gap-8">
-          {products.map((product) => {
-            const imageUrl = product.image_url || 
-                            (product.images && product.images.length > 0 ? product.images[0] : null);
-            
-            return (
-              <Link
-                key={product.id}
-                to={`/product/${product.slug}`}
-                className="group relative aspect-square overflow-hidden rounded-lg border border-border hover:shadow-lg transition-all"
-              >
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-muted flex items-center justify-center">
-                    <span className="text-muted-foreground text-sm">No Image</span>
-                  </div>
-                )}
-                
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                  <p className="text-white text-sm font-medium text-center line-clamp-2">
-                    {product.name}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
+          {galleryImages.map((image) => (
+            <div
+              key={image.id}
+              className="relative aspect-square overflow-hidden rounded-lg border border-border"
+            >
+              <img
+                src={image.image_url}
+                alt={image.title || "Gallery image"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ))}
         </div>
       </div>
     </section>

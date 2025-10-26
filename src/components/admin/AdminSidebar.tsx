@@ -20,18 +20,19 @@ const menuItems = [
   { title: "Orders", url: "/admin/orders", icon: ShoppingBag },
   { title: "Reviews", url: "/admin/reviews", icon: Star },
   { title: "Hero Banners", url: "/admin/banners", icon: Image },
+  { title: "Gallery", url: "/admin/gallery", icon: Image },
 ];
 
 export function AdminSidebar() {
   return (
-    <Sidebar>
-      <div className="p-4 border-b">
-        <h2 className="text-xl font-bold text-foreground">YukonStore Admin</h2>
+    <Sidebar className="bg-white border-r">
+      <div className="p-4 border-b bg-white">
+        <h2 className="text-xl font-bold text-black">YukonStore Admin</h2>
       </div>
       
-      <SidebarContent>
+      <SidebarContent className="bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground">Management</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-gray-600">Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -42,8 +43,8 @@ export function AdminSidebar() {
                       end 
                       className={({ isActive }) =>
                         cn(
-                          "text-foreground hover:bg-accent hover:text-accent-foreground transition-colors",
-                          isActive && "bg-accent text-accent-foreground font-semibold"
+                          "text-black hover:bg-gray-100 transition-colors",
+                          isActive && "bg-gray-200 text-black font-semibold"
                         )
                       }
                     >
