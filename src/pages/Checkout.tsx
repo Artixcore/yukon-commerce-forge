@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
@@ -51,6 +51,7 @@ const Checkout = () => {
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors },
   } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
@@ -176,23 +177,29 @@ const Checkout = () => {
 
             <div>
               <Label>Delivery Location *</Label>
-              <RadioGroup
-                defaultValue="inside_dhaka"
-                onValueChange={(value) => register("deliveryLocation").onChange({ target: { value } })}
-              >
-                <div className="flex items-center space-x-2 border rounded-lg p-3">
-                  <RadioGroupItem value="inside_dhaka" id="inside_dhaka" {...register("deliveryLocation")} />
-                  <Label htmlFor="inside_dhaka" className="cursor-pointer flex-1">
-                    Inside Dhaka (৳60 delivery charge)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2 border rounded-lg p-3">
-                  <RadioGroupItem value="outside_dhaka" id="outside_dhaka" {...register("deliveryLocation")} />
-                  <Label htmlFor="outside_dhaka" className="cursor-pointer flex-1">
-                    Outside Dhaka (৳120 delivery charge)
-                  </Label>
-                </div>
-              </RadioGroup>
+              <Controller
+                name="deliveryLocation"
+                control={control}
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <div className="flex items-center space-x-2 border rounded-lg p-3">
+                      <RadioGroupItem value="inside_dhaka" id="inside_dhaka" />
+                      <Label htmlFor="inside_dhaka" className="cursor-pointer flex-1">
+                        Inside Dhaka (৳60 delivery charge)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 border rounded-lg p-3">
+                      <RadioGroupItem value="outside_dhaka" id="outside_dhaka" />
+                      <Label htmlFor="outside_dhaka" className="cursor-pointer flex-1">
+                        Outside Dhaka (৳120 delivery charge)
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
               {errors.deliveryLocation && (
                 <p className="text-sm text-destructive mt-1">{errors.deliveryLocation.message}</p>
               )}
