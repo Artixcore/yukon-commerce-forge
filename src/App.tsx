@@ -16,7 +16,6 @@ import Categories from "./pages/admin/Categories";
 import Orders from "./pages/admin/Orders";
 import Banners from "./pages/admin/Banners";
 import Login from "./pages/admin/Login";
-import Setup from "./pages/Setup";
 import NotFound from "./pages/NotFound";
 import SearchResults from "./pages/SearchResults";
 import BestSelling from "./pages/BestSelling";
@@ -54,7 +53,6 @@ const App = () => (
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/returns" element={<Returns />} />
           <Route path="/shipping" element={<Shipping />} />
-          <Route path="/setup" element={<Setup />} />
           <Route path="/admin/login" element={<Login />} />
           <Route path="/admin" element={<Admin />}>
             <Route index element={<Dashboard />} />
