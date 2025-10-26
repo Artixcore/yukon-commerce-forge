@@ -38,9 +38,9 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <Link to={`/product/${product.slug}`}>
-      <Card className="overflow-hidden border transition-shadow hover:shadow-lg" style={{ borderRadius: '8px' }}>
+      <Card className="overflow-hidden border transition-shadow hover:shadow-lg" style={{ borderRadius: '15px' }}>
         {/* Image with Discount Badge */}
-        <div className="relative overflow-hidden bg-muted" style={{ borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
+        <div className="relative overflow-hidden bg-muted" style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
           <img
             src={product.image_url || "/placeholder.svg"}
             alt={product.name}
@@ -92,7 +92,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           onClick={handleAddToCart}
           disabled={product.stock_quantity === 0}
           className="w-full h-9 sm:h-10 text-sm rounded-none"
-          style={{ borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px' }}
+          style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}
           variant="default"
         >
           {product.stock_quantity === 0 ? "Out of Stock" : "Add to cart"}
