@@ -22,7 +22,7 @@ export const ProductGallery = () => {
     return (
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 gap-2 md:gap-6 lg:gap-8">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="aspect-square bg-muted animate-pulse rounded-lg" />
             ))}
@@ -43,7 +43,7 @@ export const ProductGallery = () => {
           New Arrivals Gallery
         </h2>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 gap-2 md:gap-6 lg:gap-8">
           {products.map((product) => {
             const imageUrl = product.image_url || 
                             (product.images && product.images.length > 0 ? product.images[0] : null);

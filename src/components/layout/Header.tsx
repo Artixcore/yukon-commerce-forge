@@ -50,11 +50,63 @@ export const Header = () => {
     <header className="sticky top-0 z-50 w-full bg-background border-b">
       {/* Top bar with logo, search, phone, and cart */}
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
-          <Link to="/" className="flex items-center">
-            <img src={logo} alt="Yukon Lifestyle" className="h-12 w-auto" />
-          </Link>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 py-2 md:py-0 md:h-20">
+          {/* Row 1: Logo + Actions */}
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Link to="/" className="flex items-center">
+              <img src={logo} alt="Yukon Lifestyle" className="h-10 md:h-12 w-auto" />
+            </Link>
+
+            {/* Right Actions - Mobile & Desktop */}
+            <div className="flex items-center gap-2 md:gap-4">
+              <Button variant="destructive" className="hidden lg:flex items-center gap-2 h-11">
+                <Phone className="h-4 w-4" />
+                <span>+880 1906-192164</span>
+              </Button>
+
+              <Link to="/cart">
+                <Button size="icon" variant="destructive" className="relative h-9 w-9 md:h-11 md:w-11">
+                  <ShoppingCart className="h-4 w-4 md:h-5 md:w-5" />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-background text-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-primary">
+                      {cartItemCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+
+              {/* Mobile menu toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden h-9 w-9"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Row 2: Search Bar - Mobile (always visible) */}
+          <div className="flex md:hidden w-full">
+            <form onSubmit={handleSearch} className="relative w-full">
+              <Input
+                type="text"
+                placeholder="Search product"
+                className="w-full pr-12 h-9 rounded-r-none border-r-0"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Button
+                type="submit"
+                size="icon"
+                className="absolute right-0 top-0 h-9 rounded-l-none"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
 
           {/* Search Bar - Desktop */}
           <div className="hidden md:flex flex-1 max-w-2xl mx-8">
@@ -74,35 +126,6 @@ export const Header = () => {
                 <Search className="h-4 w-4" />
               </Button>
             </form>
-          </div>
-
-          {/* Phone and Cart */}
-          <div className="flex items-center gap-4">
-            <Button variant="destructive" className="hidden lg:flex items-center gap-2 h-11">
-              <Phone className="h-4 w-4" />
-              <span>+880 1906-192164</span>
-            </Button>
-
-            <Link to="/cart">
-              <Button size="icon" variant="destructive" className="relative h-11 w-11">
-                <ShoppingCart className="h-5 w-5" />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-background text-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-primary">
-                    {cartItemCount}
-                  </span>
-                )}
-              </Button>
-            </Link>
-
-            {/* Mobile menu toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
           </div>
         </div>
       </div>
@@ -170,23 +193,7 @@ export const Header = () => {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-background border-t">
-          <div className="container mx-auto px-4 py-4 space-y-4">
-            <form onSubmit={handleSearch} className="relative">
-              <Input
-                type="text"
-                placeholder="Search product"
-                className="w-full pr-12"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="absolute right-0 top-0"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </form>
+          <div className="container mx-auto px-4 py-4">
             <nav className="flex flex-col space-y-3">
               <Link 
                 to="/" 

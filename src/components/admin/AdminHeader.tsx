@@ -52,10 +52,10 @@ export const AdminHeader = () => {
   return (
     <header className="h-16 border-b bg-background sticky top-0 z-50">
       <div className="h-full px-4 flex items-center justify-between gap-2">
-        {/* Mobile: Sidebar Trigger + Logo */}
+        {/* Sidebar Trigger + Logo */}
         <div className="flex items-center gap-2 md:gap-3">
-          {/* Mobile Sidebar Trigger */}
-          <SidebarTrigger className="md:hidden" />
+          {/* Sidebar Trigger - Always Visible */}
+          <SidebarTrigger />
           
           {/* Logo with Primary Background on Mobile */}
           <div className="flex items-center gap-2 md:gap-3 bg-primary md:bg-transparent px-3 py-2 md:p-0 rounded">

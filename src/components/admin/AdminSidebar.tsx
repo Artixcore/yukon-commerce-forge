@@ -56,10 +56,6 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
-      <div className="p-4 border-t bg-white">
-        <SidebarTrigger className="text-gray-900" />
-      </div>
     </Sidebar>
   );
 }
