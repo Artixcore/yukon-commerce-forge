@@ -5,7 +5,7 @@ export const Features = () => {
     {
       icon: Truck,
       title: "Free Shipping",
-      description: "On orders over $50",
+      description: "On orders over ৳2000",
     },
     {
       icon: Shield,

@@ -85,7 +85,7 @@ const Products = () => {
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.categories?.name}</TableCell>
-                  <TableCell>${product.price}</TableCell>
+                  <TableCell>৳{product.price}</TableCell>
                   <TableCell>{product.stock_quantity}</TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded-full text-xs ${

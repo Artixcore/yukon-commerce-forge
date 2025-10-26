@@ -120,10 +120,10 @@ const Shop = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Prices</SelectItem>
-                    <SelectItem value="0-50">Under $50</SelectItem>
-                    <SelectItem value="50-100">$50 - $100</SelectItem>
-                    <SelectItem value="100-200">$100 - $200</SelectItem>
-                    <SelectItem value="200+">Over $200</SelectItem>
+                    <SelectItem value="0-2000">Under ৳2000</SelectItem>
+                    <SelectItem value="2000-4000">৳2000 - ৳4000</SelectItem>
+                    <SelectItem value="4000-8000">৳4000 - ৳8000</SelectItem>
+                    <SelectItem value="8000+">Over ৳8000</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
