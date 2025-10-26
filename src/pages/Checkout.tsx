@@ -55,47 +55,43 @@ const Checkout = () => {
     setIsSubmitting(true);
 
     try {
-      // Generate order number
-      const orderNumber = `ORD-${Date.now()}`;
+      const orderData = {
+        customer_name: data.name,
+        customer_phone: data.phone,
+        customer_email: null,
+        city: data.city,
+        delivery_location: data.deliveryLocation,
+        shipping_address: data.address,
+        message: data.message || null,
+        total_amount: finalTotal,
+        delivery_charge: deliveryCharge,
+        items: items.map((item) => ({
+          product_id: item.product.id,
+          product_name: item.product.name,
+          quantity: item.quantity,
+          price: item.product.price,
+        })),
+      };
 
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          order_number: orderNumber,
-          customer_name: data.name,
-          customer_phone: data.phone,
-          customer_email: null,
-          city: data.city,
-          delivery_location: data.deliveryLocation,
-          shipping_address: data.address,
-          message: data.message || null,
-          total_amount: finalTotal,
-          delivery_charge: deliveryCharge,
-          status: "pending",
-        })
-        .select()
-        .single();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-order`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify(orderData),
+        }
+      );
 
-      if (orderError) throw orderError;
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to place order');
+      }
 
-      // Create order items
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        product_id: item.product.id,
-        product_name: item.product.name,
-        quantity: item.quantity,
-        price: item.product.price,
-      }));
+      const { order } = await response.json();
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Stock is automatically updated by database trigger
-      
       clearCart();
       toast.success("Order placed successfully!");
       navigate(`/order-confirmation/${order.id}`);
