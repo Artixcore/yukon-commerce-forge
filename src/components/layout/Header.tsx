@@ -1,16 +1,40 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, Phone } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, Phone, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
 import logo from "@/assets/logo.png";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [productMenuOpen, setProductMenuOpen] = useState(false);
   const { items } = useCart();
   const navigate = useNavigate();
+
+  const { data: categories } = useQuery({
+    queryKey: ["header-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .order("name");
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,17 +114,48 @@ export const Header = () => {
             <Link to="/" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
               Home
             </Link>
-            <Link to="/shop" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
-              Product
-            </Link>
-            <Link to="/about" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
-              About Us
-            </Link>
+            
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="text-secondary-foreground hover:text-primary font-medium bg-transparent hover:bg-transparent data-[state=open]:bg-transparent h-auto py-0">
+                    Product
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="w-56 p-2 bg-background">
+                      <li>
+                        <NavigationMenuLink asChild>
+                          <Link
+                            to="/shop"
+                            className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                          >
+                            <div className="text-sm font-medium">All Products</div>
+                            <p className="text-xs leading-snug text-muted-foreground mt-1">
+                              Browse our entire collection
+                            </p>
+                          </Link>
+                        </NavigationMenuLink>
+                      </li>
+                      {categories?.map((category) => (
+                        <li key={category.id}>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to={`/shop?category=${category.id}`}
+                              className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                            >
+                              <div className="text-sm font-medium">{category.name}</div>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
+
             <Link to="/reviews" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
               Reviews
-            </Link>
-            <Link to="/categories" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
-              Categories
             </Link>
             <Link to="/best-selling" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
               Best Selling
@@ -133,25 +188,64 @@ export const Header = () => {
               </Button>
             </form>
             <nav className="flex flex-col space-y-3">
-              <Link to="/" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+              <Link 
+                to="/" 
+                className="text-foreground hover:text-primary transition-colors font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 Home
               </Link>
-              <Link to="/shop" className="text-foreground hover:text-primary transition-colors font-medium py-2">
-                Product
-              </Link>
-              <Link to="/about" className="text-foreground hover:text-primary transition-colors font-medium py-2">
-                About Us
-              </Link>
-              <Link to="/reviews" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+              
+              <div>
+                <button
+                  onClick={() => setProductMenuOpen(!productMenuOpen)}
+                  className="flex items-center justify-between w-full text-foreground font-medium py-2"
+                >
+                  <span>Product</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${productMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {productMenuOpen && (
+                  <div className="ml-4 space-y-2 mt-2">
+                    <Link 
+                      to="/shop" 
+                      className="block text-foreground hover:text-primary transition-colors py-1"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      All Products
+                    </Link>
+                    {categories?.map((category) => (
+                      <Link
+                        key={category.id}
+                        to={`/shop?category=${category.id}`}
+                        className="block text-foreground hover:text-primary transition-colors py-1"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {category.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Link 
+                to="/reviews" 
+                className="text-foreground hover:text-primary transition-colors font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 Reviews
               </Link>
-              <Link to="/categories" className="text-foreground hover:text-primary transition-colors font-medium py-2">
-                Categories
-              </Link>
-              <Link to="/best-selling" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+              <Link 
+                to="/best-selling" 
+                className="text-foreground hover:text-primary transition-colors font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 Best Selling
               </Link>
-              <Link to="/flash-selling" className="text-foreground hover:text-primary transition-colors font-medium py-2">
+              <Link 
+                to="/flash-selling" 
+                className="text-foreground hover:text-primary transition-colors font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 Flash Selling
               </Link>
             </nav>

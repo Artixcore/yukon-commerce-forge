@@ -10,15 +10,56 @@ const BestSelling = () => {
   const { data: products, isLoading } = useQuery({
     queryKey: ["best-selling-products-page"],
     queryFn: async () => {
+      // First, get product IDs with their order counts
+      const { data: orderStats, error: orderError } = await supabase
+        .from("order_items")
+        .select("product_id, quantity");
+
+      if (orderError) throw orderError;
+
+      // Calculate total quantity sold per product
+      const productSales = orderStats?.reduce((acc, item) => {
+        if (!acc[item.product_id]) {
+          acc[item.product_id] = 0;
+        }
+        acc[item.product_id] += item.quantity;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      // Get top 12 product IDs by sales
+      const topProductIds = Object.entries(productSales)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 12)
+        .map(([id]) => id);
+
+      if (topProductIds.length === 0) {
+        // If no orders yet, fall back to newest products
+        const { data, error } = await supabase
+          .from("products")
+          .select("*, categories(name)")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(12);
+        
+        if (error) throw error;
+        return data;
+      }
+
+      // Fetch full product details for best sellers
       const { data, error } = await supabase
         .from("products")
         .select("*, categories(name)")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(12);
-      
+        .in("id", topProductIds)
+        .eq("is_active", true);
+
       if (error) throw error;
-      return data;
+
+      // Sort products by sales order
+      return data.sort((a, b) => {
+        const salesA = productSales[a.id] || 0;
+        const salesB = productSales[b.id] || 0;
+        return salesB - salesA;
+      });
     },
   });
 

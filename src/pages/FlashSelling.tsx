@@ -14,7 +14,6 @@ const FlashSelling = () => {
         .from("products")
         .select("*, categories(name)")
         .eq("is_active", true)
-        .eq("is_featured", true)
         .order("created_at", { ascending: false })
         .limit(12);
       
