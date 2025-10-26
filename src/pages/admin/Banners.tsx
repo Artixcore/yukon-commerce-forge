@@ -52,86 +52,88 @@ const Banners = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Hero Banners</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Hero Banners</h1>
         <Button onClick={() => {
           setSelectedBanner(null);
           setIsDialogOpen(true);
         }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Banner
+          <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+          <span className="text-sm md:text-base">Add Banner</span>
         </Button>
       </div>
 
       {isLoading ? (
         <div>Loading...</div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Image</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Linked To</TableHead>
-              <TableHead>Order</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {banners?.map((banner) => (
-              <TableRow key={banner.id}>
-                <TableCell>
-                  <img 
-                    src={banner.image_url} 
-                    alt={banner.title}
-                    className="w-20 h-12 object-cover rounded"
-                  />
-                </TableCell>
-                <TableCell>{banner.title}</TableCell>
-                <TableCell>
-                  {banner.link_url ? (
-                    banner.link_url.startsWith('/product/') ? (
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                        Product: {banner.link_url.replace('/product/', '')}
-                      </span>
-                    ) : (
-                      <span className="text-xs bg-muted px-2 py-1 rounded">
-                        External Link
-                      </span>
-                    )
-                  ) : (
-                    <span className="text-xs text-muted-foreground">No link</span>
-                  )}
-                </TableCell>
-                <TableCell>{banner.display_order}</TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded text-xs ${banner.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {banner.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(banner)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(banner.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+        <div className="border rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Image</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead className="hidden md:table-cell">Linked To</TableHead>
+                <TableHead className="hidden lg:table-cell">Order</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {banners?.map((banner) => (
+                <TableRow key={banner.id}>
+                  <TableCell>
+                    <img 
+                      src={banner.image_url} 
+                      alt={banner.title}
+                      className="w-16 h-10 md:w-20 md:h-12 object-cover rounded"
+                    />
+                  </TableCell>
+                  <TableCell>{banner.title}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {banner.link_url ? (
+                      banner.link_url.startsWith('/product/') ? (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                          Product: {banner.link_url.replace('/product/', '')}
+                        </span>
+                      ) : (
+                        <span className="text-xs bg-muted px-2 py-1 rounded">
+                          External Link
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No link</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">{banner.display_order}</TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded text-xs ${banner.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {banner.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(banner)}
+                      >
+                        <Pencil className="h-3 w-3 md:h-4 md:w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(banner.id)}
+                      >
+                        <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       <BannerDialog

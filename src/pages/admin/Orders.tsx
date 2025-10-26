@@ -65,9 +65,9 @@ const Orders = () => {
   });
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Orders Management</h1>
+    <div className="p-4 md:p-8">
+      <div className="flex justify-between items-center mb-4 md:mb-8">
+        <h1 className="text-2xl md:text-4xl font-bold">Orders Management</h1>
         <div className="text-sm text-muted-foreground">
           Total Orders: {filteredOrders?.length || 0}
         </div>
@@ -113,18 +113,18 @@ const Orders = () => {
       {isLoading ? (
         <div className="text-center py-8">Loading orders...</div>
       ) : (
-        <div className="border rounded-lg">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Order #</TableHead>
                 <TableHead>Customer</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>City</TableHead>
-                <TableHead>Location</TableHead>
+                <TableHead className="hidden sm:table-cell">Phone</TableHead>
+                <TableHead className="hidden md:table-cell">City</TableHead>
+                <TableHead className="hidden lg:table-cell">Location</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead className="hidden lg:table-cell">Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -140,9 +140,9 @@ const Orders = () => {
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">{order.order_number}</TableCell>
                     <TableCell>{order.customer_name}</TableCell>
-                    <TableCell>{order.customer_phone}</TableCell>
-                    <TableCell>{(order as any).city}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">{order.customer_phone}</TableCell>
+                    <TableCell className="hidden md:table-cell">{(order as any).city}</TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <span className="text-xs">
                         {(order as any).delivery_location === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka"}
                       </span>
@@ -153,14 +153,15 @@ const Orders = () => {
                         {statusLabels[order.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{new Date(order.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="text-xs"
                         onClick={() => handleViewDetails(order.id)}
                       >
-                        <Eye className="w-4 h-4 mr-1" />
+                        <Eye className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                         View
                       </Button>
                     </TableCell>

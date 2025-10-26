@@ -44,42 +44,45 @@ const Categories = () => {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Categories</h1>
+    <div className="p-4 md:p-8">
+      <div className="flex justify-between items-center mb-4 md:mb-8">
+        <h1 className="text-2xl md:text-4xl font-bold">Categories</h1>
         <Button onClick={() => { setSelectedCategory(null); setIsDialogOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" /> Add Category
+          <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+          <span className="text-sm md:text-base">Add Category</span>
         </Button>
       </div>
 
       {isLoading ? <div>Loading...</div> : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {categories?.map((cat) => (
-              <TableRow key={cat.id}>
-                <TableCell className="font-medium">{cat.name}</TableCell>
-                <TableCell>{cat.slug}</TableCell>
-                <TableCell>{cat.description}</TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button variant="ghost" size="icon" onClick={() => { setSelectedCategory(cat); setIsDialogOpen(true); }}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(cat.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
+        <div className="border rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead className="hidden md:table-cell">Description</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {categories?.map((cat) => (
+                <TableRow key={cat.id}>
+                  <TableCell className="font-medium">{cat.name}</TableCell>
+                  <TableCell>{cat.slug}</TableCell>
+                  <TableCell className="hidden md:table-cell">{cat.description}</TableCell>
+                  <TableCell className="text-right space-x-2">
+                    <Button variant="ghost" size="icon" onClick={() => { setSelectedCategory(cat); setIsDialogOpen(true); }}>
+                      <Pencil className="h-3 w-3 md:h-4 md:w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(cat.id)}>
+                      <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       <CategoryDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} category={selectedCategory} />

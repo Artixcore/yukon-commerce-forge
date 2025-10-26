@@ -59,29 +59,30 @@ const Products = () => {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Products</h1>
+    <div className="p-4 md:p-8">
+      <div className="flex justify-between items-center mb-4 md:mb-8">
+        <h1 className="text-2xl md:text-4xl font-bold">Products</h1>
         <Button onClick={() => {
           setSelectedProduct(null);
           setIsDialogOpen(true);
         }}>
-          <Plus className="mr-2 h-4 w-4" /> Add Product
+          <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+          <span className="text-sm md:text-base">Add Product</span>
         </Button>
       </div>
 
       {isLoading ? (
         <div>Loading...</div>
       ) : (
-        <div className="border rounded-lg">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Product ID</TableHead>
-                <TableHead>Category</TableHead>
+                <TableHead className="hidden sm:table-cell">Product ID</TableHead>
+                <TableHead className="hidden md:table-cell">Category</TableHead>
                 <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
+                <TableHead className="hidden lg:table-cell">Stock</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -90,7 +91,7 @@ const Products = () => {
               {products?.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <div className="flex items-center gap-2">
                       <code className="text-xs bg-muted px-2 py-1 rounded">
                         {product.slug}
@@ -103,13 +104,13 @@ const Products = () => {
                           showInfo("Copied!", "Product ID copied to clipboard");
                         }}
                       >
-                        <Copy className="h-4 w-4" />
+                        <Copy className="h-3 w-3 md:h-4 md:w-4" />
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell>{product.categories?.name}</TableCell>
+                  <TableCell className="hidden md:table-cell">{product.categories?.name}</TableCell>
                   <TableCell>৳{product.price}</TableCell>
-                  <TableCell>{product.stock_quantity}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{product.stock_quantity}</TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       product.is_active 
@@ -125,14 +126,14 @@ const Products = () => {
                       size="icon"
                       onClick={() => handleEdit(product)}
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(product.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
