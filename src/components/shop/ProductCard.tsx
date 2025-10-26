@@ -85,16 +85,17 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             </div>
           </div>
 
-          {/* Add to Cart Button */}
-          <Button
-            onClick={handleAddToCart}
-            disabled={product.stock_quantity === 0}
-            className="w-full h-9 sm:h-10 text-sm rounded-xl"
-            variant="default"
-          >
-            {product.stock_quantity === 0 ? "Out of Stock" : "Add to cart"}
-          </Button>
         </div>
+        
+        {/* Add to Cart Button - Full Width */}
+        <Button
+          onClick={handleAddToCart}
+          disabled={product.stock_quantity === 0}
+          className="w-full h-9 sm:h-10 text-sm rounded-b-xl rounded-t-none"
+          variant="default"
+        >
+          {product.stock_quantity === 0 ? "Out of Stock" : "Add to cart"}
+        </Button>
       </Card>
     </Link>
   );
