@@ -37,8 +37,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Link to={`/product/${product.slug}`}>
-      <Card className="overflow-hidden border transition-shadow hover:shadow-lg" style={{ borderRadius: '15px' }}>
+    <Link to={`/product/${product.slug}`} className="h-full">
+      <Card className="overflow-hidden border transition-shadow hover:shadow-lg h-full flex flex-col" style={{ borderRadius: '15px' }}>
         {/* Image with Discount Badge */}
         <div className="relative overflow-hidden bg-muted" style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
           <img
@@ -53,35 +53,38 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           )}
         </div>
         
-        <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 flex flex-col">
+        <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 flex flex-col flex-1">
           {/* Rating Section */}
-          {product.rating ? (
-            <div className="flex items-center gap-1">
-              {renderStars(product.rating)}
-              <span className="text-xs text-muted-foreground ml-1">
-                ({product.review_count || 0})
-              </span>
-            </div>
-          ) : (
-            <div className="text-xs text-muted-foreground">
-              No ratings yet
-            </div>
-          )}
+          <div className="min-h-[1.5rem] flex items-center">
+            {product.rating ? (
+              <div className="flex items-center gap-1">
+                {renderStars(product.rating)}
+                <span className="text-xs text-muted-foreground ml-1">
+                  ({product.review_count || 0})
+                </span>
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground">
+                No ratings yet
+              </div>
+            )}
+          </div>
 
           {/* Product Name and Price */}
           <div className="flex justify-between items-start gap-2">
             <h3 className="font-medium text-sm sm:text-base text-foreground line-clamp-2 flex-1">
               {product.name}
             </h3>
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col items-end min-h-[3rem]">
               <span className="font-bold text-base sm:text-lg text-foreground">
                 ৳{product.price}
               </span>
-              {product.original_price && product.original_price > product.price && (
-                <span className="text-xs text-muted-foreground line-through">
-                  ৳{product.original_price}
-                </span>
-              )}
+              <span className="text-xs text-muted-foreground line-through h-4">
+                {product.original_price && product.original_price > product.price 
+                  ? `৳${product.original_price}`
+                  : '\u00A0'
+                }
+              </span>
             </div>
           </div>
 
@@ -91,7 +94,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         <Button
           onClick={handleAddToCart}
           disabled={product.stock_quantity === 0}
-          className="w-full h-9 sm:h-10 text-sm rounded-none"
+          className="w-full h-9 sm:h-10 text-sm rounded-none mt-auto"
           style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}
           variant="default"
         >
