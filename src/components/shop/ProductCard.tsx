@@ -34,7 +34,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </h3>
           
           <p className="text-foreground font-medium">
-            Prices: ${product.price}
+            Price: ৳{product.price}
           </p>
 
           <Button

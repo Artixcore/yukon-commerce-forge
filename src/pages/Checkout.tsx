@@ -1,22 +1,24 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "@/hooks/useCart";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useCart } from "@/hooks/useCart";
+import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const checkoutSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  address: z.string().min(10, "Address must be at least 10 characters"),
+  phone: z.string().regex(/^(\+8801|01)[3-9]\d{8}$/, "Please enter a valid Bangladesh phone number (e.g., 01XXXXXXXXX)"),
+  city: z.string().min(2, "City is required"),
+  deliveryLocation: z.enum(["inside_dhaka", "outside_dhaka"]),
+  address: z.string().min(10, "Please provide a complete address"),
+  message: z.string().optional(),
 });
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;
@@ -26,30 +28,48 @@ const Checkout = () => {
   const { items, total, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<CheckoutForm>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
+      deliveryLocation: "inside_dhaka",
     },
   });
 
+  const deliveryLocation = watch("deliveryLocation");
+  const deliveryCharge = deliveryLocation === "inside_dhaka" ? 60 : 120;
+  const finalTotal = total + deliveryCharge;
+
   const onSubmit = async (data: CheckoutForm) => {
+    if (items.length === 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
+
     setIsSubmitting(true);
+
     try {
+      // Generate order number
       const orderNumber = `ORD-${Date.now()}`;
-      
+
+      // Create order
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
           order_number: orderNumber,
           customer_name: data.name,
-          customer_email: data.email,
           customer_phone: data.phone,
+          customer_email: null,
+          city: data.city,
+          delivery_location: data.deliveryLocation,
           shipping_address: data.address,
-          total_amount: total,
+          message: data.message || null,
+          total_amount: finalTotal,
+          delivery_charge: deliveryCharge,
           status: "pending",
         })
         .select()
@@ -57,12 +77,13 @@ const Checkout = () => {
 
       if (orderError) throw orderError;
 
-      const orderItems = items.map(item => ({
+      // Create order items
+      const orderItems = items.map((item) => ({
         order_id: order.id,
         product_id: item.product.id,
         product_name: item.product.name,
         quantity: item.quantity,
-        price: parseFloat(item.product.price),
+        price: item.product.price,
       }));
 
       const { error: itemsError } = await supabase
@@ -71,27 +92,24 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError;
 
+      // Update product stock
       for (const item of items) {
-        const { data: currentProduct } = await supabase
+        const { error: stockError } = await supabase
           .from("products")
-          .select("stock_quantity")
-          .eq("id", item.product.id)
-          .single();
-        
-        if (currentProduct) {
-          await supabase
-            .from("products")
-            .update({ stock_quantity: currentProduct.stock_quantity - item.quantity })
-            .eq("id", item.product.id);
-        }
+          .update({
+            stock_quantity: item.product.stock_quantity - item.quantity,
+          })
+          .eq("id", item.product.id);
+
+        if (stockError) throw stockError;
       }
 
       clearCart();
       toast.success("Order placed successfully!");
-      navigate("/order-confirmation", { state: { orderNumber } });
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error("Failed to place order. Please try again.");
+      navigate(`/order-confirmation/${order.id}`);
+    } catch (error: any) {
+      console.error("Error placing order:", error);
+      toast.error(error.message || "Failed to place order");
     } finally {
       setIsSubmitting(false);
     }
@@ -103,105 +121,143 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold mb-8">Checkout</h1>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Checkout</h1>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-6">Shipping Information</h2>
-              
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+      <div className="grid md:grid-cols-2 gap-8">
+        {/* Shipping Form */}
+        <div>
+          <h2 className="text-2xl font-semibold mb-6">Shipping Information</h2>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div>
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                {...register("name")}
+                placeholder="Enter your full name"
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive mt-1">{errors.name.message}</p>
+              )}
+            </div>
 
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="john@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            <div>
+              <Label htmlFor="phone">Phone Number *</Label>
+              <Input
+                id="phone"
+                {...register("phone")}
+                placeholder="01XXXXXXXXX"
+              />
+              {errors.phone && (
+                <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>
+              )}
+            </div>
 
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+1 234 567 8900" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            <div>
+              <Label htmlFor="city">City *</Label>
+              <Input
+                id="city"
+                {...register("city")}
+                placeholder="Enter your city"
+              />
+              {errors.city && (
+                <p className="text-sm text-destructive mt-1">{errors.city.message}</p>
+              )}
+            </div>
 
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Shipping Address</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="123 Main St, City, State, ZIP" 
-                            rows={3}
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Processing..." : "Place Order"}
-                  </Button>
-                </form>
-              </Form>
-            </Card>
-          </div>
-
-          <div>
-            <Card className="p-6 sticky top-4">
-              <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-              
-              <div className="space-y-3 mb-4">
-                {items.map((item) => (
-                  <div key={item.product.id} className="flex justify-between text-sm">
-                    <span>{item.product.name} × {item.quantity}</span>
-                    <span>${(parseFloat(item.product.price) * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="border-t pt-4">
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+            <div>
+              <Label>Delivery Location *</Label>
+              <RadioGroup
+                defaultValue="inside_dhaka"
+                onValueChange={(value) => register("deliveryLocation").onChange({ target: { value } })}
+              >
+                <div className="flex items-center space-x-2 border rounded-lg p-3">
+                  <RadioGroupItem value="inside_dhaka" id="inside_dhaka" {...register("deliveryLocation")} />
+                  <Label htmlFor="inside_dhaka" className="cursor-pointer flex-1">
+                    Inside Dhaka (৳60 delivery charge)
+                  </Label>
                 </div>
+                <div className="flex items-center space-x-2 border rounded-lg p-3">
+                  <RadioGroupItem value="outside_dhaka" id="outside_dhaka" {...register("deliveryLocation")} />
+                  <Label htmlFor="outside_dhaka" className="cursor-pointer flex-1">
+                    Outside Dhaka (৳120 delivery charge)
+                  </Label>
+                </div>
+              </RadioGroup>
+              {errors.deliveryLocation && (
+                <p className="text-sm text-destructive mt-1">{errors.deliveryLocation.message}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="address">Full Address *</Label>
+              <Textarea
+                id="address"
+                {...register("address")}
+                placeholder="House/Flat no, Road, Area, Landmark"
+                rows={3}
+              />
+              {errors.address && (
+                <p className="text-sm text-destructive mt-1">{errors.address.message}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="message">Special Instructions (Optional)</Label>
+              <Textarea
+                id="message"
+                {...register("message")}
+                placeholder="Any special instructions for delivery"
+                rows={2}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Processing..." : "Place Order"}
+            </Button>
+          </form>
+        </div>
+
+        {/* Order Summary */}
+        <div>
+          <h2 className="text-2xl font-semibold mb-6">Order Summary</h2>
+          <div className="bg-muted rounded-lg p-6 space-y-4">
+            {items.map((item) => (
+              <div key={item.product.id} className="flex justify-between">
+                <div>
+                  <p className="font-medium">{item.product.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Quantity: {item.quantity}
+                  </p>
+                </div>
+                <p className="font-medium">৳{(Number(item.product.price) * item.quantity).toFixed(2)}</p>
               </div>
-            </Card>
+            ))}
+            
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span>৳{total.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Delivery Charge</span>
+                <span>৳{deliveryCharge.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-xl font-bold border-t pt-2">
+                <span>Total</span>
+                <span>৳{finalTotal.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="bg-background rounded p-4 text-sm">
+              <p className="font-semibold mb-2">Payment Method:</p>
+              <p className="text-muted-foreground">Cash on Delivery (COD)</p>
+            </div>
           </div>
         </div>
       </div>
