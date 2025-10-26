@@ -24,23 +24,23 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <img
             src={product.image_url || "/placeholder.svg"}
             alt={product.name}
-            className="w-full h-64 object-cover"
+            className="w-full h-48 sm:h-64 object-cover"
           />
         </div>
         
-        <div className="p-4 space-y-3">
-          <h3 className="font-medium text-base text-foreground line-clamp-2">
+        <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+          <h3 className="font-medium text-sm sm:text-base text-foreground line-clamp-2">
             {product.name}
           </h3>
           
-          <p className="text-foreground font-medium">
+          <p className="text-sm sm:text-base text-foreground font-medium">
             Price: ৳{product.price}
           </p>
 
           <Button
             onClick={handleAddToCart}
             disabled={product.stock_quantity === 0}
-            className="w-full h-10"
+            className="w-full h-9 sm:h-10 text-sm"
             variant="default"
           >
             {product.stock_quantity === 0 ? "Out of Stock" : "Add to cart"}
