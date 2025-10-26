@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { ImageUpload } from "./ImageUpload";
 
 const bannerSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -148,11 +149,20 @@ export const BannerDialog = ({ open, onOpenChange, banner }: BannerDialogProps) 
               name="image_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image URL</FormLabel>
+                  <FormLabel>Banner Image</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://..." />
+                    <ImageUpload
+                      value={field.value}
+                      onChange={field.onChange}
+                      folder="banners"
+                      label="Upload banner image (recommended: 1920x600px)"
+                      required
+                    />
                   </FormControl>
                   <FormMessage />
+                  <p className="text-xs text-muted-foreground">
+                    For best results, use images with 16:9 aspect ratio
+                  </p>
                 </FormItem>
               )}
             />

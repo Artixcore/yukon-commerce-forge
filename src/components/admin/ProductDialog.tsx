@@ -12,7 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
-import { X, Plus } from "lucide-react";
+import { ImageUpload } from "./ImageUpload";
+import { X, GripVertical, Plus } from "lucide-react";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -252,9 +253,14 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
               name="image_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Featured Image URL</FormLabel>
+                  <FormLabel>Featured Image</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://..." />
+                    <ImageUpload
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      folder="products"
+                      label="Upload featured image"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -264,29 +270,28 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
             <div className="space-y-2">
               <FormLabel>Additional Images</FormLabel>
               {additionalImages.map((img, index) => (
-                <div key={index} className="flex gap-2 items-center">
-                  <Input
+                <div key={index} className="space-y-2">
+                  <ImageUpload
                     value={img}
-                    onChange={(e) => {
+                    onChange={(url) => {
                       const newImages = [...additionalImages];
-                      newImages[index] = e.target.value;
+                      newImages[index] = url;
                       setAdditionalImages(newImages);
                     }}
-                    placeholder="https://..."
+                    folder="products"
+                    label={`Additional image ${index + 1}`}
                   />
-                  {img && (
-                    <img src={img} alt="" className="w-12 h-12 object-cover rounded" />
-                  )}
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon"
+                    variant="outline"
+                    size="sm"
                     onClick={() => {
                       const newImages = additionalImages.filter((_, i) => i !== index);
                       setAdditionalImages(newImages);
                     }}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-4 w-4 mr-2" />
+                    Remove
                   </Button>
                 </div>
               ))}
