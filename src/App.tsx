@@ -29,6 +29,7 @@ import Track from "./pages/Track";
 import Reviews from "./pages/Reviews";
 import Returns from "./pages/Returns";
 import Shipping from "./pages/Shipping";
+import UnderConstruction from "./pages/UnderConstruction";
 
 const queryClient = new QueryClient();
 
@@ -39,33 +40,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/product/:slug" element={<ProductDetail />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
-          <Route path="/search" element={<SearchResults />} />
-          <Route path="/best-selling" element={<BestSelling />} />
-          <Route path="/categories" element={<CategoriesPage />} />
-          <Route path="/flash-selling" element={<FlashSelling />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/track" element={<Track />} />
-          <Route path="/reviews" element={<Reviews />} />
-          <Route path="/returns" element={<Returns />} />
-          <Route path="/shipping" element={<Shipping />} />
-          <Route path="/admin/login" element={<Login />} />
-          <Route path="/admin" element={<Admin />}>
-            <Route index element={<Dashboard />} />
-            <Route path="products" element={<Products />} />
-            <Route path="categories" element={<Categories />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="reviews" element={<AdminReviews />} />
-          <Route path="banners" element={<Banners />} />
-          <Route path="gallery" element={<Gallery />} />
-        </Route>
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<UnderConstruction />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
