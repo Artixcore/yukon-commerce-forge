@@ -201,7 +201,7 @@ const ProductDetail = () => {
           <div className="flex flex-col space-y-6">
             <div>
               <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-              <div className="text-3xl font-bold mb-4">৳{product.price} USD</div>
+              <div className="text-3xl font-bold mb-4">৳{product.price}</div>
             </div>
 
             {/* Color Selector */}
@@ -260,7 +260,7 @@ const ProductDetail = () => {
             <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
               <span className="text-sm font-medium">Stock:</span>
               {product.stock_quantity > 0 ? (
-                <span className="text-primary font-bold">{product.stock_quantity} available</span>
+                <span className="text-red-600 font-bold">{product.stock_quantity} available</span>
               ) : (
                 <span className="text-destructive font-bold">Out of stock</span>
               )}
@@ -302,25 +302,26 @@ const ProductDetail = () => {
 
             {/* Size Chart */}
             {product.size_chart && Array.isArray(product.size_chart) && product.size_chart.length > 0 && (
-              <Collapsible>
-                <CollapsibleTrigger className="text-sm font-medium underline">
-                  Size Chart
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-semibold py-2 px-4 bg-muted hover:bg-muted/80 rounded-md transition-colors w-full justify-between">
+                  <span>Size Chart</span>
+                  <span className="text-xs text-muted-foreground">(Click to toggle)</span>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                  <div className="border rounded-lg overflow-hidden">
+                <CollapsibleContent className="mt-4">
+                  <div className="border-2 rounded-lg overflow-hidden shadow-sm">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Size</TableHead>
-                          <TableHead>Length (in)</TableHead>
-                          <TableHead>Chest (in)</TableHead>
-                          <TableHead>Sleeve (in)</TableHead>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="font-bold">Size</TableHead>
+                          <TableHead className="font-bold">Length (in)</TableHead>
+                          <TableHead className="font-bold">Chest (in)</TableHead>
+                          <TableHead className="font-bold">Sleeve (in)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {(product.size_chart as any[]).map((row: any) => (
                           <TableRow key={row.size}>
-                            <TableCell className="font-medium">{row.size}</TableCell>
+                            <TableCell className="font-semibold">{row.size}</TableCell>
                             <TableCell>{row.length}</TableCell>
                             <TableCell>{row.chest}</TableCell>
                             <TableCell>{row.sleeve}</TableCell>
