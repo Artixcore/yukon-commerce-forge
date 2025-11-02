@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, FolderTree, ShoppingBag, Image, Star } from "lucide-react";
+import { LayoutDashboard, Package, FolderTree, ShoppingBag, Image, Star, Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -21,6 +21,7 @@ const menuItems = [
   { title: "Reviews", url: "/admin/reviews", icon: Star },
   { title: "Hero Banners", url: "/admin/banners", icon: Image },
   { title: "Gallery", url: "/admin/gallery", icon: Image },
+  { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
 export function AdminSidebar() {

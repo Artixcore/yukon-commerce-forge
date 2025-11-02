@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { LogOut, Store, Plus, User, Search, Phone } from "lucide-react";
+import { LogOut, Store, Plus, User, Search, Phone, Settings } from "lucide-react";
 import { showSuccess, showError, showConfirmation } from "@/lib/sweetalert";
 import logo from "@/assets/logo.png";
 
@@ -139,6 +139,10 @@ export const AdminHeader = () => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/admin/settings")}>
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleViewStore}>
                 <Store className="h-4 w-4 mr-2" />
                 View Store
