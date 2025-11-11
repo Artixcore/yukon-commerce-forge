@@ -168,6 +168,41 @@ serve(async (req) => {
 
     // Stock update is handled by database trigger
 
+    // Send Purchase event to Meta Conversion API
+    try {
+      const metaEventData = {
+        event_name: "Purchase",
+        user_data: {
+          ph: orderData.customer_phone,
+          ct: orderData.city,
+          country: "bd"
+        },
+        custom_data: {
+          value: orderData.total_amount,
+          currency: "BDT",
+          content_ids: orderData.items.map((item: any) => item.product_id),
+          content_type: "product",
+          num_items: orderData.items.length
+        }
+      };
+
+      // Call meta-conversion edge function
+      const metaResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/meta-conversion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        },
+        body: JSON.stringify(metaEventData)
+      });
+      
+      const metaResult = await metaResponse.json();
+      console.log('Purchase event sent to Meta:', metaResult);
+    } catch (metaError) {
+      // Don't fail order if Meta tracking fails
+      console.error('Failed to send Meta event:', metaError);
+    }
+
     return new Response(
       JSON.stringify({ success: true, order }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

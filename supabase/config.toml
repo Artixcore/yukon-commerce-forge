@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.setup-admin]
 verify_jwt = false
+
+[functions.meta-conversion]
+verify_jwt = false

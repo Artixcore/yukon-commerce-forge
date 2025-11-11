@@ -2,8 +2,9 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackMetaEvent } from "@/lib/metaTracking";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,18 @@ const Checkout = () => {
   const deliveryLocation = watch("deliveryLocation");
   const deliveryCharge = deliveryLocation === "inside_dhaka" ? 60 : 120;
   const finalTotal = total + deliveryCharge;
+
+  // Track InitiateCheckout event when checkout page loads
+  useEffect(() => {
+    if (items.length > 0) {
+      trackMetaEvent('InitiateCheckout', {
+        content_ids: items.map(item => item.product.id),
+        value: finalTotal,
+        currency: 'BDT',
+        num_items: items.reduce((sum, item) => sum + item.quantity, 0),
+      });
+    }
+  }, []); // Run once on mount
 
   const onSubmit = async (data: CheckoutForm) => {
     if (items.length === 0) {

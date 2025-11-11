@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { trackMetaEvent } from '@/lib/metaTracking';
 
 interface CartItem {
   product: any;
@@ -53,6 +54,15 @@ export const useCart = create<CartStore>()(
           0
         );
         set({ total });
+
+        // Track AddToCart event with Meta
+        trackMetaEvent('AddToCart', {
+          content_ids: [product.id],
+          content_name: product.name,
+          value: parseFloat(product.price) * quantity,
+          currency: 'BDT',
+          num_items: quantity,
+        });
       },
       
       removeItem: (productId, variants) => {

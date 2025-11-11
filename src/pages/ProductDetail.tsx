@@ -15,6 +15,7 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { ReviewDialog } from "@/components/product/ReviewDialog";
 import { format } from "date-fns";
+import { trackMetaEvent } from "@/lib/metaTracking";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -101,6 +102,21 @@ const ProductDetail = () => {
       setSelectedSize((product.sizes as any)[0]);
     }
   }, [product, selectedColor, selectedSize]);
+
+  // Track ViewContent event when product loads
+  useEffect(() => {
+    if (product) {
+      trackMetaEvent('ViewContent', {
+        content_ids: [product.id],
+        content_name: product.name,
+        value: Number(product.price),
+        currency: 'BDT',
+        content_type: 'product',
+        content_category: product.categories?.name || '',
+        num_items: 1,
+      });
+    }
+  }, [product]);
 
   const handleAddToCart = () => {
     if (product) {
