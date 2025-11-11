@@ -28,13 +28,14 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get Meta credentials from secrets
-    const pixelId = Deno.env.get('META_PIXEL_ID');
-    const accessToken = Deno.env.get('META_ACCESS_TOKEN');
-    const testEventCode = Deno.env.get('META_TEST_EVENT_CODE');
+    // Load Meta credentials from database
+    const { data: metaSettings, error: settingsError } = await supabase
+      .from('meta_settings')
+      .select('pixel_id, access_token, test_event_code, is_active')
+      .single();
 
-    if (!pixelId || !accessToken) {
-      console.warn('Meta Conversion API not configured - missing credentials');
+    if (settingsError || !metaSettings) {
+      console.warn('Meta settings not configured:', settingsError);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -46,6 +47,21 @@ serve(async (req) => {
         }
       );
     }
+
+    if (!metaSettings.is_active) {
+      console.log('Meta tracking is disabled');
+      return new Response(
+        JSON.stringify({ success: true, message: 'Tracking disabled' }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const pixelId = metaSettings.pixel_id;
+    const accessToken = metaSettings.access_token;
+    const testEventCode = metaSettings.test_event_code;
 
     const eventData = await req.json();
     const { 

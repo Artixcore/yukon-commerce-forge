@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,6 +8,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { showSuccess, showError } from "@/lib/sweetalert";
 import { Loader2 } from "lucide-react";
 
@@ -27,6 +29,8 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 const Settings = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [existingCredentials, setExistingCredentials] = useState<any>(null);
+  const [loadingCredentials, setLoadingCredentials] = useState(true);
 
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
@@ -88,19 +92,69 @@ const Settings = () => {
     },
   });
 
+  useEffect(() => {
+    loadMetaCredentials();
+  }, []);
+
+  const loadMetaCredentials = async () => {
+    setLoadingCredentials(true);
+    try {
+      const { data, error } = await supabase
+        .from('meta_settings')
+        .select('*')
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // Not found is okay
+        console.error('Error loading credentials:', error);
+      } else if (data) {
+        setExistingCredentials(data);
+        // Pre-fill form with existing values
+        metaForm.reset({
+          pixelId: data.pixel_id || '',
+          accessToken: '', // Don't show token for security
+          testEventCode: data.test_event_code || '',
+        });
+        // Save to localStorage for frontend use
+        localStorage.setItem('meta_pixel_id', data.pixel_id);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoadingCredentials(false);
+    }
+  };
+
   const onMetaSubmit = async (values: any) => {
     setIsLoading(true);
     try {
-      // Here you would save to Supabase secrets via an edge function
-      // For now, we'll show a success message
-      showSuccess("Meta Settings Saved", "Your Meta Conversion API credentials have been saved securely");
-      console.log('Meta credentials to be saved as secrets:', {
-        META_PIXEL_ID: values.pixelId,
-        META_ACCESS_TOKEN: values.accessToken,
-        META_TEST_EVENT_CODE: values.testEventCode,
-      });
-    } catch (error) {
-      showError("Error", "Failed to save Meta settings");
+      const { data, error } = await supabase
+        .from('meta_settings')
+        .upsert({
+          id: '00000000-0000-0000-0000-000000000001',
+          pixel_id: values.pixelId,
+          access_token: values.accessToken,
+          test_event_code: values.testEventCode,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        showError("Save Failed", error.message);
+      } else {
+        // Save Pixel ID to localStorage for frontend tracking
+        localStorage.setItem('meta_pixel_id', values.pixelId);
+        
+        // Reload credentials to update display
+        await loadMetaCredentials();
+        
+        showSuccess("Meta Settings Saved", "Your Meta Conversion API credentials have been saved securely");
+        
+        // Clear the access token field for security
+        metaForm.setValue('accessToken', '');
+      }
+    } catch (error: any) {
+      showError("Error", error.message || "Failed to save Meta settings");
     } finally {
       setIsLoading(false);
     }
@@ -199,6 +253,61 @@ const Settings = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {existingCredentials && (
+            <div className="mb-6 p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold">Current Configuration</h3>
+                <Badge variant="default" className="bg-green-600">✓ Configured</Badge>
+              </div>
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Pixel ID</TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {existingCredentials.pixel_id}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Access Token</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      ●●●●●●●●●●●●●●●● (hidden)
+                    </TableCell>
+                  </TableRow>
+                  {existingCredentials.test_event_code && (
+                    <TableRow>
+                      <TableCell className="font-medium">Test Event Code</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {existingCredentials.test_event_code}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  <TableRow>
+                    <TableCell className="font-medium">Status</TableCell>
+                    <TableCell>
+                      <Badge variant={existingCredentials.is_active ? "default" : "secondary"} className={existingCredentials.is_active ? "bg-green-600" : ""}>
+                        {existingCredentials.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Last Updated</TableCell>
+                    <TableCell className="text-sm">
+                      {new Date(existingCredentials.updated_at).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {!existingCredentials && !loadingCredentials && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                ⚠️ Meta Conversion API is not configured yet. Enter your credentials below to start tracking.
+              </p>
+            </div>
+          )}
+
           <form onSubmit={metaForm.handleSubmit(onMetaSubmit)} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="pixelId">Facebook Pixel ID</Label>
