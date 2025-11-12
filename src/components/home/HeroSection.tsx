@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 export const HeroSection = () => {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: false })]);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 8000, stopOnInteraction: false, stopOnMouseEnter: false })]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const { data: banners, isLoading } = useQuery({
@@ -63,6 +63,8 @@ export const HeroSection = () => {
             src="/images/hero-banner.png"
             alt="Yukon Lifestyle Store"
             className="w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
           />
         </div>
       </section>
@@ -80,6 +82,8 @@ export const HeroSection = () => {
                   src={banner.image_url}
                   alt={banner.title}
                   className="w-full h-full object-cover"
+                  loading="eager"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
                   <div className="container mx-auto px-4 pb-12">

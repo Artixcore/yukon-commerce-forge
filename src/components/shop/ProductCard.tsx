@@ -4,27 +4,28 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { Star } from "lucide-react";
+import { memo, useCallback, useMemo } from "react";
 
 interface ProductCardProps {
   product: any;
 }
 
-export const ProductCard = ({ product }: ProductCardProps) => {
+const ProductCardComponent = ({ product }: ProductCardProps) => {
   const { addItem } = useCart();
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     addItem(product, 1);
     toast.success("Added to cart");
-  };
+  }, [addItem, product]);
 
-  const renderStars = (rating: number | null) => {
-    if (!rating) return null;
-    const stars = [];
-    const fullStars = Math.floor(rating);
+  const stars = useMemo(() => {
+    if (!product.rating) return null;
+    const starElements = [];
+    const fullStars = Math.floor(product.rating);
     
     for (let i = 0; i < 5; i++) {
-      stars.push(
+      starElements.push(
         <Star
           key={i}
           className={`h-3 w-3 sm:h-4 sm:w-4 ${
@@ -33,8 +34,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         />
       );
     }
-    return stars;
-  };
+    return starElements;
+  }, [product.rating]);
 
   return (
     <Link to={`/product/${product.slug}`} className="h-full">
@@ -45,6 +46,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             src={product.image_url || "/placeholder.svg"}
             alt={product.name}
             className="w-full h-48 sm:h-64 object-cover"
+            loading="lazy"
+            decoding="async"
           />
           {product.discount_percentage > 0 && (
             <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs sm:text-sm font-bold">
@@ -56,9 +59,9 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 flex flex-col flex-1">
           {/* Rating Section */}
           <div className="min-h-[1.5rem] flex items-center">
-            {product.rating ? (
+            {stars ? (
               <div className="flex items-center gap-1">
-                {renderStars(product.rating)}
+                {stars}
                 <span className="text-xs text-muted-foreground ml-1">
                   ({product.review_count || 0})
                 </span>
@@ -104,3 +107,5 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     </Link>
   );
 };
+
+export const ProductCard = memo(ProductCardComponent);

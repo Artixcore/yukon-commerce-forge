@@ -9,6 +9,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
 import Autoplay from "embla-carousel-autoplay";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Review {
   id: number;
@@ -63,10 +64,14 @@ const reviews: Review[] = [
 ];
 
 export const CustomerReviews = () => {
+  const isMobile = useIsMobile();
+  
   const getInitials = (name: string) => {
     // Get first character of the Bengali name
     return name.charAt(0);
   };
+
+  const carouselPlugins = isMobile ? [] : [Autoplay({ delay: 4000 })];
 
   return (
     <section className="py-16 bg-muted/30">
@@ -81,11 +86,7 @@ export const CustomerReviews = () => {
             align: "start",
             loop: true,
           }}
-          plugins={[
-            Autoplay({
-              delay: 4000,
-            }),
-          ]}
+          plugins={carouselPlugins}
           className="w-full max-w-6xl mx-auto"
         >
           <CarouselContent className="-ml-2 md:-ml-4">
