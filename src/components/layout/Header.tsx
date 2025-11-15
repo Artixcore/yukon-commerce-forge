@@ -4,7 +4,8 @@ import { ShoppingCart, Menu, X, Search, Phone, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
-import logo from "@/assets/logo.png";
+import logoWebP from "@/assets/logo.webp";
+import logoPng from "@/assets/logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -62,15 +63,21 @@ export const Header = () => {
         <div className="flex items-center justify-between gap-2 py-2 md:py-0 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img 
-              src={logo} 
-              alt="Yukon Lifestyle" 
-              className="h-8 md:h-10 lg:h-12 w-auto"
-              width="120"
-              height="48"
-              loading="eager"
-              decoding="async"
-            />
+            <picture>
+              <source 
+                type="image/webp" 
+                srcSet={logoWebP}
+              />
+              <img 
+                src={logoPng}
+                alt="Yukon Lifestyle" 
+                className="h-8 md:h-10 lg:h-12 w-auto"
+                width="120"
+                height="48"
+                loading="eager"
+                decoding="async"
+              />
+            </picture>
           </Link>
 
           {/* Search Bar - Mobile & Desktop */}
