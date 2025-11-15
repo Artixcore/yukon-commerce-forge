@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { UpdateNotification } from "@/components/UpdateNotification";
 
 // Eager load critical routes
 import Index from "./pages/Index";
@@ -60,6 +61,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <UpdateNotification />
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
           <Routes>

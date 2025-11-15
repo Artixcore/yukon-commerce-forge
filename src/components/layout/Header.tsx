@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import logo from "@/assets/logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -22,6 +23,7 @@ export const Header = () => {
   const [productMenuOpen, setProductMenuOpen] = useState(false);
   const { items } = useCart();
   const navigate = useNavigate();
+  const isOnline = useNetworkStatus();
 
   const { data: categories } = useQuery({
     queryKey: ["header-categories"],
@@ -50,6 +52,11 @@ export const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background border-b">
+      {!isOnline && (
+        <div className="bg-yellow-500 text-white text-center py-2 text-sm font-medium">
+          You're currently offline. Some features may be limited.
+        </div>
+      )}
       {/* Top bar with logo, search, phone, and cart */}
       <div className="container mx-auto px-2 md:px-4">
         <div className="flex items-center justify-between gap-2 py-2 md:py-0 md:h-20">
