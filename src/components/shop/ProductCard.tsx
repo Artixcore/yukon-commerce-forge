@@ -5,6 +5,7 @@ import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { Star } from "lucide-react";
 import { memo, useCallback, useMemo } from "react";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface ProductCardProps {
   product: any;
@@ -41,13 +42,14 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
     <Link to={`/product/${product.slug}`} className="h-full">
       <Card className="overflow-hidden border transition-shadow hover:shadow-lg h-full flex flex-col" style={{ borderRadius: '15px' }}>
         {/* Image with Discount Badge */}
-        <div className="relative overflow-hidden bg-muted" style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
-          <img
+        <div className="relative overflow-hidden" style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
+          <OptimizedImage
             src={product.image_url || "/placeholder.svg"}
             alt={product.name}
-            className="w-full h-48 sm:h-64 object-cover"
-            loading="lazy"
-            decoding="async"
+            width={400}
+            height={256}
+            className="w-full h-48 sm:h-64"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
           {product.discount_percentage > 0 && (
             <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs sm:text-sm font-bold">
