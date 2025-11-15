@@ -136,8 +136,20 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'radix-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          'react-vendor': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'radix-dialog': ['@radix-ui/react-dialog'],
+          'radix-dropdown': ['@radix-ui/react-dropdown-menu'],
+          'radix-select': ['@radix-ui/react-select'],
+          'radix-other': [
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+          ],
+          'query': ['@tanstack/react-query'],
+          'embla': ['embla-carousel-react', 'embla-carousel-autoplay'],
+          'charts': ['recharts'],
+          'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
         },
       },
     },

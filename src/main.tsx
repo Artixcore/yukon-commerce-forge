@@ -6,17 +6,20 @@ import { registerSW } from 'virtual:pwa-register';
 // Register service worker
 const updateSW = registerSW({
   onNeedRefresh() {
-    console.log('New content available, please refresh.');
     updateSW(true);
   },
   onOfflineReady() {
-    console.log('App ready to work offline');
+    // Ready to work offline
   },
   onRegistered(registration) {
-    console.log('Service Worker registered:', registration);
+    if (import.meta.env.DEV) {
+      console.log('Service Worker registered:', registration);
+    }
   },
   onRegisterError(error) {
-    console.log('Service Worker registration error:', error);
+    if (import.meta.env.DEV) {
+      console.error('Service Worker registration error:', error);
+    }
   },
 });
 

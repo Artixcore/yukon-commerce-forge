@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
-export const UpdateNotification = () => {
+export const UpdateNotification = memo(() => {
   const {
     offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
@@ -50,4 +51,4 @@ export const UpdateNotification = () => {
       </div>
     </div>
   );
-};
+});

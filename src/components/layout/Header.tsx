@@ -62,7 +62,15 @@ export const Header = () => {
         <div className="flex items-center justify-between gap-2 py-2 md:py-0 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img src={logo} alt="Yukon Lifestyle" className="h-8 md:h-10 lg:h-12 w-auto" />
+            <img 
+              src={logo} 
+              alt="Yukon Lifestyle" 
+              className="h-8 md:h-10 lg:h-12 w-auto"
+              width="120"
+              height="48"
+              loading="eager"
+              decoding="async"
+            />
           </Link>
 
           {/* Search Bar - Mobile & Desktop */}
