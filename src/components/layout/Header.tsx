@@ -34,6 +34,8 @@ export const Header = () => {
       if (error) throw error;
       return data;
     },
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour
   });
 
   const handleSearch = (e: React.FormEvent) => {

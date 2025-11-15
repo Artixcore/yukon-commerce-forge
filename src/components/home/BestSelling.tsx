@@ -3,8 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 
 export const BestSelling = () => {
+  const { elementRef, isVisible } = useIntersectionObserver({ freezeOnceVisible: true });
+  
   const { data: products, isLoading } = useQuery({
     queryKey: ["best-selling-products"],
     queryFn: async () => {
@@ -18,11 +21,13 @@ export const BestSelling = () => {
       if (error) throw error;
       return data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: isVisible,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
   return (
-    <section className="py-12 bg-background">
+    <section ref={elementRef} className="py-12 bg-background">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-3xl font-bold text-foreground">Best Selling</h2>
