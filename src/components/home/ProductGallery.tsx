@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 
 export const ProductGallery = () => {
   const isMobile = useIsMobile();
   const limit = isMobile ? 6 : 12;
+  const { elementRef, isVisible } = useIntersectionObserver({ freezeOnceVisible: true });
   
   const { data: galleryImages, isLoading } = useQuery({
     queryKey: ["gallery-images", limit],
@@ -20,12 +21,14 @@ export const ProductGallery = () => {
       if (error) throw error;
       return data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: isVisible,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
-  if (isLoading) {
+  if (isLoading || !isVisible) {
     return (
-      <section className="py-12 bg-background">
+      <section ref={elementRef} className="py-12 bg-background">
         <div className="container mx-auto px-4">
         <div className="grid grid-cols-3 gap-2 md:gap-6 lg:gap-8">
             {[...Array(limit)].map((_, i) => (
@@ -42,7 +45,7 @@ export const ProductGallery = () => {
   }
 
   return (
-    <section className="py-12 bg-background">
+    <section ref={elementRef} className="py-12 bg-background">
       <div className="container mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 text-foreground">
           Gallery

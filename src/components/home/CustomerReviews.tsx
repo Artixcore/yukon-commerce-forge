@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
 import Autoplay from "embla-carousel-autoplay";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 
 interface Review {
   id: number;
@@ -65,6 +66,7 @@ const reviews: Review[] = [
 
 export const CustomerReviews = () => {
   const isMobile = useIsMobile();
+  const { elementRef, isVisible } = useIntersectionObserver({ freezeOnceVisible: true });
   
   const getInitials = (name: string) => {
     // Get first character of the Bengali name
@@ -73,8 +75,18 @@ export const CustomerReviews = () => {
 
   const carouselPlugins = isMobile ? [] : [Autoplay({ delay: 4000 })];
 
+  if (!isVisible) {
+    return (
+      <section ref={elementRef} className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="h-96 animate-pulse bg-muted rounded-lg" />
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="py-16 bg-muted/30">
+    <section ref={elementRef} className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-2">গ্রাহক পর্যালোচনা</h2>
