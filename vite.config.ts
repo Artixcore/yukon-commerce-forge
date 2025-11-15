@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
         icons: [
           {
             src: '/favicon.png',
-            sizes: '512x512',
+            sizes: 'any',
             type: 'image/png',
             purpose: 'any maskable'
           }
