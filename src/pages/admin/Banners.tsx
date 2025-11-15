@@ -6,6 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { BannerDialog } from "@/components/admin/BannerDialog";
 import { showSuccess, showConfirmation } from "@/lib/sweetalert";
 import { Pencil, Trash2, Plus } from "lucide-react";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { IMAGE_SIZES } from "@/config/imageSizes";
 
 const Banners = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -83,11 +85,13 @@ const Banners = () => {
               {banners?.map((banner) => (
                 <TableRow key={banner.id}>
                   <TableCell>
-                    <img 
-                      src={banner.image_url} 
-                      alt={banner.title}
-                      className="w-16 h-10 md:w-20 md:h-12 object-cover rounded"
-                    />
+                    <div className="w-16 h-10 md:w-20 md:h-12 overflow-hidden rounded">
+                      <OptimizedImage
+                        src={banner.image_url}
+                        alt={banner.title}
+                        {...IMAGE_SIZES.adminThumbnail}
+                      />
+                    </div>
                   </TableCell>
                   <TableCell>{banner.title}</TableCell>
                   <TableCell className="hidden md:table-cell">

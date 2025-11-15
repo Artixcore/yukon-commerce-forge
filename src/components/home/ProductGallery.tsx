@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { IMAGE_SIZES } from "@/config/imageSizes";
 
 export const ProductGallery = () => {
   const isMobile = useIsMobile();
@@ -57,12 +59,11 @@ export const ProductGallery = () => {
               key={image.id}
               className="relative aspect-square overflow-hidden rounded-lg border border-border"
             >
-              <img
+              <OptimizedImage
                 src={image.image_url}
                 alt={image.title || "Gallery image"}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
+                {...IMAGE_SIZES.galleryImage}
+                className="rounded-lg"
               />
             </div>
           ))}

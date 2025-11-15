@@ -5,6 +5,8 @@ import { useCart } from "@/hooks/useCart";
 import { Card } from "@/components/ui/card";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { IMAGE_SIZES } from "@/config/imageSizes";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -40,14 +42,13 @@ const Cart = () => {
             {items.map((item, index) => (
               <Card key={`${item.product.id}-${item.variants?.color}-${item.variants?.size}-${index}`} className="p-4">
                 <div className="flex gap-4">
-                  <div className="w-24 h-24 bg-muted rounded-lg flex-shrink-0">
-                    {item.product.image_url && (
-                      <img
-                        src={item.product.image_url}
-                        alt={item.product.name}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                    )}
+                  <div className="w-24 h-24 flex-shrink-0 overflow-hidden rounded-lg">
+                    <OptimizedImage
+                      src={item.product.image_url || "/placeholder.svg"}
+                      alt={item.product.name}
+                      {...IMAGE_SIZES.cartThumbnail}
+                      className="rounded-lg"
+                    />
                   </div>
                   
                   <div className="flex-1">
