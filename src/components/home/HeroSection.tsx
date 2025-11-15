@@ -7,6 +7,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { IMAGE_SIZES } from "@/config/imageSizes";
 
 export const HeroSection = () => {
   const isMobile = useIsMobile();
@@ -88,26 +90,16 @@ export const HeroSection = () => {
     <section className="w-full relative">
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
-          {banners.map((banner) => (
+          {banners.map((banner, index) => (
             <div key={banner.id} className="flex-[0_0_100%] min-w-0">
               <div className="relative w-full h-[300px] md:h-[500px] overflow-hidden">
-                <picture>
-                  <source
-                    type="image/webp"
-                    srcSet={`${banner.image_url}?format=webp&width=640 640w,
-                             ${banner.image_url}?format=webp&width=1024 1024w,
-                             ${banner.image_url}?format=webp&width=1920 1920w`}
-                    sizes="100vw"
-                  />
-                  <img
-                    src={banner.image_url}
-                    alt={banner.title}
-                    className="w-full h-full object-cover"
-                    loading="eager"
-                    decoding="async"
-                    fetchPriority="high"
-                  />
-                </picture>
+                <OptimizedImage
+                  src={banner.image_url}
+                  alt={banner.title}
+                  {...IMAGE_SIZES.heroBanner}
+                  priority={index === 0}
+                  className="w-full h-full"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
                   <div className="container mx-auto px-4 pb-12">
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-2">

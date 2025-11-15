@@ -16,6 +16,8 @@ import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import bkashLogo from "@/assets/bkash.svg";
 import nagadLogo from "@/assets/nagad.png";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { IMAGE_SIZES } from "@/config/imageSizes";
 
 const checkoutSchema = z.object({
   name: z.string()
@@ -257,8 +259,15 @@ const Checkout = () => {
           <h2 className="text-2xl font-semibold mb-6">Order Summary</h2>
             <div className="bg-muted rounded-lg p-6 space-y-4">
             {items.map((item, index) => (
-              <div key={`${item.product.id}-${item.variants?.color}-${item.variants?.size}-${index}`} className="flex justify-between">
-                <div>
+              <div key={`${item.product.id}-${item.variants?.color}-${item.variants?.size}-${index}`} className="flex gap-3">
+                <div className="w-16 h-16 flex-shrink-0 overflow-hidden rounded">
+                  <OptimizedImage
+                    src={item.product.image_url || "/placeholder.svg"}
+                    alt={item.product.name}
+                    {...IMAGE_SIZES.checkoutThumbnail}
+                  />
+                </div>
+                <div className="flex-1">
                   <p className="font-medium">{item.product.name}</p>
                   <p className="text-sm text-muted-foreground">
                     Quantity: {item.quantity}

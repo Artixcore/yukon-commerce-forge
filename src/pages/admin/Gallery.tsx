@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { GalleryDialog } from "@/components/admin/GalleryDialog";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { IMAGE_SIZES } from "@/config/imageSizes";
 
 const Gallery = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -91,11 +93,13 @@ const Gallery = () => {
               {images?.map((image) => (
                 <TableRow key={image.id}>
                   <TableCell>
-                    <img
-                      src={image.image_url}
-                      alt={image.title || "Gallery image"}
-                      className="h-16 w-16 object-cover rounded"
-                    />
+                    <div className="h-16 w-16 overflow-hidden rounded">
+                      <OptimizedImage
+                        src={image.image_url}
+                        alt={image.title || "Gallery image"}
+                        {...IMAGE_SIZES.adminThumbnail}
+                      />
+                    </div>
                   </TableCell>
                   <TableCell>{image.title || "-"}</TableCell>
                   <TableCell>{image.display_order}</TableCell>
