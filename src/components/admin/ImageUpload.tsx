@@ -17,6 +17,56 @@ export const ImageUpload = ({ value, onChange, folder, label, required }: ImageU
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const convertToWebP = async (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        
+        // Optimize dimensions - max 2048px
+        let width = img.width;
+        let height = img.height;
+        const maxDimension = 2048;
+        
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height / width) * maxDimension;
+            width = maxDimension;
+          } else {
+            width = (width / height) * maxDimension;
+            height = maxDimension;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to convert image'));
+            }
+          },
+          'image/webp',
+          0.85
+        );
+      };
+      
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const uploadImage = async (file: File) => {
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -24,25 +74,27 @@ export const ImageUpload = ({ value, onChange, folder, label, required }: ImageU
       return;
     }
 
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      showError('File Too Large', 'Image must be less than 5MB');
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      showError('File Too Large', 'Image must be less than 10MB');
       return;
     }
 
     setIsUploading(true);
 
     try {
-      // Generate unique filename
       const timestamp = Date.now();
-      const ext = file.name.split('.').pop();
-      const filename = `${folder}/${timestamp}-${Math.random().toString(36).substring(7)}.${ext}`;
+      const randomStr = Math.random().toString(36).substring(7);
+      
+      // Convert to WebP
+      const webpBlob = await convertToWebP(file);
+      const webpFilename = `${folder}/${timestamp}-${randomStr}.webp`;
 
-      // Upload to Supabase Storage
+      // Upload WebP version
       const { error: uploadError } = await supabase.storage
         .from('products-images')
-        .upload(filename, file, {
-          cacheControl: '3600',
+        .upload(webpFilename, webpBlob, {
+          cacheControl: '31536000',
           upsert: false
         });
 
@@ -51,10 +103,10 @@ export const ImageUpload = ({ value, onChange, folder, label, required }: ImageU
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('products-images')
-        .getPublicUrl(filename);
+        .getPublicUrl(webpFilename);
 
       onChange(publicUrl);
-      showSuccess('Uploaded!', 'Image uploaded successfully');
+      showSuccess('Uploaded!', 'Image optimized and uploaded successfully');
     } catch (error: any) {
       console.error('Upload error:', error);
       showError('Upload Failed', error.message || 'Failed to upload image');

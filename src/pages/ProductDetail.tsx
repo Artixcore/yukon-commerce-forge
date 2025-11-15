@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ReviewDialog } from "@/components/product/ReviewDialog";
 import { format } from "date-fns";
 import { trackMetaEvent } from "@/lib/metaTracking";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -177,10 +178,14 @@ const ProductDetail = () => {
                 {allImages.length > 0 ? (
                   allImages.map((img, index) => (
                     <div key={index} className="flex-[0_0_100%] min-w-0 flex items-center justify-center">
-                      <img
+                      <OptimizedImage
                         src={img}
                         alt={`${product.name} - ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        width={800}
+                        height={800}
+                        priority={index === 0}
+                        className="w-full h-full"
+                        sizes="(max-width: 768px) 100vw, 50vw"
                       />
                     </div>
                   ))
@@ -202,10 +207,13 @@ const ProductDetail = () => {
                       selectedIndex === index ? "border-primary" : "border-transparent"
                     }`}
                   >
-                    <img
+                    <OptimizedImage
                       src={img}
                       alt={`Thumbnail ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      width={80}
+                      height={80}
+                      className="w-full h-full"
+                      sizes="80px"
                     />
                   </button>
                 ))}
