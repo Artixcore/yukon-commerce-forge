@@ -1,13 +1,23 @@
-export const initMetaPixel = () => {
+const initPixel = () => {
   const pixelId = localStorage.getItem('meta_pixel_id');
   
   if (pixelId && pixelId !== 'null' && pixelId !== 'undefined') {
-    // Ensure fbq is available
     if (typeof window.fbq === 'function') {
       window.fbq('init', pixelId);
       window.fbq('track', 'PageView');
-      console.log('Meta Pixel initialized:', pixelId);
+      if (import.meta.env.DEV) {
+        console.log('Meta Pixel initialized:', pixelId);
+      }
     }
+  }
+};
+
+export const initMetaPixel = () => {
+  // Defer initialization until page is fully loaded
+  if (document.readyState === 'complete') {
+    initPixel();
+  } else {
+    window.addEventListener('load', initPixel);
   }
 };
 
@@ -17,6 +27,8 @@ export const refreshMetaPixel = (newPixelId: string) => {
   
   if (typeof window.fbq === 'function') {
     window.fbq('init', newPixelId);
-    console.log('Meta Pixel refreshed:', newPixelId);
+    if (import.meta.env.DEV) {
+      console.log('Meta Pixel refreshed:', newPixelId);
+    }
   }
 };

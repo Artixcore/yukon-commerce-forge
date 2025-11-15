@@ -30,21 +30,70 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png">
   
   <!-- DNS Prefetch & Preconnect for performance -->
-  <link rel="preconnect" href="https://pnrchmxpywyqvvwzbvwe.supabase.co">
+  <link rel="preconnect" href="https://pnrchmxpywyqvvwzbvwe.supabase.co" crossorigin>
   <link rel="dns-prefetch" href="https://pnrchmxpywyqvvwzbvwe.supabase.co">
+  <link rel="dns-prefetch" href="https://connect.facebook.net">
+  <link rel="dns-prefetch" href="https://www.facebook.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&display=swap" rel="stylesheet">
+  
+  <!-- Optimized font loading - preload critical font file -->
+  <link
+    rel="preload"
+    as="font"
+    type="font/woff2"
+    href="https://fonts.gstatic.com/s/bricolagegrotesque/v1/3y9U6as8bTXq_nANBjzKo3IeZx8z6up5BeSl5jBNz_19PpbpMXuECpwUxJBOm_OQ8RKTg-dkDg.woff2"
+    crossorigin="anonymous"
+  />
+  
+  <!-- Load font stylesheet async -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+  
+  <!-- Fallback for no-JS -->
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&display=swap" rel="stylesheet">
+  </noscript>
   
   
   <!-- Inline critical CSS for faster initial render -->
   <style>
-    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
-    .header { position: sticky; top: 0; background: white; z-index: 50; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    #root {
+      min-height: 100vh;
+    }
+    
+    /* Header skeleton to prevent CLS */
+    header {
+      height: 80px;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    /* Hero skeleton to prevent CLS */
+    .hero-skeleton {
+      height: 500px;
+      background: #f3f4f6;
+    }
   </style>
   
-  <!-- Meta Pixel Code -->
-  <script>
+  <!-- Meta Pixel Code - Deferred for performance -->
+  <script defer>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
     n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -53,16 +102,6 @@
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-    
-    // Initialize pixel if configured
-    const pixelId = window.localStorage.getItem('meta_pixel_id');
-    if (pixelId && pixelId !== 'null' && pixelId !== 'undefined') {
-      fbq('init', pixelId);
-      fbq('track', 'PageView');
-      console.log('Meta Pixel initialized:', pixelId);
-    } else {
-      console.log('Meta Pixel not configured - skipping initialization');
-    }
   </script>
   <!-- End Meta Pixel Code -->
 </head>
