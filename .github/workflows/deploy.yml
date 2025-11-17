@@ -26,6 +26,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Verify AWS credentials
+        run: |
+          echo "Verifying AWS credentials..."
+          aws sts get-caller-identity || {
+            echo "ERROR: Failed to authenticate with AWS. Please check your credentials."
+            echo "Make sure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets are set correctly."
+            exit 1
+          }
+          echo "AWS credentials verified successfully!"
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
