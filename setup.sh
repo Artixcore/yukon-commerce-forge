@@ -119,9 +119,134 @@ install_docker() {
     fi
 }
 
-# Check Docker Compose availability
+# Verify ports 80 and 443 are available
+verify_ports() {
+    print_info "Verifying ports 80 and 443 availability..."
+    
+    local ports_in_use=()
+    local port_check_failed=false
+    
+    # Check port 80
+    if command_exists lsof; then
+        if run_with_sudo lsof -i :80 >/dev/null 2>&1; then
+            ports_in_use+=("80")
+            port_check_failed=true
+        fi
+    elif command_exists ss; then
+        if run_with_sudo ss -tuln | grep -q ":80 "; then
+            ports_in_use+=("80")
+            port_check_failed=true
+        fi
+    elif command_exists netstat; then
+        if run_with_sudo netstat -tuln | grep -q ":80 "; then
+            ports_in_use+=("80")
+            port_check_failed=true
+        fi
+    fi
+    
+    # Check port 443
+    if command_exists lsof; then
+        if run_with_sudo lsof -i :443 >/dev/null 2>&1; then
+            ports_in_use+=("443")
+            port_check_failed=true
+        fi
+    elif command_exists ss; then
+        if run_with_sudo ss -tuln | grep -q ":443 "; then
+            ports_in_use+=("443")
+            port_check_failed=true
+        fi
+    elif command_exists netstat; then
+        if run_with_sudo netstat -tuln | grep -q ":443 "; then
+            ports_in_use+=("443")
+            port_check_failed=true
+        fi
+    fi
+    
+    if [ "$port_check_failed" = "true" ]; then
+        print_warning "The following ports are currently in use: ${ports_in_use[*]}"
+        print_info "Attempting to identify processes using these ports..."
+        
+        for port in "${ports_in_use[@]}"; do
+            if command_exists lsof; then
+                print_info "Port $port processes:"
+                run_with_sudo lsof -i :$port || true
+            fi
+        done
+        
+        print_warning "Ports 80 and 443 need to be available for web server."
+        print_info "The script will attempt to stop conflicting services during deployment."
+        return 1
+    else
+        print_success "Ports 80 and 443 are available."
+        return 0
+    fi
+}
+
+# Check and install system dependencies
+check_system_dependencies() {
+    print_info "Checking system dependencies..."
+    
+    local missing_deps=()
+    local deps_to_install=()
+    
+    # Required dependencies
+    local required_deps=("curl" "dig" "lsof" "ss")
+    
+    for dep in "${required_deps[@]}"; do
+        if ! command_exists "$dep"; then
+            missing_deps+=("$dep")
+        fi
+    done
+    
+    # Map dependencies to package names
+    if [[ " ${missing_deps[@]} " =~ " dig " ]]; then
+        deps_to_install+=("dnsutils")
+    fi
+    
+    if [[ " ${missing_deps[@]} " =~ " lsof " ]]; then
+        deps_to_install+=("lsof")
+    fi
+    
+    if [[ " ${missing_deps[@]} " =~ " ss " ]]; then
+        # ss is part of iproute2, usually pre-installed
+        # But we'll check anyway
+        if ! command_exists ss; then
+            deps_to_install+=("iproute2")
+        fi
+    fi
+    
+    # curl is usually pre-installed, but check anyway
+    if [[ " ${missing_deps[@]} " =~ " curl " ]]; then
+        deps_to_install+=("curl")
+    fi
+    
+    if [ ${#deps_to_install[@]} -gt 0 ]; then
+        print_info "Installing missing dependencies: ${deps_to_install[*]}"
+        run_with_sudo apt-get update -qq
+        run_with_sudo apt-get install -y -qq "${deps_to_install[@]}"
+        print_success "Dependencies installed successfully."
+    else
+        print_success "All required system dependencies are available."
+    fi
+}
+
+# Check Docker Compose availability and Docker daemon
 check_docker_compose() {
     print_info "Checking Docker Compose..."
+    
+    # Verify Docker daemon is running
+    if ! docker info >/dev/null 2>&1; then
+        print_error "Docker daemon is not running."
+        print_info "Attempting to start Docker daemon..."
+        run_with_sudo systemctl start docker
+        sleep 2
+        
+        if ! docker info >/dev/null 2>&1; then
+            print_error "Failed to start Docker daemon. Please check Docker installation."
+            exit 1
+        fi
+        print_success "Docker daemon started."
+    fi
     
     # Check for docker compose (plugin) or docker-compose (standalone)
     if docker compose version >/dev/null 2>&1; then
@@ -159,10 +284,100 @@ configure_firewall() {
     print_success "Firewall configured. Ports 22, 80, and 443 are open."
 }
 
+# Verify DNS configuration with detailed checks
+verify_dns_configuration() {
+    local domain=$1
+    local public_ip=$2
+    
+    print_info "Verifying domain DNS configuration..."
+    
+    # Get domain IP addresses (A records)
+    local domain_ips=$(dig +short $domain A 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' || echo "")
+    local domain_ipv6=$(dig +short $domain AAAA 2>/dev/null | grep -E '^[0-9a-fA-F:]+$' || echo "")
+    
+    if [ -z "$public_ip" ]; then
+        print_error "Could not determine public IP of this server."
+        print_info "Please ensure this server can access the internet."
+        return 1
+    fi
+    
+    if [ -z "$domain_ips" ]; then
+        print_error "Could not resolve domain $domain to an IP address."
+        print_info "Please check your DNS configuration:"
+        echo "  1. Ensure an A record exists for $domain"
+        echo "  2. Wait for DNS propagation (can take up to 48 hours)"
+        echo "  3. Verify with: dig +short $domain"
+        return 1
+    fi
+    
+    # Check if any A record matches the server IP
+    local ip_match=false
+    for ip in $domain_ips; do
+        if [ "$ip" = "$public_ip" ]; then
+            ip_match=true
+            break
+        fi
+    done
+    
+    if [ "$ip_match" = "false" ]; then
+        print_error "DNS Configuration Mismatch Detected!"
+        echo ""
+        echo "  Domain: $domain"
+        echo "  Domain resolves to: $(echo $domain_ips | tr '\n' ' ')"
+        if [ -n "$domain_ipv6" ]; then
+            echo "  Domain IPv6: $(echo $domain_ipv6 | tr '\n' ' ')"
+        fi
+        echo "  This server IP: $public_ip"
+        echo ""
+        print_warning "The domain does not point to this server. SSL certificate generation will fail."
+        echo ""
+        print_info "To fix this:"
+        echo "  1. Log in to your DNS provider (e.g., Cloudflare, Route53, Namecheap)"
+        echo "  2. Update the A record for $domain to point to: $public_ip"
+        echo "  3. Wait for DNS propagation (usually 5-60 minutes, can take up to 48 hours)"
+        echo "  4. Verify DNS is updated: dig +short $domain"
+        echo "  5. Then retry SSL setup with: sudo ./setup.sh --ssl-only $domain"
+        echo ""
+        return 1
+    fi
+    
+    print_success "Domain DNS configuration verified."
+    print_info "  Domain: $domain"
+    print_info "  Resolves to: $(echo $domain_ips | tr '\n' ' ')"
+    print_info "  Server IP: $public_ip"
+    return 0
+}
+
+# Retry SSL setup (useful after DNS is fixed)
+retry_ssl_setup() {
+    local domain=$1
+    local docker_compose_cmd=$2
+    
+    if [ -z "$domain" ]; then
+        print_error "Domain name is required for SSL retry."
+        return 1
+    fi
+    
+    print_info "Retrying SSL certificate setup for domain: $domain"
+    
+    # Get public IP
+    local public_ip=$(curl -s https://api.ipify.org || curl -s https://ifconfig.me || echo "")
+    
+    # Verify DNS configuration
+    if ! verify_dns_configuration "$domain" "$public_ip"; then
+        print_error "DNS configuration is still incorrect. Please fix DNS and try again."
+        return 1
+    fi
+    
+    # Call setup_ssl with skip_dns_check flag
+    setup_ssl "$domain" "$docker_compose_cmd" "skip_dns_check"
+}
+
 # Setup SSL with Let's Encrypt
 setup_ssl() {
     local domain=$1
     local docker_compose_cmd=$2
+    local skip_dns_check=${3:-""}
     
     if [ -z "$domain" ]; then
         print_warning "No domain provided. Skipping SSL setup. Site will be accessible via HTTP only."
@@ -171,26 +386,82 @@ setup_ssl() {
     
     print_info "Setting up SSL certificate for domain: $domain"
     
-    # Install certbot
+    # Install certbot (without nginx plugin since we're using standalone mode)
     if ! command_exists certbot; then
         print_info "Installing certbot..."
         run_with_sudo apt-get update -qq
-        run_with_sudo apt-get install -y -qq certbot python3-certbot-nginx
+        # Install certbot without nginx plugin to avoid installing nginx on host
+        run_with_sudo apt-get install -y -qq certbot
     fi
     
-    # Check if domain resolves to this server
-    print_info "Verifying domain DNS configuration..."
-    local public_ip=$(curl -s https://api.ipify.org || curl -s https://ifconfig.me || echo "")
-    local domain_ip=$(dig +short $domain | tail -n1 || echo "")
+    # Install dnsutils if not available (for dig command)
+    if ! command_exists dig; then
+        print_info "Installing dnsutils for DNS verification..."
+        run_with_sudo apt-get update -qq
+        run_with_sudo apt-get install -y -qq dnsutils
+    fi
     
-    if [ -z "$public_ip" ]; then
-        print_warning "Could not determine public IP. SSL setup may fail if domain doesn't point to this server."
-    elif [ -z "$domain_ip" ]; then
-        print_warning "Could not resolve domain $domain. SSL setup may fail."
-    elif [ "$public_ip" != "$domain_ip" ]; then
-        print_warning "Domain $domain ($domain_ip) does not point to this server ($public_ip). SSL setup may fail."
-    else
-        print_success "Domain DNS configuration verified."
+    # Stop and disable nginx if it was installed (as a dependency or otherwise)
+    if systemctl list-units --type=service --state=running 2>/dev/null | grep -q nginx; then
+        print_info "Stopping nginx service (if running)..."
+        run_with_sudo systemctl stop nginx 2>/dev/null || true
+        run_with_sudo systemctl disable nginx 2>/dev/null || true
+    fi
+    
+    # Check if domain resolves to this server (unless skip_dns_check is set)
+    local public_ip=$(curl -s https://api.ipify.org || curl -s https://ifconfig.me || echo "")
+    
+    if [ "$skip_dns_check" != "skip_dns_check" ]; then
+        if ! verify_dns_configuration "$domain" "$public_ip"; then
+            echo ""
+            print_info "What would you like to do?"
+            echo "  1) Fix DNS now and retry SSL setup"
+            echo "  2) Continue anyway (will likely fail)"
+            echo "  3) Skip SSL setup for now"
+            echo ""
+            read -p "Enter your choice (1-3): " -n 1 -r
+            echo ""
+            
+            case $REPLY in
+                1)
+                    print_info "Waiting for you to fix DNS configuration..."
+                    print_info "After updating DNS, wait a few minutes for propagation, then run:"
+                    print_info "  sudo ./setup.sh --ssl-only $domain"
+                    echo ""
+                    read -p "Press Enter when DNS is updated and you're ready to retry..."
+                    if retry_ssl_setup "$domain" "$docker_compose_cmd"; then
+                        return 0
+                    else
+                        print_error "SSL setup still failed. Please verify DNS configuration."
+                        return 1
+                    fi
+                    ;;
+                2)
+                    print_warning "Continuing with SSL setup despite DNS mismatch. This will likely fail."
+                    ;;
+                3)
+                    print_warning "Skipping SSL setup. You can set it up later with:"
+                    print_warning "  sudo ./setup.sh --ssl-only $domain"
+                    return 0
+                    ;;
+                *)
+                    print_warning "Invalid choice. Skipping SSL setup."
+                    return 0
+                    ;;
+            esac
+        else
+            # DNS is correct, proceed automatically
+            print_info "DNS configuration verified. Proceeding with automatic SSL setup..."
+        fi
+    fi
+    
+    # Auto-generate nginx-ssl.conf if template exists and domain is provided
+    if [ -f "nginx-ssl.conf.template" ] && [ -n "$domain" ]; then
+        if [ ! -f "nginx-ssl.conf" ] || [ "nginx-ssl.conf.template" -nt "nginx-ssl.conf" ]; then
+            print_info "Generating nginx-ssl.conf from template..."
+            sed "s/__DOMAIN__/$domain/g" nginx-ssl.conf.template > nginx-ssl.conf
+            print_success "nginx-ssl.conf generated successfully."
+        fi
     fi
     
     # Create directory for SSL certificates
@@ -204,8 +475,45 @@ setup_ssl() {
     print_info "Stopping any running containers to free port 80 for certbot..."
     $docker_compose_cmd down 2>/dev/null || true
     
+    # Stop host nginx service if it's running (installed as certbot dependency)
+    if systemctl is-active --quiet nginx 2>/dev/null; then
+        print_info "Stopping host nginx service to free port 80..."
+        run_with_sudo systemctl stop nginx
+        # Disable nginx from auto-starting (we're using Docker)
+        run_with_sudo systemctl disable nginx 2>/dev/null || true
+    fi
+    
+    # Check for any other process using port 80
+    if command_exists lsof; then
+        if run_with_sudo lsof -i :80 >/dev/null 2>&1; then
+            print_warning "Port 80 is still in use. Attempting to identify and stop the process..."
+            run_with_sudo lsof -i :80 | tail -n +2 | awk '{print $2}' | xargs -r run_with_sudo kill -9 2>/dev/null || true
+        fi
+    elif command_exists netstat; then
+        if run_with_sudo netstat -tuln | grep -q ":80 "; then
+            print_warning "Port 80 appears to be in use. Please manually stop any service using port 80."
+        fi
+    fi
+    
     # Wait a moment for ports to be released
-    sleep 2
+    sleep 3
+    
+    # Verify port 80 is free
+    print_info "Verifying port 80 is available..."
+    if command_exists lsof; then
+        if run_with_sudo lsof -i :80 >/dev/null 2>&1; then
+            print_error "Port 80 is still in use. Cannot proceed with SSL certificate generation."
+            print_info "Processes using port 80:"
+            run_with_sudo lsof -i :80 || true
+            return 1
+        fi
+    elif command_exists ss; then
+        if run_with_sudo ss -tuln | grep -q ":80 "; then
+            print_error "Port 80 is still in use. Cannot proceed with SSL certificate generation."
+            return 1
+        fi
+    fi
+    print_success "Port 80 is available."
     
     # Generate certificate
     print_info "Requesting SSL certificate from Let's Encrypt..."
@@ -216,20 +524,124 @@ setup_ssl() {
         --domains $domain \
         --preferred-challenges http \
         --keep-until-expiring; then
-        print_success "SSL certificate generated successfully!"
         
-        # Set up auto-renewal
-        print_info "Setting up SSL certificate auto-renewal..."
-        local renew_hook="$docker_compose_cmd restart web || true"
-        (run_with_sudo crontab -l 2>/dev/null | grep -v "certbot renew" | grep -v "# Yukon Commerce SSL renewal"; echo "0 0 * * * certbot renew --quiet --deploy-hook '$renew_hook' # Yukon Commerce SSL renewal") | run_with_sudo crontab - || true
-        
-        return 0
+        # Verify certificate files exist
+        if [ -f "/etc/letsencrypt/live/$domain/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$domain/privkey.pem" ]; then
+            print_success "SSL certificate generated successfully!"
+            print_info "Certificate location: /etc/letsencrypt/live/$domain/"
+            
+            # Set up auto-renewal
+            print_info "Setting up SSL certificate auto-renewal..."
+            local renew_hook="$docker_compose_cmd restart web || true"
+            (run_with_sudo crontab -l 2>/dev/null | grep -v "certbot renew" | grep -v "# Yukon Commerce SSL renewal"; echo "0 0 * * * certbot renew --quiet --deploy-hook '$renew_hook' # Yukon Commerce SSL renewal") | run_with_sudo crontab - || true
+            
+            return 0
+        else
+            print_error "Certificate files not found after generation."
+            print_error "Expected files:"
+            echo "  - /etc/letsencrypt/live/$domain/fullchain.pem"
+            echo "  - /etc/letsencrypt/live/$domain/privkey.pem"
+            return 1
+        fi
     else
         print_error "Failed to generate SSL certificate."
-        print_warning "Continuing without SSL. You can set it up manually later with:"
-        print_warning "  sudo certbot certonly --standalone -d $domain"
+        echo ""
+        print_info "Common causes:"
+        echo "  1. Domain DNS not pointing to this server"
+        echo "  2. Port 80 not accessible from the internet"
+        echo "  3. Firewall blocking port 80"
+        echo "  4. Rate limiting from Let's Encrypt (too many requests)"
+        echo ""
+        print_info "To troubleshoot:"
+        echo "  1. Verify DNS: dig +short $domain"
+        echo "  2. Check firewall: sudo ufw status"
+        echo "  3. Test port 80: curl -I http://$domain"
+        echo "  4. Check certbot logs: sudo cat /var/log/letsencrypt/letsencrypt.log"
+        echo ""
+        print_warning "You can retry SSL setup later with:"
+        print_warning "  sudo ./setup.sh --ssl-only $domain"
         return 1
     fi
+}
+
+# Verify and generate configuration files
+verify_config_files() {
+    print_info "Verifying configuration files..."
+    
+    local config_errors=()
+    
+    # Check nginx.conf exists
+    if [ ! -f "nginx.conf" ]; then
+        print_warning "nginx.conf not found. Creating default configuration..."
+        cat > nginx.conf << 'NGINX_EOF'
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/javascript application/json;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Cache static assets
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Handle React Router (SPA routing)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Health check endpoint
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+}
+NGINX_EOF
+        print_success "Created nginx.conf"
+    else
+        print_success "nginx.conf exists"
+    fi
+    
+    # Check docker-compose.yml exists
+    if [ ! -f "docker-compose.yml" ]; then
+        config_errors+=("docker-compose.yml")
+    else
+        print_success "docker-compose.yml exists"
+    fi
+    
+    # Check docker-compose.ssl.yml exists (optional, but needed for SSL)
+    if [ ! -f "docker-compose.ssl.yml" ]; then
+        print_warning "docker-compose.ssl.yml not found. SSL deployment will not be available."
+    else
+        print_success "docker-compose.ssl.yml exists"
+    fi
+    
+    # Check nginx-ssl.conf.template exists (needed for SSL)
+    if [ ! -f "nginx-ssl.conf.template" ]; then
+        print_warning "nginx-ssl.conf.template not found. SSL configuration may not work properly."
+    else
+        print_success "nginx-ssl.conf.template exists"
+    fi
+    
+    if [ ${#config_errors[@]} -gt 0 ]; then
+        print_error "Missing required configuration files: ${config_errors[*]}"
+        return 1
+    fi
+    
+    return 0
 }
 
 # Check and setup environment variables
@@ -238,6 +650,7 @@ setup_environment() {
     
     ENV_FILE=".env"
     REQUIRED_VARS=("VITE_SUPABASE_URL" "VITE_SUPABASE_PUBLISHABLE_KEY")
+    OPTIONAL_VARS=()
     
     if [ ! -f "$ENV_FILE" ]; then
         print_warning ".env file not found. Creating template..."
@@ -249,26 +662,37 @@ setup_environment() {
 
 VITE_SUPABASE_URL=
 VITE_SUPABASE_PUBLISHABLE_KEY=
+
+# Optional: Additional environment variables can be added here
+# These will be available during the build process
 EOF
         
-        print_warning "Created .env file with template variables."
-        print_warning "Please edit .env and add your Supabase credentials before building."
+        print_success "Created .env file with template variables."
         print_info "You can find your Supabase credentials at: https://app.supabase.com/project/_/settings/api"
         
         # Check if we should continue
+        echo ""
         read -p "Do you want to continue without Supabase credentials? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            print_info "Please edit .env file and run this script again."
+            print_info "Please edit .env file and add your Supabase credentials, then run this script again."
+            print_info "You can edit the file with: nano .env"
             exit 0
         fi
+        print_warning "Continuing without Supabase credentials. Application may not function correctly."
     else
         print_success ".env file exists."
         
         # Check if required variables are set
         MISSING_VARS=()
+        MISSING_OPTIONAL_VARS=()
+        
+        # Load variables from .env file safely
         set +e
+        # Use set -a to automatically export variables
+        set -a
         source "$ENV_FILE" 2>/dev/null || true
+        set +a
         set -e
         
         for var in "${REQUIRED_VARS[@]}"; do
@@ -277,15 +701,101 @@ EOF
             fi
         done
         
+        for var in "${OPTIONAL_VARS[@]}"; do
+            if [ -z "${!var}" ]; then
+                MISSING_OPTIONAL_VARS+=("$var")
+            fi
+        done
+        
         if [ ${#MISSING_VARS[@]} -gt 0 ]; then
-            print_warning "The following environment variables are missing or empty:"
+            print_error "The following REQUIRED environment variables are missing or empty:"
             for var in "${MISSING_VARS[@]}"; do
                 echo "  - $var"
             done
-            print_warning "Application may not function correctly without these variables."
+            echo ""
+            print_warning "Application will NOT function correctly without these variables."
+            print_info "Please edit .env file and add the missing variables."
+            print_info "You can edit the file with: nano .env"
+            echo ""
+            read -p "Do you want to continue anyway? (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                print_info "Please edit .env file and run this script again."
+                exit 0
+            fi
         else
             print_success "All required environment variables are set."
         fi
+        
+        if [ ${#MISSING_OPTIONAL_VARS[@]} -gt 0 ]; then
+            print_info "The following optional environment variables are not set:"
+            for var in "${MISSING_OPTIONAL_VARS[@]}"; do
+                echo "  - $var"
+            done
+        fi
+    fi
+}
+
+# Pre-deployment checks
+pre_deployment_checks() {
+    print_info "Running pre-deployment checks..."
+    
+    local checks_passed=true
+    
+    # Check disk space (need at least 2GB free)
+    print_info "Checking disk space..."
+    local available_space=$(df -BG / | tail -1 | awk '{print $4}' | sed 's/G//')
+    if [ "$available_space" -lt 2 ]; then
+        print_warning "Low disk space: ${available_space}GB available. Recommended: at least 2GB"
+        checks_passed=false
+    else
+        print_success "Sufficient disk space available: ${available_space}GB"
+    fi
+    
+    # Check network connectivity
+    print_info "Checking network connectivity..."
+    if curl -s --max-time 5 https://www.google.com >/dev/null 2>&1 || curl -s --max-time 5 https://www.cloudflare.com >/dev/null 2>&1; then
+        print_success "Network connectivity verified"
+    else
+        print_warning "Network connectivity check failed. Internet access may be limited."
+        checks_passed=false
+    fi
+    
+    # Verify Docker can build images
+    print_info "Verifying Docker build capability..."
+    if docker info >/dev/null 2>&1; then
+        print_success "Docker is ready for builds"
+    else
+        print_error "Docker is not ready. Please check Docker installation."
+        checks_passed=false
+    fi
+    
+    # Check if .env file has required variables (if file exists)
+    if [ -f ".env" ]; then
+        print_info "Verifying environment variables..."
+        set +e
+        source .env 2>/dev/null || true
+        set -e
+        
+        if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            print_warning "Required environment variables may be missing. Application may not function correctly."
+        else
+            print_success "Required environment variables are set"
+        fi
+    fi
+    
+    # Verify configuration files
+    if ! verify_config_files; then
+        print_warning "Some configuration files are missing or invalid"
+        checks_passed=false
+    fi
+    
+    if [ "$checks_passed" = "false" ]; then
+        print_warning "Some pre-deployment checks failed, but continuing anyway..."
+        return 1
+    else
+        print_success "All pre-deployment checks passed"
+        return 0
     fi
 }
 
@@ -317,10 +827,26 @@ deploy_with_docker() {
         
         # Create nginx-ssl.conf from template if domain is provided
         if [ -f "nginx-ssl.conf.template" ] && [ -n "$domain" ]; then
-            print_info "Configuring nginx SSL configuration for domain: $domain"
-            sed "s/__DOMAIN__/$domain/g" nginx-ssl.conf.template > nginx-ssl.conf
+            if [ ! -f "nginx-ssl.conf" ] || [ "nginx-ssl.conf.template" -nt "nginx-ssl.conf" ]; then
+                print_info "Configuring nginx SSL configuration for domain: $domain"
+                sed "s/__DOMAIN__/$domain/g" nginx-ssl.conf.template > nginx-ssl.conf
+                print_success "nginx-ssl.conf generated successfully."
+            else
+                print_info "nginx-ssl.conf already exists and is up to date."
+            fi
         elif [ ! -f "nginx-ssl.conf" ]; then
             print_error "nginx-ssl.conf.template not found. Cannot configure SSL."
+            print_error "Please ensure nginx-ssl.conf.template exists in the project directory."
+            exit 1
+        fi
+        
+        # Verify SSL certificate files exist
+        if [ ! -f "/etc/letsencrypt/live/$domain/fullchain.pem" ] || [ ! -f "/etc/letsencrypt/live/$domain/privkey.pem" ]; then
+            print_error "SSL certificate files not found for domain: $domain"
+            print_error "Expected files:"
+            echo "  - /etc/letsencrypt/live/$domain/fullchain.pem"
+            echo "  - /etc/letsencrypt/live/$domain/privkey.pem"
+            print_info "Please run SSL setup first: sudo ./setup.sh --ssl-only $domain"
             exit 1
         fi
     fi
@@ -375,6 +901,50 @@ deploy_with_docker() {
 
 # Main execution
 main() {
+    # Handle --ssl-only flag for retrying SSL setup
+    if [ "$1" = "--ssl-only" ] || [ "$1" = "-s" ]; then
+        if [ -z "$2" ]; then
+            print_error "Domain name is required for SSL-only setup."
+            echo ""
+            print_info "Usage: sudo ./setup.sh --ssl-only <domain>"
+            echo "Example: sudo ./setup.sh --ssl-only example.com"
+            exit 1
+        fi
+        
+        local domain=$2
+        
+        echo ""
+        print_info "=========================================="
+        print_info "SSL Certificate Setup Only"
+        print_info "=========================================="
+        echo ""
+        
+        # Check for root/sudo
+        if ! is_root_or_sudo; then
+            print_error "This script requires root privileges or sudo access."
+            print_error "Please run with: sudo ./setup.sh --ssl-only $domain"
+            exit 1
+        fi
+        
+        # Check Docker Compose (needed for retry_ssl_setup)
+        check_docker_compose
+        
+        # Retry SSL setup
+        if retry_ssl_setup "$domain" "$DOCKER_COMPOSE_CMD"; then
+            print_success "SSL certificate setup completed successfully!"
+            echo ""
+            print_info "Next steps:"
+            echo "  1. If containers are running, restart them to use SSL:"
+            echo "     $DOCKER_COMPOSE_CMD -f docker-compose.ssl.yml down"
+            echo "     $DOCKER_COMPOSE_CMD -f docker-compose.ssl.yml up -d"
+            echo "  2. Or run the full deployment: sudo ./setup.sh"
+            exit 0
+        else
+            print_error "SSL certificate setup failed."
+            exit 1
+        fi
+    fi
+    
     echo ""
     print_info "=========================================="
     print_info "Yukon Commerce Forge - AWS EC2 Deployment"
@@ -395,16 +965,28 @@ main() {
     # Step 1: Install Docker
     install_docker
     
-    # Step 2: Check Docker Compose
+    # Step 2: Check and install system dependencies
+    check_system_dependencies
+    
+    # Step 3: Check Docker Compose and Docker daemon
     check_docker_compose
     
-    # Step 3: Configure firewall
+    # Step 4: Verify ports 80 and 443
+    verify_ports || true  # Don't fail if ports are in use, we'll handle it during deployment
+    
+    # Step 5: Configure firewall
     configure_firewall
     
-    # Step 4: Setup environment variables
+    # Step 6: Verify configuration files
+    verify_config_files || true  # Don't fail, we'll create missing files
+    
+    # Step 7: Setup environment variables
     setup_environment
     
-    # Step 5: Ask for domain (optional)
+    # Step 8: Pre-deployment checks
+    pre_deployment_checks || true  # Warn but don't fail
+    
+    # Step 9: Ask for domain (optional)
     echo ""
     read -p "Enter your domain name (or press Enter to skip SSL setup): " DOMAIN
     DOMAIN=$(echo "$DOMAIN" | xargs) # Trim whitespace
@@ -412,20 +994,30 @@ main() {
     USE_SSL="false"
     if [ -n "$DOMAIN" ]; then
         USE_SSL="true"
-        # Setup SSL
+        # Setup SSL (will be automatic if DNS is correct)
         setup_ssl "$DOMAIN" "$DOCKER_COMPOSE_CMD"
         # Update SSL status based on certificate generation
         if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
             USE_SSL="false"
             print_warning "SSL certificate not found. Continuing with HTTP only."
+            print_info "You can retry SSL setup later with:"
+            print_info "  sudo ./setup.sh --ssl-only $DOMAIN"
+        else
+            # Ensure nginx-ssl.conf is generated for SSL deployment
+            if [ -f "nginx-ssl.conf.template" ] && [ -n "$DOMAIN" ]; then
+                if [ ! -f "nginx-ssl.conf" ] || [ "nginx-ssl.conf.template" -nt "nginx-ssl.conf" ]; then
+                    print_info "Generating nginx-ssl.conf from template..."
+                    sed "s/__DOMAIN__/$DOMAIN/g" nginx-ssl.conf.template > nginx-ssl.conf
+                fi
+            fi
         fi
     fi
     
-    # Step 6: Deploy with Docker
+    # Step 10: Deploy with Docker
     deploy_with_docker "$DOMAIN" "$USE_SSL"
     
     print_success "Setup completed successfully!"
 }
 
-# Run main function
-main
+# Run main function with all arguments
+main "$@"
