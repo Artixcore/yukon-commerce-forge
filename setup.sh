@@ -2,8 +2,14 @@
 
 # Yukon Commerce Forge - Setup Script
 # This script automates project setup, dependency installation, and server startup
+# Optimized for container execution with auto-restart and non-interactive mode
 
-set -e  # Exit on error
+# Exit on error for setup steps (will be disabled for server loop)
+set -e
+
+# Track if we should continue running
+RUNNING=true
+RESTART_DELAY=2  # Seconds to wait before restarting on failure
 
 # Colors for output
 RED='\033[0;31m'
@@ -52,6 +58,33 @@ library_exists() {
     return 1
 }
 
+# Signal handler for graceful shutdown
+cleanup() {
+    print_info "Received shutdown signal. Stopping server..."
+    RUNNING=false
+    if [ ! -z "$SERVER_PID" ] && kill -0 $SERVER_PID 2>/dev/null; then
+        print_info "Stopping server process (PID: $SERVER_PID)..."
+        kill -TERM $SERVER_PID 2>/dev/null || true
+        # Wait up to 10 seconds for graceful shutdown
+        for i in {1..10}; do
+            if ! kill -0 $SERVER_PID 2>/dev/null; then
+                break
+            fi
+            sleep 1
+        done
+        # Force kill if still running
+        if kill -0 $SERVER_PID 2>/dev/null; then
+            print_warning "Server did not stop gracefully. Force killing..."
+            kill -KILL $SERVER_PID 2>/dev/null || true
+        fi
+        wait $SERVER_PID 2>/dev/null || true
+    fi
+    exit 0
+}
+
+# Set up signal handlers
+trap cleanup SIGTERM SIGINT
+
 # Check and install system dependencies required by Node.js
 check_system_dependencies() {
     print_info "Checking system dependencies..."
@@ -70,9 +103,14 @@ check_system_dependencies() {
                 exit 1
             fi
         else
-            print_error "sudo is not available. Cannot install libatomic1 automatically."
-            print_error "Please run manually: sudo apt-get install -y libatomic1"
-            exit 1
+            # Try without sudo (for containers running as root)
+            if apt-get update >/dev/null 2>&1 && apt-get install -y libatomic1 >/dev/null 2>&1; then
+                print_success "Successfully installed libatomic1 package."
+            else
+                print_error "Cannot install libatomic1 automatically."
+                print_error "Please run manually: apt-get install -y libatomic1"
+                exit 1
+            fi
         fi
     else
         print_success "System dependencies are satisfied."
@@ -144,7 +182,15 @@ else
     exit 1
 fi
 
-# Step 3: Environment Variables Setup
+# Step 2.5: Fix vulnerabilities automatically
+print_info "Fixing security vulnerabilities..."
+if npm audit fix --force; then
+    print_success "Vulnerabilities fixed successfully!"
+else
+    print_warning "Some vulnerabilities may remain. Continuing anyway..."
+fi
+
+# Step 3: Environment Variables Setup (Non-Interactive)
 print_info "Checking environment variables..."
 
 ENV_FILE=".env"
@@ -163,16 +209,12 @@ VITE_SUPABASE_PUBLISHABLE_KEY=
 EOF
     
     print_warning "Created .env file with template variables."
-    print_warning "Please edit .env and add your Supabase credentials before running the server."
-    echo ""
-    print_info "You can find your Supabase credentials at:"
-    print_info "https://app.supabase.com/project/_/settings/api"
-    echo ""
-    read -p "Press Enter to continue (you can edit .env later) or Ctrl+C to exit..."
+    print_warning "Please edit .env and add your Supabase credentials."
+    print_info "You can find your Supabase credentials at: https://app.supabase.com/project/_/settings/api"
 else
     print_success ".env file exists."
     
-    # Check if required variables are set
+    # Check if required variables are set (non-interactive - just warn)
     MISSING_VARS=()
     source "$ENV_FILE" 2>/dev/null || true
     
@@ -187,20 +229,65 @@ else
         for var in "${MISSING_VARS[@]}"; do
             echo "  - $var"
         done
-        print_warning "Please update your .env file with the required values."
-        echo ""
-        read -p "Press Enter to continue anyway or Ctrl+C to exit..."
+        print_warning "Server may not function correctly without these variables."
     else
         print_success "All required environment variables are set."
     fi
 fi
 
-# Step 4: Start Development Server
+# Step 4: Start Development Server (Continuous with Auto-Restart)
 echo ""
-print_info "Starting development server..."
-print_info "The server will start at http://localhost:5173 (or the next available port)"
-print_info "Press Ctrl+C to stop the server"
+print_info "Starting development server in continuous mode..."
+print_info "Server will auto-restart on failure (optimized for containers)"
+print_info "Send SIGTERM or SIGINT to stop gracefully"
 echo ""
 
-npm run dev
+# Disable exit on error for the server loop
+set +e
+
+RESTART_COUNT=0
+while [ "$RUNNING" = true ]; do
+    RESTART_COUNT=$((RESTART_COUNT + 1))
+    
+    if [ $RESTART_COUNT -gt 1 ]; then
+        print_warning "Server exited unexpectedly. Restarting in ${RESTART_DELAY} seconds... (Restart #$RESTART_COUNT)"
+        sleep $RESTART_DELAY
+        
+        # Check if we should still be running
+        if [ "$RUNNING" != true ]; then
+            break
+        fi
+    fi
+    
+    print_info "Starting development server..."
+    print_info "Server will be available at http://localhost:5173 (or the next available port)"
+    
+    # Start the server in background and capture PID
+    npm run dev &
+    SERVER_PID=$!
+    
+    # Wait for the server process to exit
+    wait $SERVER_PID
+    EXIT_CODE=$?
+    
+    # Clear PID variable
+    SERVER_PID=""
+    
+    # If exit code is 0 or 130 (SIGINT), it was a graceful shutdown
+    if [ $EXIT_CODE -eq 0 ] || [ $EXIT_CODE -eq 130 ]; then
+        print_info "Server stopped gracefully."
+        RUNNING=false
+        break
+    fi
+    
+    # If we're not running anymore (signal received), break
+    if [ "$RUNNING" != true ]; then
+        break
+    fi
+    
+    # Otherwise, it crashed - will restart in next iteration
+    print_warning "Server exited with code $EXIT_CODE"
+done
+
+print_info "Setup script finished."
 
