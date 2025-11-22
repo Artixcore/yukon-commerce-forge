@@ -1,15 +1,11 @@
 #!/bin/bash
 
-# Yukon Commerce Forge - Setup Script
-# This script automates project setup, dependency installation, and server startup
-# Optimized for container execution with auto-restart and non-interactive mode
+# Yukon Commerce Forge - AWS EC2 Auto Deployment Script
+# This script automates complete server setup including Docker, nginx, SSL, and firewall configuration
+# Optimized for AWS EC2 deployment with automatic production deployment
 
-# Exit on error for setup steps (will be disabled for server loop)
+# Exit on error for setup steps
 set -e
-
-# Track if we should continue running
-RUNNING=true
-RESTART_DELAY=2  # Seconds to wait before restarting on failure
 
 # Colors for output
 RED='\033[0;31m'
@@ -40,166 +36,213 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Check if a shared library is available
-library_exists() {
-    local lib_name="$1"
-    local pkg_name="$2"
-    
-    # Check if library is available via ldconfig (most reliable)
-    if ldconfig -p 2>/dev/null | grep -q "$lib_name"; then
-        return 0
-    fi
-    
-    # Fallback: check if package is installed via dpkg
-    if dpkg -l 2>/dev/null | grep -q "^ii[[:space:]]*${pkg_name}"; then
-        return 0
-    fi
-    
-    return 1
+# Check if running as root or with sudo
+is_root_or_sudo() {
+    [ "$EUID" -eq 0 ] || command_exists sudo
 }
 
-# Signal handler for graceful shutdown
-cleanup() {
-    print_info "Received shutdown signal. Stopping server..."
-    RUNNING=false
-    if [ ! -z "$SERVER_PID" ] && kill -0 $SERVER_PID 2>/dev/null; then
-        print_info "Stopping server process (PID: $SERVER_PID)..."
-        kill -TERM $SERVER_PID 2>/dev/null || true
-        # Wait up to 10 seconds for graceful shutdown
-        for i in {1..10}; do
-            if ! kill -0 $SERVER_PID 2>/dev/null; then
-                break
-            fi
-            sleep 1
-        done
-        # Force kill if still running
-        if kill -0 $SERVER_PID 2>/dev/null; then
-            print_warning "Server did not stop gracefully. Force killing..."
-            kill -KILL $SERVER_PID 2>/dev/null || true
-        fi
-        wait $SERVER_PID 2>/dev/null || true
-    fi
-    exit 0
-}
-
-# Set up signal handlers
-trap cleanup SIGTERM SIGINT
-
-# Check and install system dependencies required by Node.js
-check_system_dependencies() {
-    print_info "Checking system dependencies..."
-    
-    # Check for libatomic.so.1 (provided by libatomic1 package)
-    if ! library_exists "libatomic.so.1" "libatomic1"; then
-        print_warning "libatomic.so.1 library is missing. This is required for Node.js."
-        print_info "Attempting to install libatomic1 package..."
-        
-        if command_exists sudo; then
-            if sudo apt-get update >/dev/null 2>&1 && sudo apt-get install -y libatomic1 >/dev/null 2>&1; then
-                print_success "Successfully installed libatomic1 package."
-            else
-                print_error "Failed to install libatomic1 automatically."
-                print_error "Please run manually: sudo apt-get install -y libatomic1"
-                exit 1
-            fi
-        else
-            # Try without sudo (for containers running as root)
-            if apt-get update >/dev/null 2>&1 && apt-get install -y libatomic1 >/dev/null 2>&1; then
-                print_success "Successfully installed libatomic1 package."
-            else
-                print_error "Cannot install libatomic1 automatically."
-                print_error "Please run manually: apt-get install -y libatomic1"
-                exit 1
-            fi
-        fi
+# Run command with sudo if needed
+run_with_sudo() {
+    if [ "$EUID" -eq 0 ]; then
+        "$@"
     else
-        print_success "System dependencies are satisfied."
+        sudo "$@"
     fi
 }
 
-# Step 1: Check Prerequisites
-print_info "Checking prerequisites..."
-
-# Check system dependencies first
-check_system_dependencies
-
-if ! command_exists node; then
-    print_error "Node.js is not installed. Please install Node.js from https://nodejs.org/"
-    exit 1
-fi
-
-if ! command_exists npm; then
-    print_error "npm is not installed. Please install npm (it usually comes with Node.js)"
-    exit 1
-fi
-
-# Try to get Node.js version with error handling
-# Temporarily disable exit on error to capture error messages
-set +e
-NODE_VERSION=$(node --version 2>&1)
-NODE_EXIT_CODE=$?
-set -e
-
-if [ $NODE_EXIT_CODE -ne 0 ]; then
-    print_error "Node.js is installed but cannot execute."
-    print_error "Error: $NODE_VERSION"
-    if echo "$NODE_VERSION" | grep -q "libatomic.so.1"; then
-        print_error "The libatomic.so.1 library is still missing."
-        print_error "Please run: sudo apt-get install -y libatomic1"
-        print_error "Then restart your terminal or run: source ~/.bashrc"
+# Detect OS
+detect_os() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+        OS_VERSION=$VERSION_ID
+    else
+        print_error "Cannot detect OS. This script supports Ubuntu/Debian systems."
+        exit 1
     fi
-    exit 1
-fi
+}
 
-# Try to get npm version with error handling
-set +e
-NPM_VERSION=$(npm --version 2>&1)
-NPM_EXIT_CODE=$?
-set -e
-
-if [ $NPM_EXIT_CODE -ne 0 ]; then
-    print_error "npm is installed but cannot execute."
-    print_error "Error: $NPM_VERSION"
-    if echo "$NPM_VERSION" | grep -q "libatomic.so.1"; then
-        print_error "The libatomic.so.1 library is still missing."
-        print_error "Please run: sudo apt-get install -y libatomic1"
-        print_error "Then restart your terminal or run: source ~/.bashrc"
-    fi
-    exit 1
-fi
-
-print_success "Node.js version: $NODE_VERSION"
-print_success "npm version: $NPM_VERSION"
-
-# Step 2: Install Dependencies
-print_info "Installing project dependencies..."
-print_info "This may take a few minutes..."
-
-if npm install; then
-    print_success "Dependencies installed successfully!"
-else
-    print_error "Failed to install dependencies. Please check the error messages above."
-    exit 1
-fi
-
-# Step 2.5: Fix vulnerabilities automatically
-print_info "Fixing security vulnerabilities..."
-if npm audit fix --force; then
-    print_success "Vulnerabilities fixed successfully!"
-else
-    print_warning "Some vulnerabilities may remain. Continuing anyway..."
-fi
-
-# Step 3: Environment Variables Setup (Non-Interactive)
-print_info "Checking environment variables..."
-
-ENV_FILE=".env"
-REQUIRED_VARS=("VITE_SUPABASE_URL" "VITE_SUPABASE_PUBLISHABLE_KEY")
-
-if [ ! -f "$ENV_FILE" ]; then
-    print_warning ".env file not found. Creating template..."
+# Install Docker
+install_docker() {
+    print_info "Installing Docker..."
     
-    cat > "$ENV_FILE" << EOF
+    if ! command_exists docker; then
+        print_info "Docker not found. Installing Docker..."
+        
+        # Update package index
+        run_with_sudo apt-get update -qq
+        
+        # Install prerequisites
+        run_with_sudo apt-get install -y -qq \
+            ca-certificates \
+            curl \
+            gnupg \
+            lsb-release
+        
+        # Add Docker's official GPG key
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | run_with_sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        run_with_sudo chmod a+r /etc/apt/keyrings/docker.gpg
+        
+        # Set up Docker repository
+        echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+            run_with_sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        
+        # Install Docker Engine
+        run_with_sudo apt-get update -qq
+        run_with_sudo apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        
+        # Add current user to docker group (if not root)
+        if [ "$EUID" -ne 0 ]; then
+            run_with_sudo usermod -aG docker $USER
+            print_warning "Added user to docker group. You may need to log out and back in for this to take effect."
+        fi
+        
+        # Start Docker service
+        run_with_sudo systemctl enable docker
+        run_with_sudo systemctl start docker
+        
+        print_success "Docker installed successfully!"
+    else
+        print_success "Docker is already installed."
+    fi
+    
+    # Verify Docker installation
+    if docker --version >/dev/null 2>&1; then
+        DOCKER_VERSION=$(docker --version)
+        print_success "Docker version: $DOCKER_VERSION"
+    else
+        print_error "Docker installation verification failed."
+        exit 1
+    fi
+}
+
+# Check Docker Compose availability
+check_docker_compose() {
+    print_info "Checking Docker Compose..."
+    
+    # Check for docker compose (plugin) or docker-compose (standalone)
+    if docker compose version >/dev/null 2>&1; then
+        DOCKER_COMPOSE_CMD="docker compose"
+        print_success "Docker Compose plugin is available."
+    elif command_exists docker-compose; then
+        DOCKER_COMPOSE_CMD="docker-compose"
+        print_success "Docker Compose standalone is available."
+    else
+        print_error "Docker Compose not found. Please install Docker Compose."
+        exit 1
+    fi
+}
+
+# Configure firewall
+configure_firewall() {
+    print_info "Configuring firewall (ufw)..."
+    
+    if ! command_exists ufw; then
+        print_info "Installing ufw..."
+        run_with_sudo apt-get update -qq
+        run_with_sudo apt-get install -y -qq ufw
+    fi
+    
+    # Allow SSH (important!)
+    run_with_sudo ufw allow 22/tcp comment 'SSH' || true
+    
+    # Allow HTTP and HTTPS
+    run_with_sudo ufw allow 80/tcp comment 'HTTP' || true
+    run_with_sudo ufw allow 443/tcp comment 'HTTPS' || true
+    
+    # Enable firewall (non-interactive)
+    echo "y" | run_with_sudo ufw --force enable || true
+    
+    print_success "Firewall configured. Ports 22, 80, and 443 are open."
+}
+
+# Setup SSL with Let's Encrypt
+setup_ssl() {
+    local domain=$1
+    local docker_compose_cmd=$2
+    
+    if [ -z "$domain" ]; then
+        print_warning "No domain provided. Skipping SSL setup. Site will be accessible via HTTP only."
+        return 0
+    fi
+    
+    print_info "Setting up SSL certificate for domain: $domain"
+    
+    # Install certbot
+    if ! command_exists certbot; then
+        print_info "Installing certbot..."
+        run_with_sudo apt-get update -qq
+        run_with_sudo apt-get install -y -qq certbot python3-certbot-nginx
+    fi
+    
+    # Check if domain resolves to this server
+    print_info "Verifying domain DNS configuration..."
+    local public_ip=$(curl -s https://api.ipify.org || curl -s https://ifconfig.me || echo "")
+    local domain_ip=$(dig +short $domain | tail -n1 || echo "")
+    
+    if [ -z "$public_ip" ]; then
+        print_warning "Could not determine public IP. SSL setup may fail if domain doesn't point to this server."
+    elif [ -z "$domain_ip" ]; then
+        print_warning "Could not resolve domain $domain. SSL setup may fail."
+    elif [ "$public_ip" != "$domain_ip" ]; then
+        print_warning "Domain $domain ($domain_ip) does not point to this server ($public_ip). SSL setup may fail."
+    else
+        print_success "Domain DNS configuration verified."
+    fi
+    
+    # Create directory for SSL certificates
+    run_with_sudo mkdir -p /etc/letsencrypt/live/$domain
+    run_with_sudo mkdir -p /etc/letsencrypt/archive/$domain
+    
+    # Generate certificate using standalone mode (since nginx isn't running yet)
+    print_info "Generating SSL certificate..."
+    
+    # Stop any running containers temporarily for certbot (port 80 must be free)
+    print_info "Stopping any running containers to free port 80 for certbot..."
+    $docker_compose_cmd down 2>/dev/null || true
+    
+    # Wait a moment for ports to be released
+    sleep 2
+    
+    # Generate certificate
+    print_info "Requesting SSL certificate from Let's Encrypt..."
+    if run_with_sudo certbot certonly --standalone \
+        --non-interactive \
+        --agree-tos \
+        --email admin@$domain \
+        --domains $domain \
+        --preferred-challenges http \
+        --keep-until-expiring; then
+        print_success "SSL certificate generated successfully!"
+        
+        # Set up auto-renewal
+        print_info "Setting up SSL certificate auto-renewal..."
+        local renew_hook="$docker_compose_cmd restart web || true"
+        (run_with_sudo crontab -l 2>/dev/null | grep -v "certbot renew" | grep -v "# Yukon Commerce SSL renewal"; echo "0 0 * * * certbot renew --quiet --deploy-hook '$renew_hook' # Yukon Commerce SSL renewal") | run_with_sudo crontab - || true
+        
+        return 0
+    else
+        print_error "Failed to generate SSL certificate."
+        print_warning "Continuing without SSL. You can set it up manually later with:"
+        print_warning "  sudo certbot certonly --standalone -d $domain"
+        return 1
+    fi
+}
+
+# Check and setup environment variables
+setup_environment() {
+    print_info "Checking environment variables..."
+    
+    ENV_FILE=".env"
+    REQUIRED_VARS=("VITE_SUPABASE_URL" "VITE_SUPABASE_PUBLISHABLE_KEY")
+    
+    if [ ! -f "$ENV_FILE" ]; then
+        print_warning ".env file not found. Creating template..."
+        
+        cat > "$ENV_FILE" << EOF
 # Supabase Configuration
 # Replace these values with your Supabase project credentials
 # You can find these in your Supabase project settings: https://app.supabase.com/project/_/settings/api
@@ -207,87 +250,182 @@ if [ ! -f "$ENV_FILE" ]; then
 VITE_SUPABASE_URL=
 VITE_SUPABASE_PUBLISHABLE_KEY=
 EOF
-    
-    print_warning "Created .env file with template variables."
-    print_warning "Please edit .env and add your Supabase credentials."
-    print_info "You can find your Supabase credentials at: https://app.supabase.com/project/_/settings/api"
-else
-    print_success ".env file exists."
-    
-    # Check if required variables are set (non-interactive - just warn)
-    MISSING_VARS=()
-    source "$ENV_FILE" 2>/dev/null || true
-    
-    for var in "${REQUIRED_VARS[@]}"; do
-        if [ -z "${!var}" ]; then
-            MISSING_VARS+=("$var")
-        fi
-    done
-    
-    if [ ${#MISSING_VARS[@]} -gt 0 ]; then
-        print_warning "The following environment variables are missing or empty:"
-        for var in "${MISSING_VARS[@]}"; do
-            echo "  - $var"
-        done
-        print_warning "Server may not function correctly without these variables."
-    else
-        print_success "All required environment variables are set."
-    fi
-fi
-
-# Step 4: Start Development Server (Continuous with Auto-Restart)
-echo ""
-print_info "Starting development server in continuous mode..."
-print_info "Server will auto-restart on failure (optimized for containers)"
-print_info "Send SIGTERM or SIGINT to stop gracefully"
-echo ""
-
-# Disable exit on error for the server loop
-set +e
-
-RESTART_COUNT=0
-while [ "$RUNNING" = true ]; do
-    RESTART_COUNT=$((RESTART_COUNT + 1))
-    
-    if [ $RESTART_COUNT -gt 1 ]; then
-        print_warning "Server exited unexpectedly. Restarting in ${RESTART_DELAY} seconds... (Restart #$RESTART_COUNT)"
-        sleep $RESTART_DELAY
         
-        # Check if we should still be running
-        if [ "$RUNNING" != true ]; then
-            break
+        print_warning "Created .env file with template variables."
+        print_warning "Please edit .env and add your Supabase credentials before building."
+        print_info "You can find your Supabase credentials at: https://app.supabase.com/project/_/settings/api"
+        
+        # Check if we should continue
+        read -p "Do you want to continue without Supabase credentials? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_info "Please edit .env file and run this script again."
+            exit 0
+        fi
+    else
+        print_success ".env file exists."
+        
+        # Check if required variables are set
+        MISSING_VARS=()
+        set +e
+        source "$ENV_FILE" 2>/dev/null || true
+        set -e
+        
+        for var in "${REQUIRED_VARS[@]}"; do
+            if [ -z "${!var}" ]; then
+                MISSING_VARS+=("$var")
+            fi
+        done
+        
+        if [ ${#MISSING_VARS[@]} -gt 0 ]; then
+            print_warning "The following environment variables are missing or empty:"
+            for var in "${MISSING_VARS[@]}"; do
+                echo "  - $var"
+            done
+            print_warning "Application may not function correctly without these variables."
+        else
+            print_success "All required environment variables are set."
+        fi
+    fi
+}
+
+# Build and deploy with Docker Compose
+deploy_with_docker() {
+    local domain=$1
+    local use_ssl=$2
+    
+    print_info "Building and deploying application with Docker..."
+    
+    # Stop and remove existing containers
+    print_info "Stopping any existing containers..."
+    $DOCKER_COMPOSE_CMD down 2>/dev/null || true
+    
+    # Build Docker image
+    print_info "Building Docker image (this may take several minutes)..."
+    if $DOCKER_COMPOSE_CMD build; then
+        print_success "Docker image built successfully!"
+    else
+        print_error "Failed to build Docker image."
+        exit 1
+    fi
+    
+    # Determine which compose file to use
+    local compose_file="docker-compose.yml"
+    if [ "$use_ssl" = "true" ] && [ -f "docker-compose.ssl.yml" ]; then
+        compose_file="docker-compose.ssl.yml"
+        print_info "Using SSL-enabled Docker Compose configuration."
+        
+        # Create nginx-ssl.conf from template if domain is provided
+        if [ -f "nginx-ssl.conf.template" ] && [ -n "$domain" ]; then
+            print_info "Configuring nginx SSL configuration for domain: $domain"
+            sed "s/__DOMAIN__/$domain/g" nginx-ssl.conf.template > nginx-ssl.conf
+        elif [ ! -f "nginx-ssl.conf" ]; then
+            print_error "nginx-ssl.conf.template not found. Cannot configure SSL."
+            exit 1
         fi
     fi
     
-    print_info "Starting development server..."
-    print_info "Server will be available at http://localhost:5173 (or the next available port)"
-    
-    # Start the server in background and capture PID
-    npm run dev &
-    SERVER_PID=$!
-    
-    # Wait for the server process to exit
-    wait $SERVER_PID
-    EXIT_CODE=$?
-    
-    # Clear PID variable
-    SERVER_PID=""
-    
-    # If exit code is 0 or 130 (SIGINT), it was a graceful shutdown
-    if [ $EXIT_CODE -eq 0 ] || [ $EXIT_CODE -eq 130 ]; then
-        print_info "Server stopped gracefully."
-        RUNNING=false
-        break
+    # Start containers
+    print_info "Starting containers..."
+    if $DOCKER_COMPOSE_CMD -f "$compose_file" up -d; then
+        print_success "Containers started successfully!"
+    else
+        print_error "Failed to start containers."
+        exit 1
     fi
     
-    # If we're not running anymore (signal received), break
-    if [ "$RUNNING" != true ]; then
-        break
+    # Wait a moment for containers to start
+    sleep 3
+    
+    # Check container status
+    if $DOCKER_COMPOSE_CMD -f "$compose_file" ps | grep -q "Up"; then
+        print_success "Application is running!"
+        
+        # Get public IP
+        local public_ip=$(curl -s https://api.ipify.org || curl -s https://ifconfig.me || echo "your-server-ip")
+        
+        echo ""
+        print_success "=========================================="
+        print_success "Deployment completed successfully!"
+        print_success "=========================================="
+        echo ""
+        
+        if [ "$use_ssl" = "true" ] && [ -n "$domain" ]; then
+            print_info "Your site is accessible at:"
+            echo "  - https://$domain"
+            echo "  - http://$domain (will redirect to HTTPS)"
+        else
+            print_info "Your site is accessible at:"
+            echo "  - http://$public_ip"
+            if [ -n "$domain" ]; then
+                echo "  - http://$domain"
+            fi
+        fi
+        
+        echo ""
+        print_info "To view logs: $DOCKER_COMPOSE_CMD logs -f"
+        print_info "To stop: $DOCKER_COMPOSE_CMD down"
+        print_info "To restart: $DOCKER_COMPOSE_CMD restart"
+        echo ""
+    else
+        print_error "Containers failed to start. Check logs with: $DOCKER_COMPOSE_CMD logs"
+        exit 1
+    fi
+}
+
+# Main execution
+main() {
+    echo ""
+    print_info "=========================================="
+    print_info "Yukon Commerce Forge - AWS EC2 Deployment"
+    print_info "=========================================="
+    echo ""
+    
+    # Detect OS
+    detect_os
+    print_info "Detected OS: $OS $OS_VERSION"
+    
+    # Check for root/sudo
+    if ! is_root_or_sudo; then
+        print_error "This script requires root privileges or sudo access."
+        print_error "Please run with: sudo ./setup.sh"
+        exit 1
     fi
     
-    # Otherwise, it crashed - will restart in next iteration
-    print_warning "Server exited with code $EXIT_CODE"
-done
+    # Step 1: Install Docker
+    install_docker
+    
+    # Step 2: Check Docker Compose
+    check_docker_compose
+    
+    # Step 3: Configure firewall
+    configure_firewall
+    
+    # Step 4: Setup environment variables
+    setup_environment
+    
+    # Step 5: Ask for domain (optional)
+    echo ""
+    read -p "Enter your domain name (or press Enter to skip SSL setup): " DOMAIN
+    DOMAIN=$(echo "$DOMAIN" | xargs) # Trim whitespace
+    
+    USE_SSL="false"
+    if [ -n "$DOMAIN" ]; then
+        USE_SSL="true"
+        # Setup SSL
+        setup_ssl "$DOMAIN" "$DOCKER_COMPOSE_CMD"
+        # Update SSL status based on certificate generation
+        if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+            USE_SSL="false"
+            print_warning "SSL certificate not found. Continuing with HTTP only."
+        fi
+    fi
+    
+    # Step 6: Deploy with Docker
+    deploy_with_docker "$DOMAIN" "$USE_SSL"
+    
+    print_success "Setup completed successfully!"
+}
 
-print_info "Setup script finished."
-
+# Run main function
+main
