@@ -13,12 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { showSuccess, showError } from "@/lib/sweetalert";
 import { getCategoriesForSelect, getDescendantIds, wouldCreateCircularReference } from "@/lib/categoryUtils";
 import { Badge } from "@/components/ui/badge";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z.string().min(1, "Slug is required"),
   description: z.string().optional(),
   parent_id: z.string().nullable().optional(),
+  image_url: z.string().optional(),
 });
 
 type CategoryForm = z.infer<typeof categorySchema>;
@@ -27,7 +29,7 @@ export const CategoryDialog = ({ open, onOpenChange, category }: any) => {
   const queryClient = useQueryClient();
   const form = useForm<CategoryForm>({
     resolver: zodResolver(categorySchema),
-    defaultValues: { name: "", slug: "", description: "", parent_id: null },
+    defaultValues: { name: "", slug: "", description: "", parent_id: null, image_url: "" },
   });
 
   // Fetch all categories for parent selection
@@ -50,9 +52,10 @@ export const CategoryDialog = ({ open, onOpenChange, category }: any) => {
         slug: category.slug,
         description: category.description || "",
         parent_id: category.parent_id || null,
+        image_url: category.image_url || "",
       });
     } else {
-      form.reset({ name: "", slug: "", description: "", parent_id: null });
+      form.reset({ name: "", slug: "", description: "", parent_id: null, image_url: "" });
     }
   }, [category, form]);
 
@@ -70,6 +73,7 @@ export const CategoryDialog = ({ open, onOpenChange, category }: any) => {
         slug: data.slug,
         description: data.description || null,
         parent_id: data.parent_id || null,
+        image_url: data.image_url || null,
       };
       
       if (category) {
@@ -114,6 +118,24 @@ export const CategoryDialog = ({ open, onOpenChange, category }: any) => {
               <FormItem>
                 <FormLabel>Slug</FormLabel>
                 <FormControl><Input {...field} placeholder="e.g., electronics, mobile-phones" /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="image_url" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category Image (Optional)</FormLabel>
+                <FormControl>
+                  <ImageUpload
+                    value={field.value}
+                    onChange={field.onChange}
+                    folder="categories"
+                    label="Upload category icon or banner (recommended: 400x400px)"
+                  />
+                </FormControl>
+                <p className="text-xs text-muted-foreground">
+                  Add a custom icon or banner image for this category
+                </p>
                 <FormMessage />
               </FormItem>
             )} />

@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { CategoryDialog } from "@/components/admin/CategoryDialog";
 import { showSuccess, showConfirmation } from "@/lib/sweetalert";
 import { buildCategoryTree, CategoryTree } from "@/lib/categoryUtils";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { IMAGE_SIZES } from "@/config/imageSizes";
 
 const Categories = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -69,6 +71,22 @@ const Categories = () => {
     return (
       <>
         <TableRow key={category.id}>
+          <TableCell>
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+              {category.image_url ? (
+                <OptimizedImage
+                  {...IMAGE_SIZES.categoryThumbnail}
+                  src={category.image_url}
+                  alt={category.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-semibold text-muted-foreground">
+                  {category.name.charAt(0)}
+                </span>
+              )}
+            </div>
+          </TableCell>
           <TableCell className="font-medium">
             <div className="flex items-center gap-2" style={{ paddingLeft: `${indent}px` }}>
               {hasChildren ? (
@@ -173,6 +191,7 @@ const Categories = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Image</TableHead>
                 <TableHead>Category Name</TableHead>
                 <TableHead>Slug</TableHead>
                 <TableHead className="hidden md:table-cell">Description</TableHead>

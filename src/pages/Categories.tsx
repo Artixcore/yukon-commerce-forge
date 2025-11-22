@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Grid3x3, FolderOpen, Folder } from "lucide-react";
 import { buildCategoryTree, CategoryTree } from "@/lib/categoryUtils";
 import { Badge } from "@/components/ui/badge";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { IMAGE_SIZES } from "@/config/imageSizes";
 
 const Categories = () => {
   const { data: categories, isLoading } = useQuery({
@@ -28,13 +30,24 @@ const Categories = () => {
   const renderCategoryCard = (category: CategoryTree, isSubcategory = false) => (
     <Link key={category.id} to={`/shop?category=${category.id}`}>
       <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group h-full">
-        <div className={`w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors ${
+        <div className={`w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors overflow-hidden ${
           isSubcategory ? 'bg-muted' : 'bg-primary/10'
         }`}>
-          {isSubcategory ? (
-            <Folder className="h-6 w-6 text-muted-foreground" />
+          {category.image_url ? (
+            <OptimizedImage
+              {...IMAGE_SIZES.categoryIcon}
+              src={category.image_url}
+              alt={category.name}
+              className="w-full h-full object-cover"
+            />
           ) : (
-            <FolderOpen className="h-7 w-7 text-primary" />
+            <>
+              {isSubcategory ? (
+                <Folder className="h-6 w-6 text-muted-foreground" />
+              ) : (
+                <FolderOpen className="h-7 w-7 text-primary" />
+              )}
+            </>
           )}
         </div>
         <h3 className={`font-semibold group-hover:text-primary transition-colors mb-1 ${
