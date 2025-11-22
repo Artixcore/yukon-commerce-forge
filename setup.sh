@@ -52,13 +52,40 @@ run_with_sudo() {
 
 # Detect OS
 detect_os() {
-    if [ -f /etc/os-release ]; then
+    # Try lsb_release first (most reliable for Ubuntu)
+    if command_exists lsb_release; then
+        OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
+        OS_VERSION=$(lsb_release -sr)
+        print_info "Detected OS via lsb_release: $OS $OS_VERSION"
+    elif [ -f /etc/lsb-release ]; then
+        # Fallback to /etc/lsb-release
+        . /etc/lsb-release
+        OS=$(echo "$DISTRIB_ID" | tr '[:upper:]' '[:lower:]')
+        OS_VERSION="$DISTRIB_RELEASE"
+        print_info "Detected OS via /etc/lsb-release: $OS $OS_VERSION"
+    elif [ -f /etc/os-release ]; then
+        # Fallback to /etc/os-release (may have incorrect VERSION_ID)
         . /etc/os-release
         OS=$ID
-        OS_VERSION=$VERSION_ID
+        
+        # Try to get more accurate version from VERSION if VERSION_ID seems wrong
+        if [ -n "$VERSION" ] && [[ "$VERSION" =~ [0-9]+\.[0-9]+ ]]; then
+            # Extract version from VERSION string (e.g., "22.04 LTS (Jammy Jellyfish)")
+            OS_VERSION=$(echo "$VERSION" | grep -oE '[0-9]+\.[0-9]+' | head -1)
+        else
+            OS_VERSION=$VERSION_ID
+        fi
+        
+        print_info "Detected OS via /etc/os-release: $OS $OS_VERSION"
     else
         print_error "Cannot detect OS. This script supports Ubuntu/Debian systems."
         exit 1
+    fi
+    
+    # Validate OS is Ubuntu or Debian
+    if [[ "$OS" != "ubuntu" ]] && [[ "$OS" != "debian" ]]; then
+        print_warning "Detected OS: $OS $OS_VERSION"
+        print_warning "This script is optimized for Ubuntu/Debian. Proceeding anyway..."
     fi
 }
 
@@ -234,18 +261,108 @@ check_system_dependencies() {
 check_docker_compose() {
     print_info "Checking Docker Compose..."
     
-    # Verify Docker daemon is running
+    # Check Docker service status first (more reliable than docker info)
+    local docker_service_running=false
+    if systemctl is-active --quiet docker 2>/dev/null; then
+        docker_service_running=true
+        print_info "Docker service is running."
+    fi
+    
+    # Verify Docker daemon is accessible
     if ! docker info >/dev/null 2>&1; then
-        print_error "Docker daemon is not running."
-        print_info "Attempting to start Docker daemon..."
-        run_with_sudo systemctl start docker
-        sleep 2
+        if [ "$docker_service_running" = "true" ]; then
+            # Service is running but docker command fails - likely permission issue
+            print_warning "Docker service is running but docker command failed (likely permission issue)."
+            
+            # Check if user is in docker group
+            if [ "$EUID" -ne 0 ]; then
+                if groups | grep -q docker; then
+                    print_warning "User is in docker group but docker command still fails."
+                    print_info "You may need to log out and back in for group changes to take effect."
+                    print_info "Alternatively, you can use 'sudo docker' commands."
+                    # Try with sudo to verify Docker works
+                    if sudo docker info >/dev/null 2>&1; then
+                        print_info "Docker works with sudo. Continuing with sudo for Docker commands..."
+                        # Note: This is handled by run_with_sudo in the script
+                    fi
+                else
+                    print_warning "User is not in docker group. Adding user to docker group..."
+                    run_with_sudo usermod -aG docker $USER
+                    print_warning "User added to docker group. You may need to log out and back in."
+                    print_info "For now, Docker commands will use sudo."
+                fi
+            fi
+        else
+            # Service is not running
+            print_warning "Docker daemon is not running."
         
-        if ! docker info >/dev/null 2>&1; then
-            print_error "Failed to start Docker daemon. Please check Docker installation."
-            exit 1
+            # Check if Docker service exists
+            if systemctl list-unit-files | grep -q docker.service; then
+                print_info "Docker service found. Attempting to start Docker daemon..."
+                
+                # Enable Docker service if not enabled
+                if ! systemctl is-enabled docker >/dev/null 2>&1; then
+                    print_info "Enabling Docker service to start on boot..."
+                    run_with_sudo systemctl enable docker
+                fi
+                
+                # Start Docker service
+                run_with_sudo systemctl start docker
+                sleep 3
+            
+            # Check if Docker daemon started successfully
+            if docker info >/dev/null 2>&1; then
+                print_success "Docker daemon started successfully."
+            else
+                # Check Docker service status
+                print_error "Failed to start Docker daemon."
+                print_info "Checking Docker service status..."
+                run_with_sudo systemctl status docker --no-pager -l || true
+                
+                echo ""
+                print_info "Troubleshooting steps:"
+                echo "  1. Check Docker service: sudo systemctl status docker"
+                echo "  2. Check Docker logs: sudo journalctl -u docker.service"
+                echo "  3. Try starting manually: sudo systemctl start docker"
+                echo "  4. If user permissions issue, ensure you're in docker group:"
+                echo "     sudo usermod -aG docker $USER"
+                echo "     (then log out and back in)"
+                echo ""
+                
+                # Check if user is in docker group
+                if [ "$EUID" -ne 0 ]; then
+                    if groups | grep -q docker; then
+                        print_info "User is in docker group. Service may need manual intervention."
+                    else
+                        print_warning "User is not in docker group. Adding user to docker group..."
+                        run_with_sudo usermod -aG docker $USER
+                        print_warning "User added to docker group. You may need to log out and back in."
+                        print_info "Alternatively, try running Docker commands with sudo."
+                    fi
+                fi
+                
+                # Try one more time with a longer wait
+                print_info "Waiting a bit longer and retrying..."
+                sleep 5
+                if docker info >/dev/null 2>&1 || sudo docker info >/dev/null 2>&1; then
+                    print_success "Docker daemon is now running."
+                else
+                    print_error "Docker daemon still not running. Please resolve the issue and run the script again."
+                    exit 1
+                fi
+            fi
+            else
+                print_error "Docker service not found. Docker may not be installed correctly."
+                print_info "Please ensure Docker is installed:"
+                echo "  sudo apt-get update"
+                echo "  sudo apt-get install docker.io"
+                echo "  sudo systemctl start docker"
+                echo "  sudo systemctl enable docker"
+                exit 1
+            fi
         fi
-        print_success "Docker daemon started."
+    else
+        print_success "Docker daemon is running."
     fi
     
     # Check for docker compose (plugin) or docker-compose (standalone)
