@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { IMAGE_SIZES } from "@/config/imageSizes";
 
 export const CategoryGrid = () => {
   const { data: categories } = useQuery({
@@ -30,8 +32,17 @@ export const CategoryGrid = () => {
           {categories?.map((category) => (
             <Link key={category.id} to={`/shop?category=${category.id}`}>
               <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <span className="text-2xl">{category.name.charAt(0)}</span>
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors overflow-hidden">
+                  {category.image_url ? (
+                    <OptimizedImage
+                      {...IMAGE_SIZES.categoryIcon}
+                      src={category.image_url}
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-semibold">{category.name.charAt(0)}</span>
+                  )}
                 </div>
                 <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
                   {category.name}

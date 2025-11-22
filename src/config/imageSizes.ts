@@ -54,4 +54,23 @@ export const IMAGE_SIZES = {
     height: 80,
     sizes: '80px',
   },
+  
+  // Category images
+  categoryIcon: {
+    width: 64,
+    height: 64,
+    sizes: '64px',
+  },
+  
+  categoryThumbnail: {
+    width: 40,
+    height: 40,
+    sizes: '40px',
+  },
+  
+  categoryBanner: {
+    width: 400,
+    height: 400,
+    sizes: '(max-width: 640px) 200px, 400px',
+  },
 } as const;
