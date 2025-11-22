@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { showSuccess } from "@/lib/sweetalert";
 import { ImageUpload } from "./ImageUpload";
 import { X, GripVertical, Plus } from "lucide-react";
+import { getCategoryPath, getCategoriesForSelect } from "@/lib/categoryUtils";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -313,26 +314,39 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
             <FormField
               control={form.control}
               name="category_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories?.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const selectedCategory = categories?.find(c => c.id === field.value);
+                const categoryPath = selectedCategory 
+                  ? getCategoryPath(selectedCategory.id, categories || [])
+                  : [];
+                
+                return (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category">
+                            {selectedCategory && categoryPath.length > 0 && (
+                              <span className="flex items-center gap-1">
+                                {categoryPath.join(' › ')}
+                              </span>
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {getCategoriesForSelect(categories || []).map((category) => (
+                          <SelectItem key={category.value} value={category.value}>
+                            {category.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
