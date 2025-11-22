@@ -34,8 +34,56 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Check if a shared library is available
+library_exists() {
+    local lib_name="$1"
+    local pkg_name="$2"
+    
+    # Check if library is available via ldconfig (most reliable)
+    if ldconfig -p 2>/dev/null | grep -q "$lib_name"; then
+        return 0
+    fi
+    
+    # Fallback: check if package is installed via dpkg
+    if dpkg -l 2>/dev/null | grep -q "^ii[[:space:]]*${pkg_name}"; then
+        return 0
+    fi
+    
+    return 1
+}
+
+# Check and install system dependencies required by Node.js
+check_system_dependencies() {
+    print_info "Checking system dependencies..."
+    
+    # Check for libatomic.so.1 (provided by libatomic1 package)
+    if ! library_exists "libatomic.so.1" "libatomic1"; then
+        print_warning "libatomic.so.1 library is missing. This is required for Node.js."
+        print_info "Attempting to install libatomic1 package..."
+        
+        if command_exists sudo; then
+            if sudo apt-get update >/dev/null 2>&1 && sudo apt-get install -y libatomic1 >/dev/null 2>&1; then
+                print_success "Successfully installed libatomic1 package."
+            else
+                print_error "Failed to install libatomic1 automatically."
+                print_error "Please run manually: sudo apt-get install -y libatomic1"
+                exit 1
+            fi
+        else
+            print_error "sudo is not available. Cannot install libatomic1 automatically."
+            print_error "Please run manually: sudo apt-get install -y libatomic1"
+            exit 1
+        fi
+    else
+        print_success "System dependencies are satisfied."
+    fi
+}
+
 # Step 1: Check Prerequisites
 print_info "Checking prerequisites..."
+
+# Check system dependencies first
+check_system_dependencies
 
 if ! command_exists node; then
     print_error "Node.js is not installed. Please install Node.js from https://nodejs.org/"
@@ -47,8 +95,40 @@ if ! command_exists npm; then
     exit 1
 fi
 
-NODE_VERSION=$(node --version)
-NPM_VERSION=$(npm --version)
+# Try to get Node.js version with error handling
+# Temporarily disable exit on error to capture error messages
+set +e
+NODE_VERSION=$(node --version 2>&1)
+NODE_EXIT_CODE=$?
+set -e
+
+if [ $NODE_EXIT_CODE -ne 0 ]; then
+    print_error "Node.js is installed but cannot execute."
+    print_error "Error: $NODE_VERSION"
+    if echo "$NODE_VERSION" | grep -q "libatomic.so.1"; then
+        print_error "The libatomic.so.1 library is still missing."
+        print_error "Please run: sudo apt-get install -y libatomic1"
+        print_error "Then restart your terminal or run: source ~/.bashrc"
+    fi
+    exit 1
+fi
+
+# Try to get npm version with error handling
+set +e
+NPM_VERSION=$(npm --version 2>&1)
+NPM_EXIT_CODE=$?
+set -e
+
+if [ $NPM_EXIT_CODE -ne 0 ]; then
+    print_error "npm is installed but cannot execute."
+    print_error "Error: $NPM_VERSION"
+    if echo "$NPM_VERSION" | grep -q "libatomic.so.1"; then
+        print_error "The libatomic.so.1 library is still missing."
+        print_error "Please run: sudo apt-get install -y libatomic1"
+        print_error "Then restart your terminal or run: source ~/.bashrc"
+    fi
+    exit 1
+fi
 
 print_success "Node.js version: $NODE_VERSION"
 print_success "npm version: $NPM_VERSION"
