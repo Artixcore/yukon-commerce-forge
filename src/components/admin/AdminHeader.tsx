@@ -61,7 +61,7 @@ export const AdminHeader = () => {
           <div className="flex items-center gap-2 md:gap-3 bg-primary md:bg-transparent px-3 py-2 md:p-0 rounded">
             <img 
               src={logo} 
-              alt="Yukon Admin" 
+              alt="YUKON Lifestyle" 
               className="h-6 md:h-8 w-auto brightness-0 invert md:brightness-100 md:invert-0" 
             />
             <span className="hidden md:inline text-lg font-semibold">Admin Panel</span>
