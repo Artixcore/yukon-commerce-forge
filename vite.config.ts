@@ -28,15 +28,9 @@ export default defineConfig(({ mode }) => ({
         icons: [
           {
             src: '/favicon.png',
-            sizes: '192x192',
+            sizes: '95x95',
             type: 'image/png',
             purpose: 'any'
-          },
-          {
-            src: '/favicon.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
           }
         ]
       },
@@ -144,28 +138,37 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         // Simplified chunking strategy to reduce memory usage during build
+        // CRITICAL: Bundle React with all React-dependent libraries to prevent forwardRef errors
         manualChunks: (id) => {
-          // Core React libraries
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+          // Bundle React and ALL React-dependent libraries together
+          // This ensures React is always available when any React code executes
+          if (
+            id.includes('node_modules/react/') || 
+            id.includes('node_modules/react-dom/') ||
+            id === 'node_modules/react' ||
+            id === 'node_modules/react-dom' ||
+            id.includes('node_modules/react/index') ||
+            id.includes('node_modules/react-dom/index') ||
+            // React Router (depends on React)
+            id.includes('node_modules/react-router') ||
+            // Radix UI components (all use React.forwardRef)
+            id.includes('node_modules/@radix-ui') ||
+            // React Query (depends on React)
+            id.includes('node_modules/@tanstack/react-query') ||
+            // Other React-dependent libraries
+            id.includes('node_modules/react-hook-form') ||
+            id.includes('node_modules/react-day-picker') ||
+            id.includes('node_modules/embla-carousel-react') ||
+            id.includes('node_modules/react-resizable-panels') ||
+            id.includes('node_modules/next-themes')
+          ) {
             return 'react-vendor';
           }
-          // Router
-          if (id.includes('node_modules/react-router')) {
-            return 'router';
-          }
-          // Radix UI components (grouped together to reduce chunks)
-          if (id.includes('node_modules/@radix-ui')) {
-            return 'radix-ui';
-          }
-          // Query library
-          if (id.includes('node_modules/@tanstack/react-query')) {
-            return 'query';
-          }
-          // Other large libraries
+          // Other large libraries (non-React dependent)
           if (id.includes('node_modules/recharts')) {
             return 'charts';
           }
-          // Vendor chunk for remaining node_modules
+          // Vendor chunk for remaining node_modules (non-React dependencies)
           if (id.includes('node_modules')) {
             return 'vendor';
           }
@@ -182,7 +185,11 @@ export default defineConfig(({ mode }) => ({
     reportCompressedSize: false, // Disable compressed size reporting to save memory
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
+    include: ['react', 'react-dom', 'react/jsx-runtime', 'react-router-dom'],
     exclude: ['lucide-react'],
+    esbuildOptions: {
+      // Ensure React is properly resolved
+      resolveExtensions: ['.js', '.jsx', '.ts', '.tsx'],
+    },
   },
 }));
