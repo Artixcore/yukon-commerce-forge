@@ -1310,6 +1310,9 @@ main() {
     # Check script integrity first (line endings, etc.)
     check_script_integrity
     
+    # Set default domain
+    DEFAULT_DOMAIN="yukonlifestyle.com"
+    
     # Handle --ssl-only flag for retrying SSL setup
     if [ "$1" = "--ssl-only" ] || [ "$1" = "-s" ]; then
         if [ -z "$2" ]; then
@@ -1414,8 +1417,14 @@ main() {
     
     # Step 9: Ask for domain (optional)
     echo ""
-    read -p "Enter your domain name (or press Enter to skip SSL setup): " DOMAIN
+    read -p "Enter your domain name [$DEFAULT_DOMAIN] (or press Enter to use default): " DOMAIN
     DOMAIN=$(echo "$DOMAIN" | xargs) # Trim whitespace
+    
+    # Use default domain if user pressed Enter
+    if [ -z "$DOMAIN" ]; then
+        DOMAIN="$DEFAULT_DOMAIN"
+        print_info "Using default domain: $DOMAIN"
+    fi
     
     USE_SSL="false"
     if [ -n "$DOMAIN" ]; then
