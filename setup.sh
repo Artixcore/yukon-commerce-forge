@@ -3,6 +3,22 @@
 # Yukon Commerce Forge - AWS EC2 Auto Deployment Script
 # This script automates complete server setup including Docker, nginx, SSL, and firewall configuration
 # Optimized for AWS EC2 deployment with automatic production deployment
+#
+# TROUBLESHOOTING:
+# If you encounter errors like "//: Permission denied", "import: not found", or "const: not found",
+# this usually indicates Windows line endings (CRLF) instead of Unix line endings (LF).
+# 
+# To fix on Ubuntu/Debian:
+#   1. Install dos2unix: sudo apt-get install dos2unix
+#   2. Convert line endings: dos2unix setup.sh
+#   OR use sed: sed -i 's/\r$//' setup.sh
+#
+# Alternative fix:
+#   sed -i 's/\r$//' setup.sh && chmod +x setup.sh
+#
+# Verify the fix:
+#   file setup.sh  (should show "Bourne-Again shell script")
+#   head -1 setup.sh | od -c  (should show \n, not \r\n)
 
 # Exit on error for setup steps
 set -e
@@ -29,6 +45,29 @@ print_warning() {
 
 print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Check script integrity and line endings
+check_script_integrity() {
+    # Check if this script has CRLF line endings by examining itself
+    local script_path="${BASH_SOURCE[0]}"
+    if [ -f "$script_path" ]; then
+        # Count carriage returns in first few lines
+        local cr_count=$(head -5 "$script_path" 2>/dev/null | grep -c $'\r' || echo "0")
+        if [ "$cr_count" -gt 0 ]; then
+            print_error "This script appears to have Windows line endings (CRLF)."
+            print_error "Please convert to Unix line endings (LF) before running."
+            echo ""
+            print_info "To fix, run one of these commands:"
+            echo "  dos2unix $script_path"
+            echo "  OR"
+            echo "  sed -i 's/\r$//' $script_path"
+            echo ""
+            print_info "Then make it executable:"
+            echo "  chmod +x $script_path"
+            exit 1
+        fi
+    fi
 }
 
 # Check if command exists
@@ -217,7 +256,7 @@ check_system_dependencies() {
     local deps_to_install=()
     
     # Required dependencies
-    local required_deps=("curl" "dig" "lsof" "ss")
+    local required_deps=("curl" "dig" "lsof" "ss" "git")
     
     for dep in "${required_deps[@]}"; do
         if ! command_exists "$dep"; then
@@ -245,6 +284,11 @@ check_system_dependencies() {
     # curl is usually pre-installed, but check anyway
     if [[ " ${missing_deps[@]} " =~ " curl " ]]; then
         deps_to_install+=("curl")
+    fi
+    
+    # git is required for auto-updates
+    if [[ " ${missing_deps[@]} " =~ " git " ]]; then
+        deps_to_install+=("git")
     fi
     
     if [ ${#deps_to_install[@]} -gt 0 ]; then
@@ -943,6 +987,73 @@ EOF
     fi
 }
 
+# Setup and verify database
+setup_database() {
+    print_info "Setting up database..."
+    
+    # Check if PostgreSQL container exists
+    if ! docker ps -a --format '{{.Names}}' | grep -q "^yukon-commerce-db$"; then
+        print_info "PostgreSQL container not found. It will be created during deployment."
+        return 0
+    fi
+    
+    # Check if PostgreSQL container is running
+    if ! docker ps --format '{{.Names}}' | grep -q "^yukon-commerce-db$"; then
+        print_info "PostgreSQL container exists but is not running. Starting container..."
+        docker start yukon-commerce-db || true
+        sleep 5
+    fi
+    
+    # Wait for database to be ready
+    print_info "Waiting for database to be ready..."
+    local max_attempts=30
+    local attempt=0
+    local db_ready=false
+    
+    # Load database credentials from environment or use defaults
+    local db_user="${POSTGRES_USER:-postgres}"
+    local db_password="${POSTGRES_PASSWORD:-postgres}"
+    local db_name="${POSTGRES_DB:-yukon_commerce}"
+    
+    while [ $attempt -lt $max_attempts ]; do
+        if docker exec yukon-commerce-db pg_isready -U "$db_user" -d "$db_name" >/dev/null 2>&1; then
+            db_ready=true
+            break
+        fi
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+    
+    if [ "$db_ready" = "false" ]; then
+        print_warning "Database did not become ready within expected time."
+        print_info "This may be normal if the database is still initializing."
+        return 1
+    fi
+    
+    print_success "Database is ready."
+    
+    # Verify database initialization by checking if tables exist
+    print_info "Verifying database initialization..."
+    local table_count=$(docker exec yukon-commerce-db psql -U "$db_user" -d "$db_name" -tAc "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" 2>/dev/null || echo "0")
+    
+    if [ "$table_count" -gt 0 ]; then
+        print_success "Database initialized successfully. Found $table_count table(s)."
+        
+        # List key tables
+        print_info "Key tables in database:"
+        docker exec yukon-commerce-db psql -U "$db_user" -d "$db_name" -tAc "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;" 2>/dev/null | head -10 | while read -r table; do
+            if [ -n "$table" ]; then
+                echo "  - $table"
+            fi
+        done || true
+    else
+        print_warning "Database appears to be empty or initialization may still be in progress."
+        print_info "If this is the first run, initialization scripts will run automatically."
+    fi
+    
+    return 0
+}
+
 # Pre-deployment checks
 pre_deployment_checks() {
     print_info "Running pre-deployment checks..."
@@ -1019,10 +1130,20 @@ deploy_with_docker() {
     
     # Build Docker image
     print_info "Building Docker image (this may take several minutes)..."
-    if $DOCKER_COMPOSE_CMD build; then
+    print_info "Memory optimizations enabled: Node.js heap size set to 1536MB"
+    print_info "Build progress will be shown below. If build hangs, check server memory."
+    echo ""
+    
+    # Build with progress output
+    if $DOCKER_COMPOSE_CMD build --progress=plain; then
         print_success "Docker image built successfully!"
     else
         print_error "Failed to build Docker image."
+        echo ""
+        print_info "If the build failed due to memory issues, try:"
+        echo "  1. Check available memory: free -h"
+        echo "  2. Free up memory by stopping other services"
+        echo "  3. Consider increasing server memory or using a build server"
         exit 1
     fi
     
@@ -1106,8 +1227,89 @@ deploy_with_docker() {
     fi
 }
 
+# Update from GitHub repository
+update_from_github() {
+    print_info "Checking for updates from GitHub..."
+    
+    # Check if git is installed
+    if ! command_exists git; then
+        print_warning "Git is not installed. Skipping repository update."
+        print_info "Git will be installed during dependency check."
+        return 0
+    fi
+    
+    # Check if we're in a git repository
+    if [ ! -d ".git" ]; then
+        print_info "Not a git repository. Skipping update."
+        return 0
+    fi
+    
+    # Check if remote origin exists
+    if ! git remote get-url origin >/dev/null 2>&1; then
+        print_info "No remote origin configured. Skipping update."
+        return 0
+    fi
+    
+    # Get current branch
+    local current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    if [ -z "$current_branch" ]; then
+        print_warning "Could not determine current branch. Skipping update."
+        return 0
+    fi
+    
+    print_info "Current branch: $current_branch"
+    
+    # Check for uncommitted changes
+    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+        print_warning "You have uncommitted changes in your working directory."
+        print_info "Attempting to pull updates (this may cause conflicts)..."
+    fi
+    
+    # Fetch latest changes
+    print_info "Fetching latest changes from origin..."
+    if ! git fetch origin "$current_branch" 2>/dev/null; then
+        print_warning "Failed to fetch updates from GitHub. Continuing with current version."
+        print_info "This may be due to network issues or authentication problems."
+        return 0
+    fi
+    
+    # Check if there are updates available
+    local local_commit=$(git rev-parse HEAD 2>/dev/null)
+    local remote_commit=$(git rev-parse "origin/$current_branch" 2>/dev/null)
+    
+    if [ -z "$local_commit" ] || [ -z "$remote_commit" ]; then
+        print_warning "Could not determine commit status. Skipping update."
+        return 0
+    fi
+    
+    if [ "$local_commit" = "$remote_commit" ]; then
+        print_success "Repository is already up to date."
+        return 0
+    fi
+    
+    # Count commits ahead
+    local commit_count=$(git rev-list --count HEAD.."origin/$current_branch" 2>/dev/null || echo "0")
+    
+    # Pull updates
+    print_info "Pulling latest changes..."
+    if git pull origin "$current_branch" 2>/dev/null; then
+        print_success "Successfully updated from GitHub!"
+        if [ "$commit_count" != "0" ] && [ "$commit_count" != "" ]; then
+            print_info "Updated with $commit_count new commit(s)."
+        fi
+    else
+        print_warning "Failed to pull updates. This may be due to merge conflicts."
+        print_info "You may need to resolve conflicts manually or stash your changes."
+        print_info "Continuing with current version..."
+        return 0
+    fi
+}
+
 # Main execution
 main() {
+    # Check script integrity first (line endings, etc.)
+    check_script_integrity
+    
     # Handle --ssl-only flag for retrying SSL setup
     if [ "$1" = "--ssl-only" ] || [ "$1" = "-s" ]; then
         if [ -z "$2" ]; then
@@ -1140,6 +1342,9 @@ main() {
             print_error "Please run with: sudo ./setup.sh --ssl-only $domain"
             exit 1
         fi
+        
+        # Update from GitHub (non-blocking)
+        update_from_github || true
         
         # Check Docker Compose (needed for retry_ssl_setup)
         check_docker_compose
@@ -1177,6 +1382,9 @@ main() {
         exit 1
     fi
     
+    # Step 0: Update from GitHub (non-blocking)
+    update_from_github || true
+    
     # Step 1: Install Docker
     install_docker
     
@@ -1185,6 +1393,9 @@ main() {
     
     # Step 3: Check Docker Compose and Docker daemon
     check_docker_compose
+    
+    # Step 3.5: Setup database (after Docker Compose is verified)
+    setup_database || true  # Don't fail if database setup has issues, it will be handled during deployment
     
     # Step 4: Verify ports 80 and 443
     verify_ports || true  # Don't fail if ports are in use, we'll handle it during deployment

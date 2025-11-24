@@ -3,17 +3,30 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Set Node.js memory options for low-memory servers
+# Increase heap size to 1536MB (leaves ~500MB for system on 2GB servers)
+ENV NODE_OPTIONS="--max-old-space-size=1536"
+
+# Accept build arguments for Supabase environment variables
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_PUBLISHABLE_KEY
+
+# Set environment variables for Vite build
+ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+ENV VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --prefer-offline --no-audit
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with progress output
+# Using --verbose flag to see build progress and detect hangs
+RUN npm run build -- --verbose
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine

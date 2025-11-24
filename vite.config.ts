@@ -28,7 +28,13 @@ export default defineConfig(({ mode }) => ({
         icons: [
           {
             src: '/favicon.png',
-            sizes: 'any',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/favicon.png',
+            sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
           }
@@ -133,29 +139,47 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'es2020',
     minify: 'esbuild',
+    // Optimize for low-memory environments
+    chunkSizeWarningLimit: 500, // Reduced from 1000 to encourage smaller chunks
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'radix-dialog': ['@radix-ui/react-dialog'],
-          'radix-dropdown': ['@radix-ui/react-dropdown-menu'],
-          'radix-select': ['@radix-ui/react-select'],
-          'radix-other': [
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-toast',
-          ],
-          'query': ['@tanstack/react-query'],
-          'embla': ['embla-carousel-react', 'embla-carousel-autoplay'],
-          'charts': ['recharts'],
-          'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+        // Simplified chunking strategy to reduce memory usage during build
+        manualChunks: (id) => {
+          // Core React libraries
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'react-vendor';
+          }
+          // Router
+          if (id.includes('node_modules/react-router')) {
+            return 'router';
+          }
+          // Radix UI components (grouped together to reduce chunks)
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'radix-ui';
+          }
+          // Query library
+          if (id.includes('node_modules/@tanstack/react-query')) {
+            return 'query';
+          }
+          // Other large libraries
+          if (id.includes('node_modules/recharts')) {
+            return 'charts';
+          }
+          // Vendor chunk for remaining node_modules
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
         },
+        // Optimize chunk file names for better caching
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
       },
     },
     cssCodeSplit: true,
     sourcemap: false,
-    chunkSizeWarningLimit: 1000,
+    // Reduce memory usage during build
+    reportCompressedSize: false, // Disable compressed size reporting to save memory
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
