@@ -25,8 +25,8 @@ RUN npm ci --prefer-offline --no-audit
 COPY . .
 
 # Build the application with progress output
-# Using --verbose flag to see build progress and detect hangs
-RUN npm run build -- --verbose
+# Vite provides build progress output by default
+RUN npm run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
