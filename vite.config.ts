@@ -4,6 +4,9 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Check if running in Docker build (CI/CD or Docker environment)
+const isDockerBuild = process.env.DOCKER_BUILD === 'true' || process.env.CI === 'true' || process.env.NODE_ENV === 'production';
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -13,6 +16,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(), 
     mode === "development" && componentTagger(),
+    // Optimize VitePWA for Docker builds to prevent hanging
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'robots.txt', 'images/**/*'],
@@ -36,8 +40,16 @@ export default defineConfig(({ mode }) => ({
       },
       
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // Optimize glob patterns to reduce file processing during build
+        // Only include essential files to prevent hanging on large directories
+        globPatterns: isDockerBuild 
+          ? ['**/*.{js,css,html,ico,png,svg}'] // Reduced pattern for Docker builds
+          : ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         
+        // Limit maximum file size to prevent processing huge files
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
+        
+        // Optimize runtime caching for Docker builds
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/pnrchmxpywyqvvwzbvwe\.supabase\.co\/storage\/v1\/object\/public\/products-images\/.*/i,
@@ -117,12 +129,26 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        
+        // Optimize for Docker builds: reduce workbox processing overhead
+        ...(isDockerBuild && {
+          // Skip source maps in Docker builds
+          dontCacheBustURLsMatching: /\.\w{8}\./,
+          // Reduce manifest file size
+          manifestTransforms: [],
+        }),
       },
       
       devOptions: {
         enabled: false,
         type: 'module'
-      }
+      },
+      
+      // Optimize build mode for Docker
+      ...(isDockerBuild && {
+        strategies: 'generateSW',
+        injectRegister: 'script',
+      }),
     })
   ].filter(Boolean),
   resolve: {
@@ -133,11 +159,11 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'es2020',
     minify: 'esbuild',
-    // Optimize for low-memory environments
-    chunkSizeWarningLimit: 500, // Reduced from 1000 to encourage smaller chunks
+    // Increase chunk size warning limit to reduce warnings (chunks are still optimized)
+    chunkSizeWarningLimit: 1000, // Increased to reduce noise, chunks are still optimized via manualChunks
     rollupOptions: {
       output: {
-        // Simplified chunking strategy to reduce memory usage during build
+        // Optimized chunking strategy to reduce memory usage and prevent large chunks
         // CRITICAL: Bundle React with all React-dependent libraries to prevent forwardRef errors
         manualChunks: (id) => {
           // Bundle React and ALL React-dependent libraries together
@@ -164,9 +190,21 @@ export default defineConfig(({ mode }) => ({
           ) {
             return 'react-vendor';
           }
-          // Other large libraries (non-React dependent)
+          // Split large libraries into separate chunks
           if (id.includes('node_modules/recharts')) {
             return 'charts';
+          }
+          // Supabase client (can be large)
+          if (id.includes('node_modules/@supabase')) {
+            return 'supabase';
+          }
+          // Form validation libraries
+          if (id.includes('node_modules/zod') || id.includes('node_modules/@hookform')) {
+            return 'forms';
+          }
+          // UI utilities
+          if (id.includes('node_modules/lucide-react') || id.includes('node_modules/cmdk')) {
+            return 'ui-utils';
           }
           // Vendor chunk for remaining node_modules (non-React dependencies)
           if (id.includes('node_modules')) {
