@@ -401,10 +401,70 @@ configure_firewall() {
     print_success "Firewall configured. Ports 22, 80, and 443 are open."
 }
 
+# Check if domain is proxied through Cloudflare
+is_cloudflare_proxied() {
+    local domain_ips=$1
+    
+    if [ -z "$domain_ips" ]; then
+        return 1
+    fi
+    
+    # Cloudflare IPv4 ranges (common prefixes)
+    # Check if any resolved IP matches known Cloudflare IP ranges
+    for ip in $domain_ips; do
+        # Extract octets for easier range checking
+        IFS='.' read -r o1 o2 o3 o4 <<< "$ip"
+        
+        # 104.16.0.0/12 (104.16.0.0 - 104.31.255.255)
+        if [ "$o1" = "104" ] && [ "$o2" -ge 16 ] && [ "$o2" -le 31 ]; then
+            return 0
+        fi
+        # 104.24.0.0/14 (104.24.0.0 - 104.27.255.255)
+        if [ "$o1" = "104" ] && [ "$o2" -ge 24 ] && [ "$o2" -le 27 ]; then
+            return 0
+        fi
+        # 172.64.0.0/13 (172.64.0.0 - 172.71.255.255)
+        if [ "$o1" = "172" ] && [ "$o2" -ge 64 ] && [ "$o2" -le 71 ]; then
+            return 0
+        fi
+        # 173.245.48.0/20 (173.245.48.0 - 173.245.63.255)
+        if [ "$o1" = "173" ] && [ "$o2" = "245" ] && [ "$o3" -ge 48 ] && [ "$o3" -le 63 ]; then
+            return 0
+        fi
+        # 188.114.96.0/20 (188.114.96.0 - 188.114.111.255)
+        if [ "$o1" = "188" ] && [ "$o2" = "114" ] && [ "$o3" -ge 96 ] && [ "$o3" -le 111 ]; then
+            return 0
+        fi
+        # 198.41.128.0/17 (198.41.128.0 - 198.41.255.255)
+        if [ "$o1" = "198" ] && [ "$o2" = "41" ] && [ "$o3" -ge 128 ]; then
+            return 0
+        fi
+        # 141.101.64.0/18 (141.101.64.0 - 141.101.127.255)
+        if [ "$o1" = "141" ] && [ "$o2" = "101" ] && [ "$o3" -ge 64 ] && [ "$o3" -le 127 ]; then
+            return 0
+        fi
+        # 190.93.240.0/20 (190.93.240.0 - 190.93.255.255)
+        if [ "$o1" = "190" ] && [ "$o2" = "93" ] && [ "$o3" -ge 240 ]; then
+            return 0
+        fi
+        # 197.234.240.0/22 (197.234.240.0 - 197.234.243.255)
+        if [ "$o1" = "197" ] && [ "$o2" = "234" ] && [ "$o3" -ge 240 ] && [ "$o3" -le 243 ]; then
+            return 0
+        fi
+        # 162.158.0.0/15 (162.158.0.0 - 162.159.255.255)
+        if [ "$o1" = "162" ] && [ "$o2" -ge 158 ] && [ "$o2" -le 159 ]; then
+            return 0
+        fi
+    done
+    
+    return 1
+}
+
 # Verify DNS configuration with detailed checks
 verify_dns_configuration() {
     local domain=$1
     local public_ip=$2
+    local skip_check=${3:-""}
     
     print_info "Verifying domain DNS configuration..."
     
@@ -425,6 +485,26 @@ verify_dns_configuration() {
         echo "  2. Wait for DNS propagation (can take up to 48 hours)"
         echo "  3. Verify with: dig +short $domain"
         return 1
+    fi
+    
+    # Check if domain is proxied through Cloudflare
+    if is_cloudflare_proxied "$domain_ips"; then
+        print_info "Cloudflare proxy detected for domain $domain"
+        print_info "  Domain resolves to Cloudflare IPs: $(echo $domain_ips | tr '\n' ' ')"
+        print_info "  This is normal when using Cloudflare's proxy/CDN service."
+        print_info "  Skipping DNS verification (Cloudflare will proxy requests to your server)."
+        print_success "Domain DNS configuration verified (Cloudflare proxy detected)."
+        return 0
+    fi
+    
+    # If skip_check is set, skip the IP match verification
+    if [ "$skip_check" = "skip" ]; then
+        print_warning "Skipping DNS IP verification as requested."
+        print_info "  Domain: $domain"
+        print_info "  Domain resolves to: $(echo $domain_ips | tr '\n' ' ')"
+        print_info "  Server IP: $public_ip"
+        print_success "Domain DNS configuration verified (DNS check skipped)."
+        return 0
     fi
     
     # Check if any A record matches the server IP
@@ -451,9 +531,13 @@ verify_dns_configuration() {
         print_info "To fix this:"
         echo "  1. Log in to your DNS provider (e.g., Cloudflare, Route53, Namecheap)"
         echo "  2. Update the A record for $domain to point to: $public_ip"
-        echo "  3. Wait for DNS propagation (usually 5-60 minutes, can take up to 48 hours)"
-        echo "  4. Verify DNS is updated: dig +short $domain"
-        echo "  5. Then retry SSL setup with: sudo ./setup.sh --ssl-only $domain"
+        echo "  3. If using Cloudflare proxy, ensure 'Proxy' is enabled (orange cloud)"
+        echo "  4. Wait for DNS propagation (usually 5-60 minutes, can take up to 48 hours)"
+        echo "  5. Verify DNS is updated: dig +short $domain"
+        echo "  6. Then retry SSL setup with: sudo ./setup.sh --ssl-only $domain"
+        echo ""
+        print_info "If your domain is behind a proxy/CDN (like Cloudflare), you can skip DNS check:"
+        echo "  sudo ./setup.sh --ssl-only $domain --skip-dns-check"
         echo ""
         return 1
     fi
@@ -469,6 +553,7 @@ verify_dns_configuration() {
 retry_ssl_setup() {
     local domain=$1
     local docker_compose_cmd=$2
+    local skip_dns=${3:-""}
     
     if [ -z "$domain" ]; then
         print_error "Domain name is required for SSL retry."
@@ -480,8 +565,13 @@ retry_ssl_setup() {
     # Get public IP
     local public_ip=$(curl -s https://api.ipify.org || curl -s https://ifconfig.me || echo "")
     
-    # Verify DNS configuration
-    if ! verify_dns_configuration "$domain" "$public_ip"; then
+    # Verify DNS configuration (with optional skip flag)
+    local skip_flag=""
+    if [ "$skip_dns" = "skip" ]; then
+        skip_flag="skip"
+    fi
+    
+    if ! verify_dns_configuration "$domain" "$public_ip" "$skip_flag"; then
         print_error "DNS configuration is still incorrect. Please fix DNS and try again."
         return 1
     fi
@@ -1023,12 +1113,20 @@ main() {
         if [ -z "$2" ]; then
             print_error "Domain name is required for SSL-only setup."
             echo ""
-            print_info "Usage: sudo ./setup.sh --ssl-only <domain>"
+            print_info "Usage: sudo ./setup.sh --ssl-only <domain> [--skip-dns-check]"
             echo "Example: sudo ./setup.sh --ssl-only example.com"
+            echo "Example: sudo ./setup.sh --ssl-only example.com --skip-dns-check"
             exit 1
         fi
         
         local domain=$2
+        local skip_dns=""
+        
+        # Check for --skip-dns-check flag
+        if [ "$3" = "--skip-dns-check" ]; then
+            skip_dns="skip"
+            print_info "DNS check will be skipped as requested."
+        fi
         
         echo ""
         print_info "=========================================="
@@ -1047,7 +1145,7 @@ main() {
         check_docker_compose
         
         # Retry SSL setup
-        if retry_ssl_setup "$domain" "$DOCKER_COMPOSE_CMD"; then
+        if retry_ssl_setup "$domain" "$DOCKER_COMPOSE_CMD" "$skip_dns"; then
             print_success "SSL certificate setup completed successfully!"
             echo ""
             print_info "Next steps:"
