@@ -42,11 +42,13 @@ export const trackMetaEvent = async (
       body: payload,
     });
 
-    if (error) {
+    if (error && import.meta.env.DEV) {
       console.error('Meta tracking error:', error);
     }
   } catch (error) {
     // Silent fail - don't disrupt user experience
-    console.error('Meta tracking error:', error);
+    if (import.meta.env.DEV) {
+      console.error('Meta tracking error:', error);
+    }
   }
 };

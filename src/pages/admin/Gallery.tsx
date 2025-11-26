@@ -43,7 +43,9 @@ const Gallery = () => {
     },
     onError: (error) => {
       toast.error("Failed to delete gallery image");
-      console.error(error);
+      if (import.meta.env.DEV) {
+        console.error(error);
+      }
     },
   });
 

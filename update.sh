@@ -153,16 +153,31 @@ check_and_pull_updates() {
     fi
 }
 
+# Check if Docker is running
+check_docker_running() {
+    if ! docker info >/dev/null 2>&1; then
+        print_error "Docker is not running. Please start Docker and try again."
+        return 1
+    fi
+    return 0
+}
+
 # Detect Docker Compose command
 detect_docker_compose() {
     if docker compose version >/dev/null 2>&1; then
         echo "docker compose"
+        return 0
     elif command_exists docker-compose; then
-        echo "docker-compose"
-    else
-        print_error "Docker Compose not found. Please install Docker Compose."
-        return 1
+        if docker-compose version >/dev/null 2>&1; then
+            echo "docker-compose"
+            return 0
+        fi
     fi
+    print_error "Docker Compose not found. Please install Docker Compose."
+    print_info "Installation options:"
+    echo "  - Docker Compose V2 (recommended): Comes with Docker Desktop or install via Docker plugin"
+    echo "  - Docker Compose V1: Install via pip or package manager"
+    return 1
 }
 
 # Detect which compose file to use
@@ -186,62 +201,99 @@ detect_compose_file() {
 rebuild_and_restart() {
     print_info "Rebuilding and restarting Docker containers..."
     
+    # Check if Docker is running
+    if ! check_docker_running; then
+        return 1
+    fi
+    
     # Detect Docker Compose command
-    local docker_compose_cmd=$(detect_docker_compose)
-    if [ $? -ne 0 ]; then
+    local docker_compose_cmd
+    docker_compose_cmd=$(detect_docker_compose)
+    local compose_detect_status=$?
+    if [ $compose_detect_status -ne 0 ]; then
         return 1
     fi
     
     # Detect compose file (try to detect domain from environment or existing containers)
     local compose_file="docker-compose.yml"
     
+    # Verify compose file exists
+    if [ ! -f "$compose_file" ]; then
+        print_error "Compose file not found: $compose_file"
+        print_info "Please ensure you're running this script from the project root directory."
+        return 1
+    fi
+    
     # Try to detect if SSL is being used by checking running containers
-    if docker ps --format '{{.Names}}' | grep -q "yukon-commerce-web"; then
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "yukon-commerce-web"; then
         # Check which compose file was likely used
         if [ -f "docker-compose.ssl.yml" ]; then
             # Try to detect domain from nginx config or environment
-            local domain=$(grep -oP 'server_name \K[^;]+' nginx-ssl.conf 2>/dev/null | head -1 || echo "")
+            local domain=""
+            if [ -f "nginx-ssl.conf" ]; then
+                domain=$(grep -oP 'server_name \K[^;]+' nginx-ssl.conf 2>/dev/null | head -1 || echo "")
+            fi
             if [ -n "$domain" ]; then
                 compose_file=$(detect_compose_file "$domain")
+                # Verify the detected compose file exists
+                if [ ! -f "$compose_file" ]; then
+                    print_warning "Detected SSL compose file '$compose_file' not found, using default."
+                    compose_file="docker-compose.yml"
+                fi
             fi
         fi
     fi
     
     print_info "Using compose file: $compose_file"
     
-    # Stop existing containers
-    print_info "Stopping existing containers..."
-    $docker_compose_cmd -f "$compose_file" down 2>/dev/null || true
-    
-    # Build Docker image
-    print_info "Building Docker image (this may take several minutes)..."
-    if $docker_compose_cmd -f "$compose_file" build --progress=plain; then
-        print_success "Docker image built successfully!"
-    else
-        print_error "Failed to build Docker image."
+    # Verify compose file exists before proceeding
+    if [ ! -f "$compose_file" ]; then
+        print_error "Compose file not found: $compose_file"
         return 1
     fi
     
+    # Stop existing containers
+    print_info "Stopping existing containers..."
+    if ! $docker_compose_cmd -f "$compose_file" down 2>/dev/null; then
+        print_warning "Some containers may not have stopped cleanly, continuing anyway..."
+    fi
+    
+    # Build Docker image
+    print_info "Building Docker image (this may take several minutes)..."
+    if ! $docker_compose_cmd -f "$compose_file" build --progress=plain; then
+        print_error "Failed to build Docker image."
+        print_info "Troubleshooting tips:"
+        echo "  1. Check Docker logs: docker logs <container-name>"
+        echo "  2. Verify .env file exists and has required variables"
+        echo "  3. Check disk space: df -h"
+        echo "  4. Check Docker daemon: docker info"
+        return 1
+    fi
+    
+    print_success "Docker image built successfully!"
+    
     # Start containers
     print_info "Starting containers..."
-    if $docker_compose_cmd -f "$compose_file" up -d; then
-        print_success "Containers started successfully!"
-        
-        # Wait a moment for containers to start
-        sleep 3
-        
-        # Check container status
-        if $docker_compose_cmd -f "$compose_file" ps | grep -q "Up"; then
-            print_success "Application is running!"
-            return 0
-        else
-            print_warning "Containers started but may not be fully ready yet."
-            print_info "Check status with: $docker_compose_cmd -f $compose_file ps"
-            return 0
-        fi
-    else
+    if ! $docker_compose_cmd -f "$compose_file" up -d; then
         print_error "Failed to start containers."
+        print_info "Check container logs with: $docker_compose_cmd -f $compose_file logs"
         return 1
+    fi
+    
+    print_success "Containers started successfully!"
+    
+    # Wait a moment for containers to start
+    sleep 3
+    
+    # Check container status
+    if $docker_compose_cmd -f "$compose_file" ps 2>/dev/null | grep -q "Up"; then
+        print_success "Application is running!"
+        return 0
+    else
+        print_warning "Containers started but may not be fully ready yet."
+        print_info "Check status with: $docker_compose_cmd -f $compose_file ps"
+        print_info "Check logs with: $docker_compose_cmd -f $compose_file logs"
+        return 0
     fi
 }
 

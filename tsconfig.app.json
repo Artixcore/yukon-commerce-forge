@@ -15,6 +15,9 @@
     "jsx": "react-jsx",
 
     /* Linting */
+    // Note: Strict mode is disabled to allow gradual migration
+    // Consider enabling strict mode gradually by setting strict: true
+    // and fixing type errors incrementally
     "strict": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,

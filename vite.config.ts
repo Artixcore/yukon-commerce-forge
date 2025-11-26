@@ -8,7 +8,12 @@ import { VitePWA } from 'vite-plugin-pwa';
 const isDockerBuild = process.env.DOCKER_BUILD === 'true' || process.env.CI === 'true' || process.env.NODE_ENV === 'production';
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  // Extract Supabase domain from environment variable for dynamic URL patterns
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+  const supabaseDomain = supabaseUrl ? new URL(supabaseUrl).hostname.replace(/\./g, '\\.') : 'pnrchmxpywyqvvwzbvwe\\.supabase\\.co';
+  
+  return {
   server: {
     host: "::",
     port: 8080,
@@ -52,7 +57,7 @@ export default defineConfig(({ mode }) => ({
         // Optimize runtime caching for Docker builds
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/pnrchmxpywyqvvwzbvwe\.supabase\.co\/storage\/v1\/object\/public\/products-images\/.*/i,
+            urlPattern: new RegExp(`^https://${supabaseDomain}/storage/v1/object/public/products-images/.*`, 'i'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'product-images-cache',
@@ -66,7 +71,7 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            urlPattern: /^https:\/\/pnrchmxpywyqvvwzbvwe\.supabase\.co\/rest\/v1\/.*/i,
+            urlPattern: new RegExp(`^https://${supabaseDomain}/rest/v1/.*`, 'i'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api-cache',
@@ -155,59 +160,116 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Ensure proper module resolution order
+    dedupe: ['react', 'react-dom'],
   },
   build: {
     target: 'es2020',
     minify: 'esbuild',
-    // Increase chunk size warning limit to reduce warnings (chunks are still optimized)
-    chunkSizeWarningLimit: 1000, // Increased to reduce noise, chunks are still optimized via manualChunks
+    // Increase chunk size warning limit to reduce warnings
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        // Optimized chunking strategy to reduce memory usage and prevent large chunks
-        // CRITICAL: Bundle React with all React-dependent libraries to prevent forwardRef errors
+        // Enhanced chunking strategy to prevent initialization order issues
+        // Key principle: React must load first, then React-dependent libraries in separate chunks
+        // Split vendor chunk further to prevent circular dependencies and initialization errors
         manualChunks: (id) => {
-          // Bundle React and ALL React-dependent libraries together
-          // This ensures React is always available when any React code executes
+          // CRITICAL: React and React-DOM must be in their own chunk and load first
+          // This prevents "Cannot access 'T' before initialization" errors
           if (
             id.includes('node_modules/react/') || 
             id.includes('node_modules/react-dom/') ||
             id === 'node_modules/react' ||
-            id === 'node_modules/react-dom' ||
-            id.includes('node_modules/react/index') ||
-            id.includes('node_modules/react-dom/index') ||
-            // React Router (depends on React)
-            id.includes('node_modules/react-router') ||
-            // Radix UI components (all use React.forwardRef)
-            id.includes('node_modules/@radix-ui') ||
-            // React Query (depends on React)
-            id.includes('node_modules/@tanstack/react-query') ||
-            // Other React-dependent libraries
-            id.includes('node_modules/react-hook-form') ||
-            id.includes('node_modules/react-day-picker') ||
-            id.includes('node_modules/embla-carousel-react') ||
-            id.includes('node_modules/react-resizable-panels') ||
-            id.includes('node_modules/next-themes')
+            id === 'node_modules/react-dom'
           ) {
-            return 'react-vendor';
+            return 'react-core';
           }
-          // Split large libraries into separate chunks
+          
+          // React Router - separate chunk (loads after React)
+          if (id.includes('node_modules/react-router')) {
+            return 'react-router';
+          }
+          
+          // Radix UI - separate chunk (loads after React)
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'radix-ui';
+          }
+          
+          // React Query - separate chunk (loads after React)
+          if (id.includes('node_modules/@tanstack/react-query')) {
+            return 'react-query';
+          }
+          
+          // Form libraries - separate chunk
+          if (id.includes('node_modules/react-hook-form') || 
+              id.includes('node_modules/@hookform') ||
+              id.includes('node_modules/zod')) {
+            return 'forms';
+          }
+          
+          // Other React-dependent libraries - separate chunk
+          if (id.includes('node_modules/react-day-picker') ||
+              id.includes('node_modules/embla-carousel-react') ||
+              id.includes('node_modules/react-resizable-panels') ||
+              id.includes('node_modules/next-themes')) {
+            return 'react-utils';
+          }
+          
+          // Large charting library - separate chunk
           if (id.includes('node_modules/recharts')) {
             return 'charts';
           }
-          // Supabase client (can be large)
+          
+          // Supabase client - separate chunk
           if (id.includes('node_modules/@supabase')) {
             return 'supabase';
           }
-          // Form validation libraries
-          if (id.includes('node_modules/zod') || id.includes('node_modules/@hookform')) {
-            return 'forms';
-          }
-          // UI utilities
-          if (id.includes('node_modules/lucide-react') || id.includes('node_modules/cmdk')) {
+          
+          // UI utilities - separate chunk
+          if (id.includes('node_modules/lucide-react') || 
+              id.includes('node_modules/cmdk')) {
             return 'ui-utils';
           }
-          // Vendor chunk for remaining node_modules (non-React dependencies)
+          
+          // State management libraries - separate chunk
+          if (id.includes('node_modules/zustand')) {
+            return 'state';
+          }
+          
+          // Date/time libraries - separate chunk
+          if (id.includes('node_modules/date-fns')) {
+            return 'date-utils';
+          }
+          
+          // PWA/Workbox libraries - separate chunk
+          if (id.includes('node_modules/workbox') || 
+              id.includes('node_modules/vite-plugin-pwa')) {
+            return 'pwa';
+          }
+          
+          // Utility libraries that might have initialization issues - separate chunk
+          if (id.includes('node_modules/clsx') ||
+              id.includes('node_modules/tailwind-merge') ||
+              id.includes('node_modules/class-variance-authority')) {
+            return 'utils';
+          }
+          
+          // All other vendor dependencies - split into smaller chunks to prevent initialization issues
           if (id.includes('node_modules')) {
+            // Use a hash-based approach to split large vendor chunks
+            // This prevents circular dependencies and initialization order issues
+            const match = id.match(/node_modules\/([^/]+)/);
+            if (match) {
+              const packageName = match[1];
+              // Group smaller packages together, but keep large ones separate
+              if (packageName.startsWith('@')) {
+                return 'vendor-scoped';
+              }
+              // Keep common utility packages together
+              if (['sweetalert2', 'sonner', 'vaul'].includes(packageName)) {
+                return 'vendor-ui';
+              }
+            }
             return 'vendor';
           }
         },
@@ -223,11 +285,19 @@ export default defineConfig(({ mode }) => ({
     reportCompressedSize: false, // Disable compressed size reporting to save memory
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react/jsx-runtime', 'react-router-dom'],
+    // Pre-bundle critical dependencies to ensure proper initialization order
+    include: [
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      'react-router-dom',
+    ],
     exclude: ['lucide-react'],
     esbuildOptions: {
       // Ensure React is properly resolved
       resolveExtensions: ['.js', '.jsx', '.ts', '.tsx'],
     },
   },
-}));
+  };
+});

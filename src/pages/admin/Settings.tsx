@@ -105,7 +105,9 @@ const Settings = () => {
         .single();
 
       if (error && error.code !== 'PGRST116') { // Not found is okay
-        console.error('Error loading credentials:', error);
+        if (import.meta.env.DEV) {
+          console.error('Error loading credentials:', error);
+        }
       } else if (data) {
         setExistingCredentials(data);
         // Pre-fill form with existing values
@@ -118,7 +120,9 @@ const Settings = () => {
         localStorage.setItem('meta_pixel_id', data.pixel_id);
       }
     } catch (error) {
-      console.error('Error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error:', error);
+      }
     } finally {
       setLoadingCredentials(false);
     }

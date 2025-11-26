@@ -80,8 +80,8 @@ export const OptimizedImage = ({
     setIsLoaded(true);
     if (onLoad) onLoad();
     
-    // Track performance in production for priority images
-    if (import.meta.env.PROD && priority) {
+    // Track performance in development for priority images
+    if (import.meta.env.DEV && priority) {
       const loadTime = performance.now() - startTime.current;
       console.debug(`Image loaded in ${Math.round(loadTime)}ms:`, src);
     }
@@ -90,7 +90,9 @@ export const OptimizedImage = ({
   const handleError = useCallback(() => {
     setHasError(true);
     if (onError) onError();
-    console.error('Failed to load image:', src);
+    if (import.meta.env.DEV) {
+      console.error('Failed to load image:', src);
+    }
   }, [onError, src]);
 
   // Error state with fallback placeholder

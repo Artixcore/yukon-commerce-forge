@@ -1,3 +1,6 @@
+# Supabase Project Configuration
+# Note: This project_id is specific to this Supabase project instance
+# If deploying to a different Supabase project, update this value accordingly
 project_id = "pnrchmxpywyqvvwzbvwe"
 
 [functions.create-order]

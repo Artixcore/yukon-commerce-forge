@@ -40,7 +40,9 @@ const Admin = () => {
 
       setIsAdmin(true);
     } catch (error) {
-      console.error("Admin check error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Admin check error:", error);
+      }
       navigate("/admin/login");
     } finally {
       setIsLoading(false);

@@ -108,7 +108,9 @@ export const ImageUpload = ({ value, onChange, folder, label, required }: ImageU
       onChange(publicUrl);
       showSuccess('Uploaded!', 'Image optimized and uploaded successfully');
     } catch (error: any) {
-      console.error('Upload error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Upload error:', error);
+      }
       showError('Upload Failed', error.message || 'Failed to upload image');
     } finally {
       setIsUploading(false);

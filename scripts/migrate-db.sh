@@ -29,6 +29,9 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Container name can be overridden via DB_CONTAINER_NAME environment variable
+DB_CONTAINER_NAME="${DB_CONTAINER_NAME:-yukon-commerce-db}"
+
 # Check if Docker is running
 if ! docker info >/dev/null 2>&1; then
     print_error "Docker is not running. Please start Docker and try again."
@@ -36,17 +39,18 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 # Check if PostgreSQL container exists
-if ! docker ps -a --format '{{.Names}}' | grep -q "^yukon-commerce-db$"; then
-    print_error "PostgreSQL container 'yukon-commerce-db' not found."
+if ! docker ps -a --format '{{.Names}}' | grep -q "^${DB_CONTAINER_NAME}$"; then
+    print_error "PostgreSQL container '${DB_CONTAINER_NAME}' not found."
     print_info "Please start the database container first:"
     echo "  docker-compose up -d postgres"
+    echo "  Or set DB_CONTAINER_NAME environment variable if using a different container name"
     exit 1
 fi
 
 # Check if PostgreSQL container is running
-if ! docker ps --format '{{.Names}}' | grep -q "^yukon-commerce-db$"; then
+if ! docker ps --format '{{.Names}}' | grep -q "^${DB_CONTAINER_NAME}$"; then
     print_info "PostgreSQL container is not running. Starting it..."
-    docker start yukon-commerce-db
+    docker start "${DB_CONTAINER_NAME}"
     sleep 5
 fi
 
@@ -62,7 +66,7 @@ attempt=0
 db_ready=false
 
 while [ $attempt -lt $max_attempts ]; do
-    if docker exec yukon-commerce-db pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
+    if docker exec "${DB_CONTAINER_NAME}" pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
         db_ready=true
         break
     fi
@@ -96,7 +100,7 @@ fi
 print_info "Found migration files. Checking which ones need to be applied..."
 
 # Create migrations tracking table if it doesn't exist
-docker exec yukon-commerce-db psql -U "$DB_USER" -d "$DB_NAME" <<EOF >/dev/null 2>&1 || true
+docker exec "${DB_CONTAINER_NAME}" psql -U "$DB_USER" -d "$DB_NAME" <<EOF >/dev/null 2>&1 || true
 CREATE TABLE IF NOT EXISTS schema_migrations (
     version VARCHAR(255) PRIMARY KEY,
     applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -107,8 +111,15 @@ EOF
 for migration_file in $MIGRATION_FILES; do
     migration_name=$(basename "$migration_file")
     
-    # Check if migration has already been applied
-    if docker exec yukon-commerce-db psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT 1 FROM schema_migrations WHERE version = '$migration_name';" | grep -q 1; then
+    # Escape single quotes in migration name to prevent SQL injection
+    # Replace each single quote with two single quotes (SQL standard escaping)
+    escaped_migration_name=$(echo "$migration_name" | sed "s/'/''/g")
+    
+    # Check if migration has already been applied using safely escaped value
+    # Use psql's -tAc to get a single value safely
+    migration_check=$(docker exec "${DB_CONTAINER_NAME}" psql -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT 1 FROM schema_migrations WHERE version = '${escaped_migration_name}';" 2>/dev/null || echo "")
+    
+    if [ "$migration_check" = "1" ]; then
         print_info "Skipping already applied migration: $migration_name"
         continue
     fi
@@ -116,9 +127,9 @@ for migration_file in $MIGRATION_FILES; do
     print_info "Applying migration: $migration_name"
     
     # Apply migration
-    if docker exec -i yukon-commerce-db psql -U "$DB_USER" -d "$DB_NAME" < "$migration_file"; then
-        # Record migration
-        docker exec yukon-commerce-db psql -U "$DB_USER" -d "$DB_NAME" -c "INSERT INTO schema_migrations (version) VALUES ('$migration_name') ON CONFLICT (version) DO NOTHING;" >/dev/null 2>&1
+    if docker exec -i "${DB_CONTAINER_NAME}" psql -U "$DB_USER" -d "$DB_NAME" < "$migration_file"; then
+        # Record migration using safely escaped name
+        docker exec "${DB_CONTAINER_NAME}" psql -U "$DB_USER" -d "$DB_NAME" -c "INSERT INTO schema_migrations (version) VALUES ('${escaped_migration_name}') ON CONFLICT (version) DO NOTHING;" >/dev/null 2>&1
         print_success "Applied migration: $migration_name"
     else
         print_error "Failed to apply migration: $migration_name"
@@ -130,5 +141,5 @@ print_success "All migrations applied successfully!"
 
 # Show current schema version
 print_info "Current database schema:"
-docker exec yukon-commerce-db psql -U "$DB_USER" -d "$DB_NAME" -c "SELECT version, applied_at FROM schema_migrations ORDER BY applied_at DESC LIMIT 5;" 2>/dev/null || true
+docker exec "${DB_CONTAINER_NAME}" psql -U "$DB_USER" -d "$DB_NAME" -c "SELECT version, applied_at FROM schema_migrations ORDER BY applied_at DESC LIMIT 5;" 2>/dev/null || true
 

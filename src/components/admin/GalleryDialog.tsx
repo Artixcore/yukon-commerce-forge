@@ -75,7 +75,9 @@ export function GalleryDialog({ open, onOpenChange, image }: GalleryDialogProps)
     },
     onError: (error) => {
       toast.error("Failed to save gallery image");
-      console.error(error);
+      if (import.meta.env.DEV) {
+        console.error(error);
+      }
     },
   });
 

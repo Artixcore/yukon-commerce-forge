@@ -1391,8 +1391,8 @@ main() {
     # Check script integrity first (line endings, etc.)
     check_script_integrity
     
-    # Set default domain
-    DEFAULT_DOMAIN="yukonlifestyle.com"
+    # Set default domain (can be overridden via YUKON_DOMAIN environment variable)
+    DEFAULT_DOMAIN="${YUKON_DOMAIN:-yukonlifestyle.com}"
     
     # Handle --ssl-only flag for retrying SSL setup
     if [ "$1" = "--ssl-only" ] || [ "$1" = "-s" ]; then

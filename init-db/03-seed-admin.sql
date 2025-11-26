@@ -11,7 +11,9 @@
 DO $$
 DECLARE
     admin_user_id UUID := 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; -- Fixed UUID for admin user
-    admin_email TEXT := 'admin@yukonlifestyle.com';
+    -- Admin email domain can be customized via environment variable YUKON_DOMAIN
+    -- Defaults to 'yukonlifestyle.com' if not set
+    admin_email TEXT := 'admin@' || COALESCE(current_setting('app.yukon_domain', true), 'yukonlifestyle.com');
     admin_password TEXT := 'Admin@@11@@22@@33##';
     hashed_password TEXT;
 BEGIN
@@ -71,15 +73,17 @@ DO $$
 DECLARE
     admin_count INTEGER;
     role_count INTEGER;
+    -- Use the same email domain logic as above
+    admin_email_check TEXT := 'admin@' || COALESCE(current_setting('app.yukon_domain', true), 'yukonlifestyle.com');
 BEGIN
     SELECT COUNT(*) INTO admin_count
     FROM auth.users
-    WHERE email = 'admin@yukonlifestyle.com';
+    WHERE email = admin_email_check;
     
     SELECT COUNT(*) INTO role_count
     FROM public.user_roles ur
     JOIN auth.users u ON ur.user_id = u.id
-    WHERE u.email = 'admin@yukonlifestyle.com'
+    WHERE u.email = admin_email_check
     AND ur.role = 'admin'::public.app_role;
     
     IF admin_count > 0 AND role_count > 0 THEN

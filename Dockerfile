@@ -22,34 +22,44 @@ ENV VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
 COPY package*.json ./
 
 # Install dependencies and timeout utility for build timeout handling
+# coreutils package provides timeout command on Alpine Linux
+# stdbuf is included in coreutils for output flushing
 RUN npm ci --prefer-offline --no-audit && \
-    apk add --no-cache coreutils || true
+    apk add --no-cache coreutils
 
 # Copy source code
 COPY . .
 
-# Build the application with explicit progress output, timeout handling, and verification
+# Build the application with explicit progress output and timeout handling
 # Timeout set to 30 minutes (1800 seconds) to prevent indefinite hangs
-RUN echo "=========================================" && \
+# Split into separate RUN commands to ensure build process fully terminates
+# Use stdbuf to disable output buffering for immediate log visibility
+RUN set -e && \
+    echo "=========================================" && \
     echo "Starting Vite build process..." && \
     echo "Build timeout: 30 minutes" && \
     echo "=========================================" && \
-    (timeout 1800 npm run build || (echo "ERROR: Build timed out after 30 minutes!" && exit 1)) && \
+    stdbuf -oL -eL timeout 1800 npm run build || (echo "ERROR: Build timed out after 30 minutes!" && exit 1) && \
     echo "=========================================" && \
     echo "Build completed successfully" && \
     echo "=========================================" && \
-    # Verify build output exists
+    sync && \
+    echo "File system operations synchronized"
+
+# Verify build output in separate RUN command
+# This ensures the build step fully completes and all processes terminate before verification
+RUN set -e && \
+    echo "=========================================" && \
     echo "Verifying build output..." && \
+    echo "=========================================" && \
     if [ ! -d "/app/dist" ]; then \
       echo "ERROR: Build output directory /app/dist does not exist!" && \
       exit 1; \
     fi && \
-    # Verify dist directory contains files
     if [ -z "$(ls -A /app/dist 2>/dev/null)" ]; then \
       echo "ERROR: Build output directory /app/dist is empty!" && \
       exit 1; \
     fi && \
-    # List build output for verification
     echo "Build output verification:" && \
     echo "Directory contents:" && \
     ls -lah /app/dist | head -20 && \
@@ -63,6 +73,9 @@ RUN echo "=========================================" && \
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
+
+# Install wget for healthcheck (required by docker-compose healthcheck commands)
+RUN apk add --no-cache wget
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
