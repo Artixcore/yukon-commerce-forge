@@ -1117,6 +1117,87 @@ pre_deployment_checks() {
     fi
 }
 
+# Setup systemd service for auto-start on boot
+setup_systemd_service() {
+    local domain=$1
+    local use_ssl=$2
+    local docker_compose_cmd=$3
+    
+    print_info "Setting up systemd service for automatic startup on boot..."
+    
+    # Get the current working directory (project root)
+    local project_dir=$(pwd)
+    local project_name=$(basename "$project_dir")
+    
+    # Determine which compose file to use
+    local compose_file="docker-compose.yml"
+    if [ "$use_ssl" = "true" ] && [ -f "docker-compose.ssl.yml" ]; then
+        compose_file="docker-compose.ssl.yml"
+    fi
+    
+    # Detect docker compose command
+    local compose_cmd="docker compose"
+    if ! docker compose version >/dev/null 2>&1; then
+        if command_exists docker-compose; then
+            compose_cmd="docker-compose"
+        else
+            print_error "Neither 'docker compose' nor 'docker-compose' is available."
+            return 1
+        fi
+    fi
+    
+    # Create systemd service file content
+    local service_file="/tmp/yukon-commerce.service"
+    cat > "$service_file" << EOF
+[Unit]
+Description=Yukon Commerce Forge - Docker Compose Application
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=$project_dir
+ExecStart=/bin/bash -c 'cd $project_dir && if [ -f "$compose_file" ]; then $compose_cmd -f $compose_file up -d; else $compose_cmd -f docker-compose.yml up -d; fi'
+ExecStop=/bin/bash -c 'cd $project_dir && if [ -f "$compose_file" ]; then $compose_cmd -f $compose_file down; else $compose_cmd -f docker-compose.yml down; fi'
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
+    # Install the service file
+    print_info "Installing systemd service..."
+    run_with_sudo cp "$service_file" /etc/systemd/system/yukon-commerce.service
+    run_with_sudo chmod 644 /etc/systemd/system/yukon-commerce.service
+    
+    # Reload systemd daemon
+    run_with_sudo systemctl daemon-reload
+    
+    # Enable the service to start on boot
+    run_with_sudo systemctl enable yukon-commerce.service
+    
+    # Start the service if containers aren't already running
+    if ! $docker_compose_cmd -f "$compose_file" ps | grep -q "Up"; then
+        print_info "Starting systemd service..."
+        run_with_sudo systemctl start yukon-commerce.service
+    else
+        print_info "Containers are already running. Service will maintain them on boot."
+    fi
+    
+    # Clean up temp file
+    rm -f "$service_file"
+    
+    print_success "Systemd service installed and enabled!"
+    print_info "The application will automatically start on server boot."
+    print_info "Service status: sudo systemctl status yukon-commerce"
+    print_info "Service logs: sudo journalctl -u yukon-commerce -f"
+}
+
 # Build and deploy with Docker Compose
 deploy_with_docker() {
     local domain=$1
@@ -1450,6 +1531,10 @@ main() {
     
     # Step 10: Deploy with Docker
     deploy_with_docker "$DOMAIN" "$USE_SSL"
+    
+    # Step 11: Setup systemd service for auto-start on boot
+    print_info "Configuring automatic startup on boot..."
+    setup_systemd_service "$DOMAIN" "$USE_SSL" "$DOCKER_COMPOSE_CMD"
     
     print_success "Setup completed successfully!"
 }

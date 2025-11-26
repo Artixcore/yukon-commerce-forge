@@ -1,0 +1,20 @@
+[Unit]
+Description=Yukon Commerce Forge - Docker Compose Application
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/root/yukon-commerce-forge
+ExecStart=/bin/bash -c 'cd /root/yukon-commerce-forge && if [ -f "docker-compose.ssl.yml" ] && [ -n "$(find /etc/letsencrypt/live -name fullchain.pem 2>/dev/null | head -1)" ]; then docker compose -f docker-compose.ssl.yml up -d || docker-compose -f docker-compose.ssl.yml up -d; else docker compose -f docker-compose.yml up -d || docker-compose -f docker-compose.yml up -d; fi'
+ExecStop=/bin/bash -c 'cd /root/yukon-commerce-forge && if [ -f "docker-compose.ssl.yml" ] && [ -n "$(find /etc/letsencrypt/live -name fullchain.pem 2>/dev/null | head -1)" ]; then docker compose -f docker-compose.ssl.yml down || docker-compose -f docker-compose.ssl.yml down; else docker compose -f docker-compose.yml down || docker-compose -f docker-compose.yml down; fi'
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
