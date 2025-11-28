@@ -6,10 +6,10 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci 
+# Install dependencies (use npm install instead of npm ci to avoid lock mismatch issues)
+RUN npm install
 
-# Copy source code
+# Copy the rest of the source code
 COPY . .
 
 # Build the application
@@ -29,4 +29,3 @@ EXPOSE 80
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
-
