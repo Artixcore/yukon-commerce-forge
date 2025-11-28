@@ -25,6 +25,7 @@ const Gallery = lazy(() => import("./pages/admin/Gallery"));
 const AdminReviews = lazy(() => import("./pages/admin/Reviews"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const Login = lazy(() => import("./pages/admin/Login"));
+const ResetPassword = lazy(() => import("./pages/admin/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const SearchResults = lazy(() => import("./pages/SearchResults"));
 const BestSelling = lazy(() => import("./pages/BestSelling"));
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/returns" element={<Returns />} />
             <Route path="/shipping" element={<Shipping />} />
             <Route path="/admin/login" element={<Login />} />
+            <Route path="/admin/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<Admin />}>
               <Route index element={<Dashboard />} />
               <Route path="products" element={<Products />} />

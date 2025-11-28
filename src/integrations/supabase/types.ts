@@ -21,6 +21,10 @@ export type Database = {
           id: string
           image_url: string | null
           level: number
+          meta_description: string | null
+          meta_keywords: string | null
+          meta_tags: Json | null
+          meta_title: string | null
           name: string
           parent_id: string | null
           slug: string
@@ -32,6 +36,10 @@ export type Database = {
           id?: string
           image_url?: string | null
           level?: number
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_tags?: Json | null
+          meta_title?: string | null
           name: string
           parent_id?: string | null
           slug: string
@@ -43,6 +51,10 @@ export type Database = {
           id?: string
           image_url?: string | null
           level?: number
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_tags?: Json | null
+          meta_title?: string | null
           name?: string
           parent_id?: string | null
           slug?: string
@@ -271,6 +283,10 @@ export type Database = {
           images: string[] | null
           is_active: boolean | null
           is_featured: boolean | null
+          meta_description: string | null
+          meta_keywords: string | null
+          meta_tags: Json | null
+          meta_title: string | null
           name: string
           original_price: number | null
           price: number
@@ -293,6 +309,10 @@ export type Database = {
           images?: string[] | null
           is_active?: boolean | null
           is_featured?: boolean | null
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_tags?: Json | null
+          meta_title?: string | null
           name: string
           original_price?: number | null
           price: number
@@ -315,6 +335,10 @@ export type Database = {
           images?: string[] | null
           is_active?: boolean | null
           is_featured?: boolean | null
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_tags?: Json | null
+          meta_title?: string | null
           name?: string
           original_price?: number | null
           price?: number
