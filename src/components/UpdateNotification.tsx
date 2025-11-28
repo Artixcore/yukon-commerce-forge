@@ -9,14 +9,10 @@ export const UpdateNotification = memo(() => {
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r) {
-      if (import.meta.env.DEV) {
-        console.log('SW Registered:', r);
-      }
+      console.log('SW Registered:', r);
     },
     onRegisterError(error) {
-      if (import.meta.env.DEV) {
-        console.log('SW registration error', error);
-      }
+      console.log('SW registration error', error);
     },
   });
 

@@ -5,33 +5,6 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Validate environment variables
-if (!SUPABASE_URL) {
-  throw new Error(
-    'Missing required environment variable: VITE_SUPABASE_URL\n\n' +
-    'Please ensure your .env file contains:\n' +
-    '  VITE_SUPABASE_URL=https://your-project.supabase.co\n\n' +
-    'If you have already set this variable:\n' +
-    '  1. Make sure the variable name starts with VITE_\n' +
-    '  2. Restart your development server\n' +
-    '  3. Check that your .env file is in the project root directory\n\n' +
-    'You can find your Supabase URL in your project settings: https://app.supabase.com/project/_/settings/api'
-  );
-}
-
-if (!SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error(
-    'Missing required environment variable: VITE_SUPABASE_PUBLISHABLE_KEY\n\n' +
-    'Please ensure your .env file contains:\n' +
-    '  VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key\n\n' +
-    'If you have already set this variable:\n' +
-    '  1. Make sure the variable name starts with VITE_\n' +
-    '  2. Restart your development server\n' +
-    '  3. Check that your .env file is in the project root directory\n\n' +
-    'You can find your Supabase anon key in your project settings: https://app.supabase.com/project/_/settings/api'
-  );
-}
-
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 

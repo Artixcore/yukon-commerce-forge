@@ -131,9 +131,7 @@ const Checkout = () => {
       toast.success("Order placed successfully!");
       navigate(`/order-confirmation/${order.id}`);
     } catch (error: any) {
-      if (import.meta.env.DEV) {
-        console.error("Error placing order:", error);
-      }
+      console.error("Error placing order:", error);
       toast.error(error.message || "Failed to place order");
     } finally {
       setIsSubmitting(false);

@@ -32,9 +32,7 @@ const OrderConfirmation = () => {
         .single();
 
       if (error) {
-        if (import.meta.env.DEV) {
-          console.error("Error fetching order:", error);
-        }
+        console.error("Error fetching order:", error);
       } else {
         setOrder(data as any);
       }
