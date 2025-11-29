@@ -37,28 +37,53 @@ serve(async (req) => {
       }
     );
 
-    console.log('Creating admin user with email:', email);
+    console.log('Checking for existing user with email:', email);
 
-    // Create the user with email confirmed
-    const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        role: 'admin'
-      }
-    });
+    // Check if user already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
 
-    if (createError) {
-      console.error('Error creating user:', createError);
-      return new Response(
-        JSON.stringify({ error: `Failed to create user: ${createError.message}` }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    let userId: string;
+
+    if (existingUser) {
+      // User already exists, use their ID
+      console.log('User already exists with ID:', existingUser.id);
+      userId = existingUser.id;
+      
+      // Optionally update password if user exists
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        existingUser.id,
+        { password }
       );
-    }
+      
+      if (updateError) {
+        console.error('Error updating user password:', updateError);
+      } else {
+        console.log('Password updated for existing user');
+      }
+    } else {
+      // Create the user with email confirmed
+      console.log('Creating new user');
+      const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          role: 'admin'
+        }
+      });
 
-    const userId = userData.user.id;
-    console.log('User created with ID:', userId);
+      if (createError) {
+        console.error('Error creating user:', createError);
+        return new Response(
+          JSON.stringify({ error: `Failed to create user: ${createError.message}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      userId = userData.user.id;
+      console.log('User created with ID:', userId);
+    }
 
     // Remove all existing admin roles
     const { error: deleteError } = await supabaseAdmin
@@ -93,7 +118,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Admin user created successfully. This is now the only admin user.',
+        message: existingUser 
+          ? 'Existing user set as admin successfully. This is now the only admin user.'
+          : 'Admin user created successfully. This is now the only admin user.',
         userId: userId,
         email: email
       }),
