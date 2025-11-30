@@ -160,6 +160,79 @@ const Settings = () => {
     }
   };
 
+  const [googleSettings, setGoogleSettings] = useState<any>(null);
+  const [loadingGoogleSettings, setLoadingGoogleSettings] = useState(true);
+
+  const googleForm = useForm({
+    defaultValues: {
+      gaMeasurementId: "",
+      gtmContainerId: "",
+      googleSiteVerification: "",
+    },
+  });
+
+  useEffect(() => {
+    loadGoogleSettings();
+  }, []);
+
+  const loadGoogleSettings = async () => {
+    setLoadingGoogleSettings(true);
+    try {
+      const { data, error } = await supabase
+        .from('google_settings')
+        .select('*')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading Google settings:', error);
+      } else if (data) {
+        setGoogleSettings(data);
+        googleForm.reset({
+          gaMeasurementId: data.ga_measurement_id || '',
+          gtmContainerId: data.gtm_container_id || '',
+          googleSiteVerification: data.google_site_verification || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoadingGoogleSettings(false);
+    }
+  };
+
+  const onGoogleSubmit = async (values: any) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('google_settings')
+        .upsert({
+          id: '00000000-0000-0000-0000-000000000002',
+          ga_measurement_id: values.gaMeasurementId,
+          gtm_container_id: values.gtmContainerId,
+          google_site_verification: values.googleSiteVerification,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        showError("Save Failed", error.message);
+      } else {
+        // Save to localStorage for dynamic script injection
+        if (values.gaMeasurementId) {
+          localStorage.setItem('ga_measurement_id', values.gaMeasurementId);
+        }
+        
+        await loadGoogleSettings();
+        showSuccess("Google Settings Saved", "Your Google Analytics & SEO settings have been saved successfully");
+      }
+    } catch (error: any) {
+      showError("Error", error.message || "Failed to save Google settings");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="mb-6">
@@ -363,6 +436,132 @@ const Settings = () => {
             <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Meta Configuration
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Google Analytics & SEO Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Google Analytics & SEO Configuration</CardTitle>
+          <CardDescription>
+            Configure Google Analytics, Google Tag Manager, and Google Search Console verification
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {googleSettings && (
+            <div className="mb-6 p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold">Current Configuration</h3>
+                <Badge variant="default" className="bg-green-600">✓ Configured</Badge>
+              </div>
+              <Table>
+                <TableBody>
+                  {googleSettings.ga_measurement_id && (
+                    <TableRow>
+                      <TableCell className="font-medium">GA Measurement ID</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {googleSettings.ga_measurement_id}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {googleSettings.gtm_container_id && (
+                    <TableRow>
+                      <TableCell className="font-medium">GTM Container ID</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {googleSettings.gtm_container_id}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {googleSettings.google_site_verification && (
+                    <TableRow>
+                      <TableCell className="font-medium">Site Verification</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {googleSettings.google_site_verification}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  <TableRow>
+                    <TableCell className="font-medium">Status</TableCell>
+                    <TableCell>
+                      <Badge variant={googleSettings.is_active ? "default" : "secondary"} className={googleSettings.is_active ? "bg-green-600" : ""}>
+                        {googleSettings.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Last Updated</TableCell>
+                    <TableCell className="text-sm">
+                      {new Date(googleSettings.updated_at).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {!googleSettings && !loadingGoogleSettings && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                ⚠️ Google Analytics & SEO tools are not configured yet. Enter your credentials below to start tracking.
+              </p>
+            </div>
+          )}
+
+          <form onSubmit={googleForm.handleSubmit(onGoogleSubmit)} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="gaMeasurementId">Google Analytics Measurement ID</Label>
+              <Input
+                id="gaMeasurementId"
+                placeholder="e.g., G-XXXXXXXXXX"
+                {...googleForm.register("gaMeasurementId")}
+                disabled={isLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Your GA4 Measurement ID from Google Analytics
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gtmContainerId">Google Tag Manager Container ID (Optional)</Label>
+              <Input
+                id="gtmContainerId"
+                placeholder="e.g., GTM-XXXXXXX"
+                {...googleForm.register("gtmContainerId")}
+                disabled={isLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Your GTM Container ID from Google Tag Manager
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="googleSiteVerification">Google Site Verification Code (Optional)</Label>
+              <Input
+                id="googleSiteVerification"
+                placeholder="e.g., abc123..."
+                {...googleForm.register("googleSiteVerification")}
+                disabled={isLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Verification code for Google Search Console
+              </p>
+            </div>
+
+            <div className="p-3 bg-muted rounded-md">
+              <p className="text-sm font-medium mb-1">What gets tracked:</p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>• Page views and navigation</li>
+                <li>• User interactions and events</li>
+                <li>• E-commerce transactions</li>
+                <li>• Traffic sources and demographics</li>
+              </ul>
+            </div>
+
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Google Configuration
             </Button>
           </form>
         </CardContent>

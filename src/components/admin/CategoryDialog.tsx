@@ -21,6 +21,9 @@ const categorySchema = z.object({
   description: z.string().optional(),
   parent_id: z.string().nullable().optional(),
   image_url: z.string().optional(),
+  meta_title: z.string().optional(),
+  meta_description: z.string().optional(),
+  meta_keywords: z.string().optional(),
 });
 
 type CategoryForm = z.infer<typeof categorySchema>;
@@ -29,7 +32,10 @@ export const CategoryDialog = ({ open, onOpenChange, category }: any) => {
   const queryClient = useQueryClient();
   const form = useForm<CategoryForm>({
     resolver: zodResolver(categorySchema),
-    defaultValues: { name: "", slug: "", description: "", parent_id: null, image_url: "" },
+    defaultValues: { 
+      name: "", slug: "", description: "", parent_id: null, image_url: "",
+      meta_title: "", meta_description: "", meta_keywords: ""
+    },
   });
 
   // Fetch all categories for parent selection
@@ -53,9 +59,15 @@ export const CategoryDialog = ({ open, onOpenChange, category }: any) => {
         description: category.description || "",
         parent_id: category.parent_id || null,
         image_url: category.image_url || "",
+        meta_title: category.meta_title || "",
+        meta_description: category.meta_description || "",
+        meta_keywords: category.meta_keywords || "",
       });
     } else {
-      form.reset({ name: "", slug: "", description: "", parent_id: null, image_url: "" });
+      form.reset({ 
+        name: "", slug: "", description: "", parent_id: null, image_url: "",
+        meta_title: "", meta_description: "", meta_keywords: ""
+      });
     }
   }, [category, form]);
 
@@ -74,6 +86,9 @@ export const CategoryDialog = ({ open, onOpenChange, category }: any) => {
         description: data.description || null,
         parent_id: data.parent_id || null,
         image_url: data.image_url || null,
+        meta_title: data.meta_title || null,
+        meta_description: data.meta_description || null,
+        meta_keywords: data.meta_keywords || null,
       };
       
       if (category) {
@@ -186,6 +201,37 @@ export const CategoryDialog = ({ open, onOpenChange, category }: any) => {
                 <FormMessage />
               </FormItem>
             )} />
+
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-sm font-semibold">SEO Settings (Optional)</h3>
+              
+              <FormField control={form.control} name="meta_title" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meta Title</FormLabel>
+                  <FormControl><Input {...field} placeholder="Defaults to category name" /></FormControl>
+                  <p className="text-xs text-muted-foreground">Custom title for search engines</p>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="meta_description" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meta Description</FormLabel>
+                  <FormControl><Textarea {...field} rows={2} placeholder="Brief description for search results" /></FormControl>
+                  <p className="text-xs text-muted-foreground">Max 160 characters recommended</p>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="meta_keywords" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meta Keywords</FormLabel>
+                  <FormControl><Input {...field} placeholder="keyword1, keyword2, keyword3" /></FormControl>
+                  <p className="text-xs text-muted-foreground">Comma-separated keywords</p>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
             
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
