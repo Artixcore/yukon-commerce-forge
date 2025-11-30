@@ -26,6 +26,7 @@ const AdminReviews = lazy(() => import("./pages/admin/Reviews"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const Login = lazy(() => import("./pages/admin/Login"));
 const ResetPassword = lazy(() => import("./pages/admin/ResetPassword"));
+const SetupAdmin = lazy(() => import("./pages/SetupAdmin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const SearchResults = lazy(() => import("./pages/SearchResults"));
 const BestSelling = lazy(() => import("./pages/BestSelling"));
@@ -65,9 +66,10 @@ const App = () => (
       <UpdateNotification />
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/shop" element={<Shop />} />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/setup-admin" element={<SetupAdmin />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
