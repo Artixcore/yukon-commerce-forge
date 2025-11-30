@@ -104,6 +104,27 @@
     'https://connect.facebook.net/en_US/fbevents.js');
   </script>
   <!-- End Meta Pixel Code -->
+
+  <!-- Google Analytics - Dynamically Loaded -->
+  <script defer>
+    (function() {
+      const gaMeasurementId = localStorage.getItem('ga_measurement_id');
+      if (gaMeasurementId) {
+        // Load gtag.js script
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaMeasurementId;
+        document.head.appendChild(script);
+        
+        // Initialize gtag
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', gaMeasurementId);
+      }
+    })();
+  </script>
+  <!-- End Google Analytics -->
 </head>
 
   <body>

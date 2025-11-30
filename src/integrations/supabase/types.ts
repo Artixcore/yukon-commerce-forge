@@ -100,6 +100,36 @@ export type Database = {
         }
         Relationships: []
       }
+      google_settings: {
+        Row: {
+          created_at: string | null
+          ga_measurement_id: string | null
+          google_site_verification: string | null
+          gtm_container_id: string | null
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          ga_measurement_id?: string | null
+          google_site_verification?: string | null
+          gtm_container_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          ga_measurement_id?: string | null
+          google_site_verification?: string | null
+          gtm_container_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       hero_banners: {
         Row: {
           button_text: string | null
@@ -109,6 +139,10 @@ export type Database = {
           image_url: string
           is_active: boolean | null
           link_url: string | null
+          meta_description: string | null
+          meta_keywords: string | null
+          meta_tags: Json | null
+          meta_title: string | null
           subtitle: string | null
           title: string
           updated_at: string
@@ -121,6 +155,10 @@ export type Database = {
           image_url: string
           is_active?: boolean | null
           link_url?: string | null
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_tags?: Json | null
+          meta_title?: string | null
           subtitle?: string | null
           title: string
           updated_at?: string
@@ -133,6 +171,10 @@ export type Database = {
           image_url?: string
           is_active?: boolean | null
           link_url?: string | null
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_tags?: Json | null
+          meta_title?: string | null
           subtitle?: string | null
           title?: string
           updated_at?: string
