@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { buildCategoryTree, CategoryTree } from "@/lib/categoryUtils";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { IMAGE_SIZES } from "@/config/imageSizes";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -60,52 +62,64 @@ export const Header = () => {
     setExpandedMobileCategory(prev => prev === categoryId ? null : categoryId);
   };
 
-  // Render desktop subcategory flyout
-  const renderDesktopCategory = (category: CategoryTree) => {
+  // Render mega menu category card
+  const renderMegaMenuCategory = (category: CategoryTree) => {
     const hasChildren = category.children.length > 0;
 
-    if (hasChildren) {
-      return (
-        <li key={category.id} className="relative group/sub">
-          <div className="flex items-center justify-between select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer">
-            <Link
-              to={`/shop?category=${category.id}`}
-              className="text-sm font-medium flex-1"
-            >
-              {category.name}
-            </Link>
-            <ChevronRight className="h-4 w-4 ml-2" />
-          </div>
-          {/* Subcategory flyout */}
-          <ul className="absolute left-full top-0 w-48 bg-background border rounded-md shadow-lg opacity-0 invisible group-hover/sub:opacity-100 group-hover/sub:visible transition-all duration-200 z-50">
-            {category.children.map((child) => (
+    return (
+      <Link
+        key={category.id}
+        to={`/shop?category=${category.id}`}
+        className="group block rounded-lg p-4 hover:bg-accent transition-all duration-200"
+      >
+        {/* Category Image */}
+        <div className="w-full h-24 rounded-md overflow-hidden mb-3 bg-muted">
+          {category.image_url ? (
+            <OptimizedImage
+              src={category.image_url}
+              alt={category.name}
+              width={IMAGE_SIZES.megaMenuCategory.width}
+              height={IMAGE_SIZES.megaMenuCategory.height}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10">
+              <span className="text-3xl font-bold text-primary/60">
+                {category.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Category Name */}
+        <h4 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
+          {category.name}
+        </h4>
+
+        {/* Description */}
+        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+          {category.description || 'Explore our collection'}
+        </p>
+
+        {/* Subcategories */}
+        {hasChildren && (
+          <ul className="space-y-1 border-t border-border pt-2 mt-2">
+            {category.children.slice(0, 4).map((child) => (
               <li key={child.id}>
-                <NavigationMenuLink asChild>
-                  <Link
-                    to={`/shop?category=${child.id}`}
-                    className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <span className="text-sm font-medium">{child.name}</span>
-                  </Link>
-                </NavigationMenuLink>
+                <span className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                  <ChevronRight className="h-3 w-3" />
+                  {child.name}
+                </span>
               </li>
             ))}
+            {category.children.length > 4 && (
+              <li className="text-xs text-primary font-medium">
+                +{category.children.length - 4} more
+              </li>
+            )}
           </ul>
-        </li>
-      );
-    }
-
-    return (
-      <li key={category.id}>
-        <NavigationMenuLink asChild>
-          <Link
-            to={`/shop?category=${category.id}`}
-            className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            <span className="text-sm font-medium">{category.name}</span>
-          </Link>
-        </NavigationMenuLink>
-      </li>
+        )}
+      </Link>
     );
   };
 
@@ -117,7 +131,25 @@ export const Header = () => {
     if (hasChildren) {
       return (
         <div key={category.id}>
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            {/* Thumbnail */}
+            <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 bg-muted">
+              {category.image_url ? (
+                <OptimizedImage
+                  src={category.image_url}
+                  alt={category.name}
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                  <span className="text-sm font-bold text-primary/60">
+                    {category.name.charAt(0)}
+                  </span>
+                </div>
+              )}
+            </div>
             <Link
               to={`/shop?category=${category.id}`}
               className="flex-1 text-foreground hover:text-primary transition-colors py-1"
@@ -133,7 +165,10 @@ export const Header = () => {
             </button>
           </div>
           {isExpanded && (
-            <div className="ml-4 space-y-1 mt-1 border-l-2 border-muted pl-3">
+            <div className="ml-11 space-y-1 mt-1 border-l-2 border-muted pl-3">
+              {category.description && (
+                <p className="text-xs text-muted-foreground mb-2">{category.description}</p>
+              )}
               {category.children.map((child) => (
                 <Link
                   key={child.id}
@@ -151,14 +186,32 @@ export const Header = () => {
     }
 
     return (
-      <Link
-        key={category.id}
-        to={`/shop?category=${category.id}`}
-        className="block text-foreground hover:text-primary transition-colors py-1"
-        onClick={() => setMobileMenuOpen(false)}
-      >
-        {category.name}
-      </Link>
+      <div key={category.id} className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 bg-muted">
+          {category.image_url ? (
+            <OptimizedImage
+              src={category.image_url}
+              alt={category.name}
+              width={32}
+              height={32}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10">
+              <span className="text-sm font-bold text-primary/60">
+                {category.name.charAt(0)}
+              </span>
+            </div>
+          )}
+        </div>
+        <Link
+          to={`/shop?category=${category.id}`}
+          className="block text-foreground hover:text-primary transition-colors py-1"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          {category.name}
+        </Link>
+      </div>
     );
   };
 
@@ -251,22 +304,61 @@ export const Header = () => {
                     Product
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="w-56 p-2 bg-background">
-                      <li>
+                    <div className="w-[800px] p-6 bg-background shadow-xl">
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+                        <h3 className="text-lg font-semibold">Browse Categories</h3>
                         <NavigationMenuLink asChild>
                           <Link
                             to="/shop"
-                            className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                            className="text-sm text-primary hover:underline flex items-center gap-1"
                           >
-                            <div className="text-sm font-medium">All Products</div>
-                            <p className="text-xs leading-snug text-muted-foreground mt-1">
-                              Browse our entire collection
-                            </p>
+                            View All Products
+                            <ArrowRight className="h-4 w-4" />
                           </Link>
                         </NavigationMenuLink>
-                      </li>
-                      {categoryTree.map(renderDesktopCategory)}
-                    </ul>
+                      </div>
+
+                      {/* Category Grid */}
+                      <div className="grid grid-cols-4 gap-4">
+                        {/* Featured All Products Card */}
+                        <NavigationMenuLink asChild>
+                          <Link
+                            to="/shop"
+                            className="group block rounded-lg p-4 bg-primary/5 hover:bg-primary/10 transition-all duration-200 border border-primary/20"
+                          >
+                            <div className="w-full h-24 rounded-md overflow-hidden mb-3 bg-primary/10 flex items-center justify-center">
+                              <ShoppingCart className="h-10 w-10 text-primary" />
+                            </div>
+                            <h4 className="font-semibold text-sm mb-1 text-primary">All Products</h4>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              Browse our entire collection
+                            </p>
+                            <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
+                              Shop Now <ArrowRight className="h-3 w-3" />
+                            </div>
+                          </Link>
+                        </NavigationMenuLink>
+
+                        {/* Category Cards */}
+                        {categoryTree.slice(0, 7).map(renderMegaMenuCategory)}
+                      </div>
+
+                      {/* Footer */}
+                      {categoryTree.length > 7 && (
+                        <div className="mt-4 pt-4 border-t border-border text-center">
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to="/categories"
+                              className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                            >
+                              View All {categoryTree.length} Categories
+                              <ArrowRight className="h-4 w-4" />
+                            </Link>
+                          </NavigationMenuLink>
+                        </div>
+                      )}
+                    </div>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
               </NavigationMenuList>
