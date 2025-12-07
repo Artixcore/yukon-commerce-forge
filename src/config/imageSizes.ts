@@ -73,4 +73,11 @@ export const IMAGE_SIZES = {
     height: 400,
     sizes: '(max-width: 640px) 200px, 400px',
   },
+  
+  // Mega menu category cards
+  megaMenuCategory: {
+    width: 200,
+    height: 120,
+    sizes: '200px',
+  },
 } as const;
