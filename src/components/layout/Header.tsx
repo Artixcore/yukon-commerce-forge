@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, Phone, ChevronDown } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import logo from "@/assets/logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { buildCategoryTree, CategoryTree } from "@/lib/categoryUtils";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -21,6 +22,7 @@ export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [productMenuOpen, setProductMenuOpen] = useState(false);
+  const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
   const { items } = useCart();
   const navigate = useNavigate();
   const isOnline = useNetworkStatus();
@@ -36,9 +38,12 @@ export const Header = () => {
       if (error) throw error;
       return data;
     },
-    staleTime: 30 * 60 * 1000, // 30 minutes
-    gcTime: 60 * 60 * 1000, // 1 hour
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
+
+  // Build hierarchical category tree
+  const categoryTree = categories ? buildCategoryTree(categories) : [];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +53,114 @@ export const Header = () => {
       setSearchQuery("");
     }
   };
+
   const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  const toggleMobileCategory = (categoryId: string) => {
+    setExpandedMobileCategory(prev => prev === categoryId ? null : categoryId);
+  };
+
+  // Render desktop subcategory flyout
+  const renderDesktopCategory = (category: CategoryTree) => {
+    const hasChildren = category.children.length > 0;
+
+    if (hasChildren) {
+      return (
+        <li key={category.id} className="relative group/sub">
+          <div className="flex items-center justify-between select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer">
+            <Link
+              to={`/shop?category=${category.id}`}
+              className="text-sm font-medium flex-1"
+            >
+              {category.name}
+            </Link>
+            <ChevronRight className="h-4 w-4 ml-2" />
+          </div>
+          {/* Subcategory flyout */}
+          <ul className="absolute left-full top-0 w-48 bg-background border rounded-md shadow-lg opacity-0 invisible group-hover/sub:opacity-100 group-hover/sub:visible transition-all duration-200 z-50">
+            {category.children.map((child) => (
+              <li key={child.id}>
+                <NavigationMenuLink asChild>
+                  <Link
+                    to={`/shop?category=${child.id}`}
+                    className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <span className="text-sm font-medium">{child.name}</span>
+                  </Link>
+                </NavigationMenuLink>
+              </li>
+            ))}
+          </ul>
+        </li>
+      );
+    }
+
+    return (
+      <li key={category.id}>
+        <NavigationMenuLink asChild>
+          <Link
+            to={`/shop?category=${category.id}`}
+            className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <span className="text-sm font-medium">{category.name}</span>
+          </Link>
+        </NavigationMenuLink>
+      </li>
+    );
+  };
+
+  // Render mobile category with expandable subcategories
+  const renderMobileCategory = (category: CategoryTree) => {
+    const hasChildren = category.children.length > 0;
+    const isExpanded = expandedMobileCategory === category.id;
+
+    if (hasChildren) {
+      return (
+        <div key={category.id}>
+          <div className="flex items-center">
+            <Link
+              to={`/shop?category=${category.id}`}
+              className="flex-1 text-foreground hover:text-primary transition-colors py-1"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {category.name}
+            </Link>
+            <button
+              onClick={() => toggleMobileCategory(category.id)}
+              className="p-1 hover:bg-accent rounded"
+            >
+              <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+          {isExpanded && (
+            <div className="ml-4 space-y-1 mt-1 border-l-2 border-muted pl-3">
+              {category.children.map((child) => (
+                <Link
+                  key={child.id}
+                  to={`/shop?category=${child.id}`}
+                  className="block text-foreground/80 hover:text-primary transition-colors py-1 text-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {child.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        key={category.id}
+        to={`/shop?category=${category.id}`}
+        className="block text-foreground hover:text-primary transition-colors py-1"
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        {category.name}
+      </Link>
+    );
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background border-b">
@@ -153,18 +265,7 @@ export const Header = () => {
                           </Link>
                         </NavigationMenuLink>
                       </li>
-                      {categories?.map((category) => (
-                        <li key={category.id}>
-                          <NavigationMenuLink asChild>
-                            <Link
-                              to={`/shop?category=${category.id}`}
-                              className="block select-none rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                            >
-                              <div className="text-sm font-medium">{category.name}</div>
-                            </Link>
-                          </NavigationMenuLink>
-                        </li>
-                      ))}
+                      {categoryTree.map(renderDesktopCategory)}
                     </ul>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
@@ -209,21 +310,12 @@ export const Header = () => {
                   <div className="ml-4 space-y-2 mt-2">
                     <Link 
                       to="/shop" 
-                      className="block text-foreground hover:text-primary transition-colors py-1"
+                      className="block text-foreground hover:text-primary transition-colors py-1 font-medium"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       All Products
                     </Link>
-                    {categories?.map((category) => (
-                      <Link
-                        key={category.id}
-                        to={`/shop?category=${category.id}`}
-                        className="block text-foreground hover:text-primary transition-colors py-1"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {category.name}
-                      </Link>
-                    ))}
+                    {categoryTree.map(renderMobileCategory)}
                   </div>
                 )}
               </div>
