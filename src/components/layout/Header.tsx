@@ -22,7 +22,7 @@ export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [productMenuOpen, setProductMenuOpen] = useState(false);
-  const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
+  const [expandedMobileCategories, setExpandedMobileCategories] = useState<Set<string>>(new Set());
   const { items } = useCart();
   const navigate = useNavigate();
   const isOnline = useNetworkStatus();
@@ -57,17 +57,52 @@ export const Header = () => {
   const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const toggleMobileCategory = (categoryId: string) => {
-    setExpandedMobileCategory(prev => prev === categoryId ? null : categoryId);
+    setExpandedMobileCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
   };
 
-  // Render mobile category with expandable subcategories
-  const renderMobileCategory = (category: CategoryTree) => {
+  // Recursive render for desktop sub-dropdowns with slide-in animation
+  const renderDesktopCategory = (category: CategoryTree, level: number = 0): JSX.Element => {
     const hasChildren = category.children.length > 0;
-    const isExpanded = expandedMobileCategory === category.id;
+    
+    return (
+      <li key={category.id} className="relative group/item">
+        <NavigationMenuLink asChild>
+          <Link
+            to={`/shop?category=${category.id}`}
+            className="flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-primary rounded-md transition-colors"
+          >
+            {category.name}
+            {hasChildren && <ChevronRight className="h-4 w-4" />}
+          </Link>
+        </NavigationMenuLink>
+        
+        {/* Sub-dropdown with slide-in animation */}
+        {hasChildren && (
+          <ul className="absolute left-full top-0 ml-1 w-48 p-2 bg-background shadow-lg rounded-md border border-border opacity-0 invisible translate-x-2 group-hover/item:opacity-100 group-hover/item:visible group-hover/item:translate-x-0 transition-all duration-200 ease-out z-50">
+            {category.children.map((child) => renderDesktopCategory(child, level + 1))}
+          </ul>
+        )}
+      </li>
+    );
+  };
+
+  // Recursive render for mobile categories with multi-level support
+  const renderMobileCategory = (category: CategoryTree, level: number = 0): JSX.Element => {
+    const hasChildren = category.children.length > 0;
+    const isExpanded = expandedMobileCategories.has(category.id);
+    const paddingLeft = level > 0 ? `${level * 12}px` : undefined;
 
     if (hasChildren) {
       return (
-        <div key={category.id}>
+        <div key={category.id} style={{ paddingLeft }}>
           <div className="flex items-center justify-between">
             <Link
               to={`/shop?category=${category.id}`}
@@ -80,21 +115,12 @@ export const Header = () => {
               onClick={() => toggleMobileCategory(category.id)}
               className="p-1 hover:bg-accent rounded"
             >
-              <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
             </button>
           </div>
           {isExpanded && (
-            <div className="ml-4 space-y-1 mt-1 border-l-2 border-muted pl-3">
-              {category.children.map((child) => (
-                <Link
-                  key={child.id}
-                  to={`/shop?category=${child.id}`}
-                  className="block text-foreground/80 hover:text-primary transition-colors py-1 text-sm"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {child.name}
-                </Link>
-              ))}
+            <div className="ml-3 space-y-1 mt-1 border-l-2 border-muted pl-3">
+              {category.children.map((child) => renderMobileCategory(child, level + 1))}
             </div>
           )}
         </div>
@@ -106,6 +132,7 @@ export const Header = () => {
         key={category.id}
         to={`/shop?category=${category.id}`}
         className="block text-foreground hover:text-primary transition-colors py-1"
+        style={{ paddingLeft }}
         onClick={() => setMobileMenuOpen(false)}
       >
         {category.name}
@@ -218,42 +245,8 @@ export const Header = () => {
                       {/* Separator */}
                       <li className="my-1 h-px bg-border" />
                       
-                      {/* Category Items */}
-                      {categoryTree.map((category) => {
-                        const hasChildren = category.children.length > 0;
-                        
-                        return (
-                          <li key={category.id} className="relative group/item">
-                            <NavigationMenuLink asChild>
-                              <Link
-                                to={`/shop?category=${category.id}`}
-                                className="flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-primary rounded-md transition-colors"
-                              >
-                                {category.name}
-                                {hasChildren && <ChevronRight className="h-4 w-4" />}
-                              </Link>
-                            </NavigationMenuLink>
-                            
-                            {/* Sub-dropdown */}
-                            {hasChildren && (
-                              <ul className="absolute left-full top-0 ml-1 w-48 p-2 bg-background shadow-lg rounded-md opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible transition-all duration-200 z-50">
-                                {category.children.map((child) => (
-                                  <li key={child.id}>
-                                    <NavigationMenuLink asChild>
-                                      <Link
-                                        to={`/shop?category=${child.id}`}
-                                        className="block px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-primary rounded-md transition-colors"
-                                      >
-                                        {child.name}
-                                      </Link>
-                                    </NavigationMenuLink>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </li>
-                        );
-                      })}
+                      {/* Category Items - Recursive rendering */}
+                      {categoryTree.map((category) => renderDesktopCategory(category))}
                     </ul>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
