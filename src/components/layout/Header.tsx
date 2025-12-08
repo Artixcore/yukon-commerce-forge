@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight, ArrowRight } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { buildCategoryTree, CategoryTree } from "@/lib/categoryUtils";
-import { OptimizedImage } from "@/components/ui/optimized-image";
-import { IMAGE_SIZES } from "@/config/imageSizes";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -62,67 +60,6 @@ export const Header = () => {
     setExpandedMobileCategory(prev => prev === categoryId ? null : categoryId);
   };
 
-  // Render mega menu category card
-  const renderMegaMenuCategory = (category: CategoryTree) => {
-    const hasChildren = category.children.length > 0;
-
-    return (
-      <Link
-        key={category.id}
-        to={`/shop?category=${category.id}`}
-        className="group block rounded-lg p-4 hover:bg-accent transition-all duration-200"
-      >
-        {/* Category Image */}
-        <div className="w-full h-24 rounded-md overflow-hidden mb-3 bg-muted">
-          {category.image_url ? (
-            <OptimizedImage
-              src={category.image_url}
-              alt={category.name}
-              width={IMAGE_SIZES.megaMenuCategory.width}
-              height={IMAGE_SIZES.megaMenuCategory.height}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-primary/10">
-              <span className="text-3xl font-bold text-primary/60">
-                {category.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Category Name */}
-        <h4 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
-          {category.name}
-        </h4>
-
-        {/* Description */}
-        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-          {category.description || 'Explore our collection'}
-        </p>
-
-        {/* Subcategories */}
-        {hasChildren && (
-          <ul className="space-y-1 border-t border-border pt-2 mt-2">
-            {category.children.slice(0, 4).map((child) => (
-              <li key={child.id}>
-                <span className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
-                  <ChevronRight className="h-3 w-3" />
-                  {child.name}
-                </span>
-              </li>
-            ))}
-            {category.children.length > 4 && (
-              <li className="text-xs text-primary font-medium">
-                +{category.children.length - 4} more
-              </li>
-            )}
-          </ul>
-        )}
-      </Link>
-    );
-  };
-
   // Render mobile category with expandable subcategories
   const renderMobileCategory = (category: CategoryTree) => {
     const hasChildren = category.children.length > 0;
@@ -131,25 +68,7 @@ export const Header = () => {
     if (hasChildren) {
       return (
         <div key={category.id}>
-          <div className="flex items-center gap-3">
-            {/* Thumbnail */}
-            <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 bg-muted">
-              {category.image_url ? (
-                <OptimizedImage
-                  src={category.image_url}
-                  alt={category.name}
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                  <span className="text-sm font-bold text-primary/60">
-                    {category.name.charAt(0)}
-                  </span>
-                </div>
-              )}
-            </div>
+          <div className="flex items-center justify-between">
             <Link
               to={`/shop?category=${category.id}`}
               className="flex-1 text-foreground hover:text-primary transition-colors py-1"
@@ -165,10 +84,7 @@ export const Header = () => {
             </button>
           </div>
           {isExpanded && (
-            <div className="ml-11 space-y-1 mt-1 border-l-2 border-muted pl-3">
-              {category.description && (
-                <p className="text-xs text-muted-foreground mb-2">{category.description}</p>
-              )}
+            <div className="ml-4 space-y-1 mt-1 border-l-2 border-muted pl-3">
               {category.children.map((child) => (
                 <Link
                   key={child.id}
@@ -186,32 +102,14 @@ export const Header = () => {
     }
 
     return (
-      <div key={category.id} className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0 bg-muted">
-          {category.image_url ? (
-            <OptimizedImage
-              src={category.image_url}
-              alt={category.name}
-              width={32}
-              height={32}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-primary/10">
-              <span className="text-sm font-bold text-primary/60">
-                {category.name.charAt(0)}
-              </span>
-            </div>
-          )}
-        </div>
-        <Link
-          to={`/shop?category=${category.id}`}
-          className="block text-foreground hover:text-primary transition-colors py-1"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          {category.name}
-        </Link>
-      </div>
+      <Link
+        key={category.id}
+        to={`/shop?category=${category.id}`}
+        className="block text-foreground hover:text-primary transition-colors py-1"
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        {category.name}
+      </Link>
     );
   };
 
@@ -304,61 +202,59 @@ export const Header = () => {
                     Product
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <div className="w-[800px] p-6 bg-background shadow-xl">
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
-                        <h3 className="text-lg font-semibold">Browse Categories</h3>
+                    <ul className="w-56 p-2 bg-background shadow-lg rounded-md">
+                      {/* All Products Link */}
+                      <li>
                         <NavigationMenuLink asChild>
                           <Link
                             to="/shop"
-                            className="text-sm text-primary hover:underline flex items-center gap-1"
+                            className="block px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-primary rounded-md transition-colors"
                           >
-                            View All Products
-                            <ArrowRight className="h-4 w-4" />
+                            All Products
                           </Link>
                         </NavigationMenuLink>
-                      </div>
-
-                      {/* Category Grid */}
-                      <div className="grid grid-cols-4 gap-4">
-                        {/* Featured All Products Card */}
-                        <NavigationMenuLink asChild>
-                          <Link
-                            to="/shop"
-                            className="group block rounded-lg p-4 bg-primary/5 hover:bg-primary/10 transition-all duration-200 border border-primary/20"
-                          >
-                            <div className="w-full h-24 rounded-md overflow-hidden mb-3 bg-primary/10 flex items-center justify-center">
-                              <ShoppingCart className="h-10 w-10 text-primary" />
-                            </div>
-                            <h4 className="font-semibold text-sm mb-1 text-primary">All Products</h4>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              Browse our entire collection
-                            </p>
-                            <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
-                              Shop Now <ArrowRight className="h-3 w-3" />
-                            </div>
-                          </Link>
-                        </NavigationMenuLink>
-
-                        {/* Category Cards */}
-                        {categoryTree.slice(0, 7).map(renderMegaMenuCategory)}
-                      </div>
-
-                      {/* Footer */}
-                      {categoryTree.length > 7 && (
-                        <div className="mt-4 pt-4 border-t border-border text-center">
-                          <NavigationMenuLink asChild>
-                            <Link
-                              to="/categories"
-                              className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-                            >
-                              View All {categoryTree.length} Categories
-                              <ArrowRight className="h-4 w-4" />
-                            </Link>
-                          </NavigationMenuLink>
-                        </div>
-                      )}
-                    </div>
+                      </li>
+                      
+                      {/* Separator */}
+                      <li className="my-1 h-px bg-border" />
+                      
+                      {/* Category Items */}
+                      {categoryTree.map((category) => {
+                        const hasChildren = category.children.length > 0;
+                        
+                        return (
+                          <li key={category.id} className="relative group/item">
+                            <NavigationMenuLink asChild>
+                              <Link
+                                to={`/shop?category=${category.id}`}
+                                className="flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-primary rounded-md transition-colors"
+                              >
+                                {category.name}
+                                {hasChildren && <ChevronRight className="h-4 w-4" />}
+                              </Link>
+                            </NavigationMenuLink>
+                            
+                            {/* Sub-dropdown */}
+                            {hasChildren && (
+                              <ul className="absolute left-full top-0 ml-1 w-48 p-2 bg-background shadow-lg rounded-md opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible transition-all duration-200 z-50">
+                                {category.children.map((child) => (
+                                  <li key={child.id}>
+                                    <NavigationMenuLink asChild>
+                                      <Link
+                                        to={`/shop?category=${child.id}`}
+                                        className="block px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-primary rounded-md transition-colors"
+                                      >
+                                        {child.name}
+                                      </Link>
+                                    </NavigationMenuLink>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
               </NavigationMenuList>
