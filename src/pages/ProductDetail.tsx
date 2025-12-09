@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ShoppingCart, Minus, Plus, Star } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Star } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +17,7 @@ import { ReviewDialog } from "@/components/product/ReviewDialog";
 import { format } from "date-fns";
 import { trackMetaEvent } from "@/lib/metaTracking";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { ImageZoom } from "@/components/product/ImageZoom";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -178,15 +179,12 @@ const ProductDetail = () => {
                 {allImages.length > 0 ? (
                   allImages.map((img, index) => (
                     <div key={index} className="flex-[0_0_100%] min-w-0 flex items-center justify-center bg-muted">
-                      <OptimizedImage
+                      <ImageZoom
                         src={img}
                         alt={`${product.name} - ${index + 1}`}
-                        width={800}
-                        height={800}
+                        allImages={allImages}
+                        currentIndex={index}
                         priority={index === 0}
-                        className="w-full h-full"
-                        objectFit="contain"
-                        sizes="(max-width: 768px) 100vw, 50vw"
                       />
                     </div>
                   ))
