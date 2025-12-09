@@ -115,7 +115,7 @@ export const CategoryDialog = ({ open, onOpenChange, category }: any) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{category ? "Edit Category" : "Add Category"}</DialogTitle>
         </DialogHeader>
