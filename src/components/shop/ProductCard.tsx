@@ -42,13 +42,14 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
     <Link to={`/product/${product.slug}`} className="h-full">
       <Card className="overflow-hidden border transition-shadow hover:shadow-lg h-full flex flex-col" style={{ borderRadius: '15px' }}>
         {/* Image with Discount Badge */}
-        <div className="relative overflow-hidden" style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
+        <div className="relative overflow-hidden bg-muted aspect-[4/5]" style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
           <OptimizedImage
             src={product.image_url || "/placeholder.svg"}
             alt={product.name}
             width={400}
-            height={256}
-            className="w-full h-48 sm:h-64"
+            height={500}
+            className="w-full h-full"
+            objectFit="contain"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
           {product.discount_percentage > 0 && (

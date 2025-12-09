@@ -177,7 +177,7 @@ const ProductDetail = () => {
               <div className="flex h-full">
                 {allImages.length > 0 ? (
                   allImages.map((img, index) => (
-                    <div key={index} className="flex-[0_0_100%] min-w-0 flex items-center justify-center">
+                    <div key={index} className="flex-[0_0_100%] min-w-0 flex items-center justify-center bg-muted">
                       <OptimizedImage
                         src={img}
                         alt={`${product.name} - ${index + 1}`}
@@ -185,6 +185,7 @@ const ProductDetail = () => {
                         height={800}
                         priority={index === 0}
                         className="w-full h-full"
+                        objectFit="contain"
                         sizes="(max-width: 768px) 100vw, 50vw"
                       />
                     </div>
