@@ -174,11 +174,11 @@ const ProductDetail = () => {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Image Gallery */}
           <div className="space-y-4">
-            <div className="bg-muted rounded-lg aspect-square overflow-hidden" ref={emblaRef}>
+            <div className="bg-white rounded-lg aspect-square md:aspect-[4/5] lg:aspect-square overflow-hidden" ref={emblaRef}>
               <div className="flex h-full">
                 {allImages.length > 0 ? (
                   allImages.map((img, index) => (
-                    <div key={index} className="flex-[0_0_100%] min-w-0 flex items-center justify-center bg-muted">
+                    <div key={index} className="flex-[0_0_100%] min-w-0 flex items-center justify-center bg-white">
                       <ImageZoom
                         src={img}
                         alt={`${product.name} - ${index + 1}`}
