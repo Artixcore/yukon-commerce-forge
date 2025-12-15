@@ -58,7 +58,7 @@ export const ImageZoom = ({ src, alt, allImages, currentIndex, priority }: Image
           height={800}
           priority={priority}
           className="w-full h-full"
-          objectFit="contain"
+          objectFit="cover"
           sizes="(max-width: 768px) 100vw, 50vw"
         />
 
