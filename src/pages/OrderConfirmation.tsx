@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { trackMetaEvent } from "@/lib/metaTracking";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
@@ -35,6 +36,15 @@ const OrderConfirmation = () => {
         console.error("Error fetching order:", error);
       } else {
         setOrder(data as any);
+        
+        // Track Purchase event with Meta Conversion API
+        trackMetaEvent('Purchase', {
+          value: data.total_amount,
+          currency: 'BDT',
+          num_items: 1,
+        }, {
+          ph: data.customer_phone,
+        });
       }
       setLoading(false);
     };

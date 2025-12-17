@@ -72,6 +72,13 @@ serve(async (req) => {
       action_source = 'website'
     } = eventData;
 
+    // Enhanced debug logging
+    console.log('=== Meta Conversion API Request ===');
+    console.log('Event Name:', event_name);
+    console.log('Custom Data:', JSON.stringify(custom_data));
+    console.log('User Data Keys:', Object.keys(user_data));
+    console.log('Event Source URL:', event_source_url);
+
     // Hash user data for privacy
     const hashedUserData: any = {
       client_user_agent: user_data.client_user_agent || req.headers.get('user-agent'),

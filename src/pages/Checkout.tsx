@@ -127,6 +127,20 @@ const Checkout = () => {
 
       const { order } = await response.json();
 
+      // Track Purchase event with Meta Conversion API
+      trackMetaEvent('Purchase', {
+        content_ids: items.map(item => item.product.id),
+        value: finalTotal,
+        currency: 'BDT',
+        num_items: items.reduce((sum, item) => sum + item.quantity, 0),
+      }, {
+        ph: data.phone,
+        fn: data.name.split(' ')[0],
+        ln: data.name.split(' ').slice(1).join(' ') || '',
+        ct: data.city,
+        country: 'bd',
+      });
+
       clearCart();
       toast.success("Order placed successfully!");
       navigate(`/order-confirmation/${order.id}`);
