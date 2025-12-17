@@ -8,6 +8,7 @@ interface MetaEventData {
   value?: number;
   currency?: string;
   num_items?: number;
+  search_string?: string;
 }
 
 interface MetaUserData {

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/layout/Header";
@@ -6,6 +7,7 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
+import { trackMetaEvent } from "@/lib/metaTracking";
 import * as z from "zod";
 
 const searchQuerySchema = z.string()
@@ -47,6 +49,18 @@ const SearchResults = () => {
     },
     enabled: !!searchQuery,
   });
+
+  // Track Search event when search completes
+  useEffect(() => {
+    if (searchQuery && products && !isLoading) {
+      trackMetaEvent('Search', {
+        search_string: searchQuery,
+        content_ids: products.slice(0, 10).map(p => p.id),
+        content_category: 'product',
+        num_items: products.length,
+      });
+    }
+  }, [searchQuery, products, isLoading]);
 
   return (
     <div className="min-h-screen bg-background">
