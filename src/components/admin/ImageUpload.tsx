@@ -7,7 +7,7 @@ import { showSuccess, showError } from "@/lib/sweetalert";
 interface ImageUploadProps {
   value?: string;
   onChange: (url: string) => void;
-  folder: 'products' | 'banners' | 'categories';
+  folder: 'products' | 'banners' | 'categories' | 'landing-pages';
   label?: string;
   required?: boolean;
 }

@@ -28,42 +28,60 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Load Meta credentials from database
-    const { data: metaSettings, error: settingsError } = await supabase
-      .from('meta_settings')
-      .select('pixel_id, access_token, test_event_code, is_active')
-      .single();
-
-    if (settingsError || !metaSettings) {
-      console.warn('Meta settings not configured:', settingsError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Meta Conversion API not configured' 
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    if (!metaSettings.is_active) {
-      console.log('Meta tracking is disabled');
-      return new Response(
-        JSON.stringify({ success: true, message: 'Tracking disabled' }),
-        { 
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const pixelId = metaSettings.pixel_id;
-    const accessToken = metaSettings.access_token;
-    const testEventCode = metaSettings.test_event_code;
-
     const eventData = await req.json();
+    
+    // Check if landing page specific credentials are provided
+    const landingPagePixelId = eventData.pixel_id;
+    const landingPageAccessToken = eventData.access_token;
+    const landingPageTestEventCode = eventData.test_event_code;
+
+    let pixelId: string;
+    let accessToken: string;
+    let testEventCode: string | null = null;
+
+    // Use landing page specific credentials if provided, otherwise use global settings
+    if (landingPagePixelId && landingPageAccessToken) {
+      pixelId = landingPagePixelId;
+      accessToken = landingPageAccessToken;
+      testEventCode = landingPageTestEventCode || null;
+      console.log('Using landing page specific Meta credentials');
+    } else {
+      // Load Meta credentials from database
+      const { data: metaSettings, error: settingsError } = await supabase
+        .from('meta_settings')
+        .select('pixel_id, access_token, test_event_code, is_active')
+        .single();
+
+      if (settingsError || !metaSettings) {
+        console.warn('Meta settings not configured:', settingsError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Meta Conversion API not configured' 
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      if (!metaSettings.is_active) {
+        console.log('Meta tracking is disabled');
+        return new Response(
+          JSON.stringify({ success: true, message: 'Tracking disabled' }),
+          { 
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      pixelId = metaSettings.pixel_id;
+      accessToken = metaSettings.access_token;
+      testEventCode = metaSettings.test_event_code;
+    }
+
     const { 
       event_name, 
       user_data = {}, 

@@ -24,6 +24,7 @@ const Orders = lazy(() => import("./pages/admin/Orders"));
 const Banners = lazy(() => import("./pages/admin/Banners"));
 const Gallery = lazy(() => import("./pages/admin/Gallery"));
 const AdminReviews = lazy(() => import("./pages/admin/Reviews"));
+const LandingPages = lazy(() => import("./pages/admin/LandingPages"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const Login = lazy(() => import("./pages/admin/Login"));
 const ResetPassword = lazy(() => import("./pages/admin/ResetPassword"));
@@ -38,6 +39,7 @@ const Track = lazy(() => import("./pages/Track"));
 const Reviews = lazy(() => import("./pages/Reviews"));
 const Returns = lazy(() => import("./pages/Returns"));
 const Shipping = lazy(() => import("./pages/Shipping"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -90,6 +92,7 @@ const App = () => (
               <Route path="/reviews" element={<Reviews />} />
               <Route path="/returns" element={<Returns />} />
               <Route path="/shipping" element={<Shipping />} />
+              <Route path="/lp/:slug" element={<LandingPage />} />
               <Route path="/admin/login" element={<Login />} />
               <Route path="/admin/reset-password" element={<ResetPassword />} />
               <Route path="/admin" element={<Admin />}>
@@ -100,6 +103,7 @@ const App = () => (
                 <Route path="reviews" element={<AdminReviews />} />
                 <Route path="banners" element={<Banners />} />
                 <Route path="gallery" element={<Gallery />} />
+                <Route path="landing-pages" element={<LandingPages />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
