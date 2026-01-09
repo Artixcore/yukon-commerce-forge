@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -303,6 +304,9 @@ export function LandingPageDialog({ open, onOpenChange, landingPage }: LandingPa
           <DialogTitle>
             {landingPage ? "Edit Landing Page" : "Create New Landing Page"}
           </DialogTitle>
+          <DialogDescription>
+            {landingPage ? "Update your landing page settings and content" : "Create a new landing page with products, reviews, and order form"}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit((data) => mutation.mutate(data))}>
