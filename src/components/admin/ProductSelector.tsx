@@ -187,7 +187,11 @@ export function ProductSelector({ selectedProducts, onProductsChange }: ProductS
                   }`}
                   onClick={() => toggleProduct(product.id)}
                 >
-                  <Checkbox checked={isSelected} />
+                  <Checkbox 
+                    checked={isSelected}
+                    onCheckedChange={() => toggleProduct(product.id)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
                   <img
                     src={product.image_url || "/placeholder.svg"}
                     alt={product.name}
@@ -214,9 +218,11 @@ export function ProductSelector({ selectedProducts, onProductsChange }: ProductS
               const displayName = selected.custom_name || product?.name || "Custom Product";
               const displayPrice = selected.custom_price || product?.price;
               const displayImage = selected.custom_image_url || product?.image_url;
+              // Generate a stable key - use product_id if available, otherwise use index with custom prefix
+              const itemKey = selected.product_id || `custom-${index}-${selected.custom_name || 'product'}`;
 
               return (
-                <Collapsible key={`${selected.product_id}-${index}`}>
+                <Collapsible key={itemKey} defaultOpen={false}>
                   <div className="border rounded-lg p-3">
                     <div className="flex items-center gap-3">
                       <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
@@ -238,7 +244,10 @@ export function ProductSelector({ selectedProducts, onProductsChange }: ProductS
                         type="button"
                         variant="ghost"
                         size="icon"
-                        onClick={() => removeProduct(selected.product_id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeProduct(selected.product_id);
+                        }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -252,7 +261,10 @@ export function ProductSelector({ selectedProducts, onProductsChange }: ProductS
                           <Input
                             type="number"
                             value={selected.custom_price || ""}
-                            onChange={(e) => updateProductOverride(selected.product_id, "custom_price", Number(e.target.value) || undefined)}
+                            onChange={(e) => {
+                              const value = e.target.value === "" ? undefined : Number(e.target.value);
+                              updateProductOverride(selected.product_id, "custom_price", value);
+                            }}
                             placeholder={product?.price?.toString() || "Price"}
                           />
                         </div>
@@ -261,8 +273,30 @@ export function ProductSelector({ selectedProducts, onProductsChange }: ProductS
                           <Input
                             type="number"
                             value={selected.custom_original_price || ""}
-                            onChange={(e) => updateProductOverride(selected.product_id, "custom_original_price", Number(e.target.value) || undefined)}
+                            onChange={(e) => {
+                              const value = e.target.value === "" ? undefined : Number(e.target.value);
+                              updateProductOverride(selected.product_id, "custom_original_price", value);
+                            }}
                             placeholder={product?.original_price?.toString() || "Original"}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs">Custom Name</Label>
+                          <Input
+                            value={selected.custom_name || ""}
+                            onChange={(e) => {
+                              const value = e.target.value === "" ? undefined : e.target.value;
+                              updateProductOverride(selected.product_id, "custom_name", value);
+                            }}
+                            placeholder={product?.name || "Product name"}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs">Custom Image</Label>
+                          <ImageUpload
+                            value={selected.custom_image_url || ""}
+                            onChange={(url) => updateProductOverride(selected.product_id, "custom_image_url", url || undefined)}
+                            folder="landing-pages"
                           />
                         </div>
                       </div>

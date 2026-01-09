@@ -6,6 +6,11 @@ ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
   bucket_id = 'products-images' 
-  AND (storage.foldername(name))[1] IN ('products', 'banners', 'categories', 'landing-pages')
+  AND (
+    name LIKE 'products/%'
+    OR name LIKE 'banners/%'
+    OR name LIKE 'categories/%'
+    OR name LIKE 'landing-pages/%'
+  )
   AND is_admin()
 );
