@@ -181,6 +181,229 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_page_orders: {
+        Row: {
+          city: string
+          created_at: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_charge: number | null
+          delivery_location: string | null
+          id: string
+          items: Json
+          landing_page_id: string | null
+          message: string | null
+          order_number: string
+          shipping_address: string
+          status: string | null
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string
+          created_at?: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_charge?: number | null
+          delivery_location?: string | null
+          id?: string
+          items: Json
+          landing_page_id?: string | null
+          message?: string | null
+          order_number: string
+          shipping_address: string
+          status?: string | null
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string
+          created_at?: string | null
+          customer_name?: string
+          customer_phone?: string
+          delivery_charge?: number | null
+          delivery_location?: string | null
+          id?: string
+          items?: Json
+          landing_page_id?: string | null
+          message?: string | null
+          order_number?: string
+          shipping_address?: string
+          status?: string | null
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_orders_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_page_products: {
+        Row: {
+          created_at: string | null
+          custom_image_url: string | null
+          custom_name: string | null
+          custom_original_price: number | null
+          custom_price: number | null
+          display_order: number | null
+          id: string
+          landing_page_id: string
+          product_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          custom_image_url?: string | null
+          custom_name?: string | null
+          custom_original_price?: number | null
+          custom_price?: number | null
+          display_order?: number | null
+          id?: string
+          landing_page_id: string
+          product_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          custom_image_url?: string | null
+          custom_name?: string | null
+          custom_original_price?: number | null
+          custom_price?: number | null
+          display_order?: number | null
+          id?: string
+          landing_page_id?: string
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_products_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "landing_page_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_page_reviews: {
+        Row: {
+          created_at: string | null
+          customer_name: string
+          display_order: number | null
+          id: string
+          landing_page_id: string
+          review_text: string
+        }
+        Insert: {
+          created_at?: string | null
+          customer_name: string
+          display_order?: number | null
+          id?: string
+          landing_page_id: string
+          review_text: string
+        }
+        Update: {
+          created_at?: string | null
+          customer_name?: string
+          display_order?: number | null
+          id?: string
+          landing_page_id?: string
+          review_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_reviews_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_pages: {
+        Row: {
+          created_at: string | null
+          delivery_charge_inside: number | null
+          delivery_charge_outside: number | null
+          display_order: number | null
+          fb_access_token: string | null
+          fb_dataset_id: string | null
+          fb_pixel_id: string | null
+          fb_test_event_code: string | null
+          features: Json | null
+          hero_cta_text: string | null
+          hero_image_url: string | null
+          hero_stats_text: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string
+          is_active: boolean | null
+          meta_description: string | null
+          meta_keywords: string | null
+          meta_title: string | null
+          slug: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_charge_inside?: number | null
+          delivery_charge_outside?: number | null
+          display_order?: number | null
+          fb_access_token?: string | null
+          fb_dataset_id?: string | null
+          fb_pixel_id?: string | null
+          fb_test_event_code?: string | null
+          features?: Json | null
+          hero_cta_text?: string | null
+          hero_image_url?: string | null
+          hero_stats_text?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          is_active?: boolean | null
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_title?: string | null
+          slug: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delivery_charge_inside?: number | null
+          delivery_charge_outside?: number | null
+          display_order?: number | null
+          fb_access_token?: string | null
+          fb_dataset_id?: string | null
+          fb_pixel_id?: string | null
+          fb_test_event_code?: string | null
+          features?: Json | null
+          hero_cta_text?: string | null
+          hero_image_url?: string | null
+          hero_stats_text?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          is_active?: boolean | null
+          meta_description?: string | null
+          meta_keywords?: string | null
+          meta_title?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       meta_settings: {
         Row: {
           access_token: string
