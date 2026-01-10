@@ -27,14 +27,34 @@ const statusLabels: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
+interface UnifiedOrder {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  customer_phone: string | null;
+  city: string;
+  delivery_location: string;
+  shipping_address: string;
+  message: string | null;
+  total_amount: number;
+  delivery_charge: number;
+  status: string;
+  created_at: string;
+  source: 'regular' | 'landing_page';
+  landing_page_slug?: string;
+  items?: any[];
+}
+
 const Orders = () => {
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
 
-  const { data: orders, isLoading } = useQuery({
+  // Fetch regular orders
+  const { data: regularOrders, isLoading: loadingRegular } = useQuery({
     queryKey: ["admin-orders"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -46,22 +66,75 @@ const Orders = () => {
     },
   });
 
-  const handleViewDetails = (orderId: string) => {
-    setSelectedOrderId(orderId);
+  // Fetch landing page orders with landing page info
+  const { data: landingPageOrders, isLoading: loadingLP } = useQuery({
+    queryKey: ["admin-landing-page-orders"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("landing_page_orders")
+        .select("*, landing_pages(slug, title)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Combine and normalize orders
+  const allOrders: UnifiedOrder[] = [
+    ...(regularOrders?.map(order => ({
+      id: order.id,
+      order_number: order.order_number,
+      customer_name: order.customer_name,
+      customer_phone: order.customer_phone,
+      city: order.city,
+      delivery_location: order.delivery_location,
+      shipping_address: order.shipping_address,
+      message: order.message,
+      total_amount: order.total_amount,
+      delivery_charge: order.delivery_charge,
+      status: order.status,
+      created_at: order.created_at,
+      source: 'regular' as const,
+    })) || []),
+    ...(landingPageOrders?.map(order => ({
+      id: order.id,
+      order_number: order.order_number,
+      customer_name: order.customer_name,
+      customer_phone: order.customer_phone,
+      city: order.city,
+      delivery_location: order.delivery_location || 'inside_dhaka',
+      shipping_address: order.shipping_address,
+      message: order.message,
+      total_amount: order.total_amount,
+      delivery_charge: order.delivery_charge || 0,
+      status: order.status || 'pending',
+      created_at: order.created_at || new Date().toISOString(),
+      source: 'landing_page' as const,
+      landing_page_slug: (order.landing_pages as any)?.slug,
+      items: order.items as any[],
+    })) || []),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const handleViewDetails = (order: UnifiedOrder) => {
+    setSelectedOrder(order);
     setDialogOpen(true);
   };
 
+  const isLoading = loadingRegular || loadingLP;
+
   // Filter orders
-  const filteredOrders = orders?.filter((order) => {
+  const filteredOrders = allOrders.filter((order) => {
     const matchesSearch =
       order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer_phone.includes(searchQuery);
+      (order.customer_phone?.includes(searchQuery) ?? false) ||
+      (order.landing_page_slug?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
 
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    const matchesLocation = locationFilter === "all" || (order as any).delivery_location === locationFilter;
+    const matchesLocation = locationFilter === "all" || order.delivery_location === locationFilter;
+    const matchesSource = sourceFilter === "all" || order.source === sourceFilter;
 
-    return matchesSearch && matchesStatus && matchesLocation;
+    return matchesSearch && matchesStatus && matchesLocation && matchesSource;
   });
 
   return (
@@ -74,9 +147,9 @@ const Orders = () => {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <Input
-          placeholder="Search by order #, name, or phone..."
+          placeholder="Search by order #, name, phone, or LP slug..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="md:col-span-2"
@@ -107,6 +180,17 @@ const Orders = () => {
             <SelectItem value="outside_dhaka">Outside Dhaka</SelectItem>
           </SelectContent>
         </Select>
+
+        <Select value={sourceFilter} onValueChange={setSourceFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by source" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Sources</SelectItem>
+            <SelectItem value="regular">Regular Orders</SelectItem>
+            <SelectItem value="landing_page">Landing Page Orders</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Orders Table */}
@@ -118,6 +202,7 @@ const Orders = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Order #</TableHead>
+                <TableHead>Source</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead className="hidden sm:table-cell">Phone</TableHead>
                 <TableHead className="hidden md:table-cell">City</TableHead>
@@ -131,26 +216,37 @@ const Orders = () => {
             <TableBody>
               {filteredOrders?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     No orders found
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredOrders?.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={`${order.source}-${order.id}`}>
                     <TableCell className="font-medium">{order.order_number}</TableCell>
+                    <TableCell>
+                      {order.source === 'landing_page' ? (
+                        <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                          LP-{order.landing_page_slug}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                          Website
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell>{order.customer_name}</TableCell>
                     <TableCell className="hidden sm:table-cell">{order.customer_phone}</TableCell>
-                    <TableCell className="hidden md:table-cell">{(order as any).city}</TableCell>
+                    <TableCell className="hidden md:table-cell">{order.city}</TableCell>
                     <TableCell className="hidden lg:table-cell">
                       <span className="text-xs">
-                        {(order as any).delivery_location === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka"}
+                        {order.delivery_location === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka"}
                       </span>
                     </TableCell>
                     <TableCell className="font-medium">৳{Number(order.total_amount).toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge className={statusColors[order.status]}>
-                        {statusLabels[order.status]}
+                        {statusLabels[order.status] || order.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">{new Date(order.created_at).toLocaleDateString()}</TableCell>
@@ -159,7 +255,7 @@ const Orders = () => {
                         variant="ghost"
                         size="sm"
                         className="text-xs"
-                        onClick={() => handleViewDetails(order.id)}
+                        onClick={() => handleViewDetails(order)}
                       >
                         <Eye className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                         View
@@ -174,7 +270,7 @@ const Orders = () => {
       )}
 
       <OrderDetailDialog
-        orderId={selectedOrderId}
+        order={selectedOrder}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
