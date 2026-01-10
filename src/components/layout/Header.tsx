@@ -141,7 +141,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background border-b">
+    <header className="sticky top-0 z-50 w-full bg-white border-b">
       {!isOnline && (
         <div className="bg-yellow-500 text-white text-center py-2 text-sm font-medium">
           You're currently offline. Some features may be limited.
@@ -149,9 +149,9 @@ export const Header = () => {
       )}
       
       {/* Top Utility Bar - Desktop Only */}
-      <div className="hidden lg:block border-b bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-2 text-xs text-muted-foreground">
+      <div className="hidden lg:block border-b bg-muted/30 h-[34px]">
+        <div className="container mx-auto px-4 h-full">
+          <div className="flex items-center justify-between h-full text-xs text-muted-foreground">
             {/* Left: Site Label */}
             <Link to="/" className="hover:text-primary transition-colors font-medium">
               Rongbazar.com
@@ -165,15 +165,16 @@ export const Header = () => {
         </div>
       </div>
 
-      {/* Main Header */}
+      {/* Main Header - Desktop: 3-column grid, Mobile: 2-row layout */}
       <div className="container mx-auto px-2 md:px-4">
-        <div className="flex items-center justify-between gap-2 py-2 md:py-3 lg:py-4">
-          {/* Logo */}
+        {/* Desktop & Tablet: 3-column grid layout */}
+        <div className="hidden md:grid grid-cols-[auto_1fr_auto] items-center gap-3 lg:gap-6 py-3 lg:py-4">
+          {/* Column 1: Logo */}
           <Link to="/" className="flex items-center shrink-0">
             <img 
               src={logo}
               alt="YUKON Lifestyle" 
-              className="h-8 md:h-10 lg:h-12 w-auto"
+              className="h-10 lg:h-12 w-auto"
               width="120"
               height="48"
               loading="eager"
@@ -181,11 +182,106 @@ export const Header = () => {
             />
           </Link>
 
-          {/* Search Bar - Mobile & Desktop */}
-          <div className="flex flex-1 mx-2 md:mx-4 lg:mx-8">
-            {/* Mobile: Small Search Input (shown when menu is closed) */}
-            {!mobileMenuOpen && (
-              <form onSubmit={handleSearch} className="relative w-full md:hidden">
+          {/* Column 2: Search Bar Container */}
+          <div className="min-w-0">
+            <form onSubmit={handleSearch} className="relative w-full">
+              <Input
+                type="text"
+                placeholder="Search for something..."
+                className="w-full pr-12 h-10 md:h-11 lg:h-12 text-sm md:text-base rounded-r-none border-r-0"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Button
+                type="submit"
+                size="icon"
+                className="absolute right-0 top-0 h-10 md:h-11 lg:h-12 rounded-l-none"
+              >
+                <Search className="h-4 w-4 md:h-5 md:w-5" />
+              </Button>
+            </form>
+          </div>
+
+          {/* Column 3: Right Actions Container */}
+          <div className="flex items-center gap-2 lg:gap-3 whitespace-nowrap">
+            {/* Phone Block - Tablet: icon + number only, Desktop: full text */}
+            <div className="hidden md:flex items-center gap-1 lg:gap-2 overflow-hidden">
+              <span className="hidden lg:inline text-sm text-muted-foreground shrink-0">Call Us Now:</span>
+              <a href="tel:+8801906192164" className="text-sm font-medium text-primary hover:underline flex items-center gap-1 shrink-0">
+                <Phone className="h-4 w-4 shrink-0" />
+                <span className="truncate">01613035048</span>
+              </a>
+            </div>
+
+            {/* Wishlist Icon - Desktop Only */}
+            <Button size="icon" variant="ghost" className="hidden lg:flex relative h-9 md:h-10 w-9 md:w-10 shrink-0">
+              <Heart className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                0
+              </span>
+            </Button>
+
+            {/* User/Login - Desktop Only */}
+            <Link to="/admin/login" className="hidden lg:flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors shrink-0">
+              <User className="h-5 w-5 shrink-0" />
+              <span className="whitespace-nowrap">Hi, Login/Signup</span>
+            </Link>
+
+            {/* Cart Icon - Desktop Only */}
+            <Link to="/cart" className="hidden lg:block relative shrink-0">
+              <div className="flex flex-col items-center">
+                <ShoppingCart className="h-6 w-6 text-foreground" />
+                <span className="text-xs text-muted-foreground mt-1 whitespace-nowrap">{cartItemCount} items</span>
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Mobile: 2-row layout */}
+        <div className="md:hidden">
+          {/* Row 1: Logo + Icons */}
+          <div className="flex items-center justify-between py-2">
+            <Link to="/" className="flex items-center shrink-0">
+              <img 
+                src={logo}
+                alt="YUKON Lifestyle" 
+                className="h-8 w-auto"
+                width="120"
+                height="48"
+                loading="eager"
+                decoding="async"
+              />
+            </Link>
+            
+            <div className="flex items-center gap-2">
+              <Link to="/cart" className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                    {cartItemCount}
+                  </span>
+                )}
+              </Link>
+              
+              <Link to="/admin/login">
+                <User className="h-5 w-5" />
+              </Link>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
+          </div>
+          
+          {/* Row 2: Full-width Search Bar */}
+          {!mobileMenuOpen && (
+            <div className="pb-2">
+              <form onSubmit={handleSearch} className="relative w-full">
                 <Input
                   type="text"
                   placeholder="Search"
@@ -202,87 +298,26 @@ export const Header = () => {
                   <Search className="h-4 w-4" />
                 </Button>
               </form>
-            )}
-            
-            {/* Desktop: Full Search Bar */}
-            <form onSubmit={handleSearch} className="relative w-full hidden md:block">
-              <Input
-                type="text"
-                placeholder="Search for something..."
-                className="w-full pr-12 h-11 lg:h-12 text-base rounded-r-none border-r-0"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="absolute right-0 top-0 h-11 lg:h-12 rounded-l-none"
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-            </form>
-          </div>
-
-          {/* Right Actions */}
-          <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
-            {/* Desktop: Phone Block */}
-            <div className="hidden lg:flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Call Us Now:</span>
-              <a href="tel:+8801906192164" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
-                <Phone className="h-4 w-4" />
-                01613035048
-              </a>
             </div>
-
-            {/* Wishlist Icon - Desktop Only */}
-            <Button size="icon" variant="ghost" className="hidden lg:flex relative h-9 w-9 md:h-10 md:w-10">
-              <Heart className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                0
-              </span>
-            </Button>
-
-            {/* User/Login - Desktop Only */}
-            <Link to="/admin/login" className="hidden lg:flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
-              <User className="h-5 w-5" />
-              <span>Hi, Login/Signup</span>
-            </Link>
-
-            {/* Cart Icon - Desktop Only (mobile shows in bottom nav) */}
-            <Link to="/cart" className="hidden lg:block relative">
-              <div className="flex flex-col items-center">
-                <ShoppingCart className="h-6 w-6 text-foreground" />
-                <span className="text-xs text-muted-foreground mt-1">{cartItemCount} items</span>
-              </div>
-            </Link>
-
-            {/* Mobile menu toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden h-9 w-9"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
+          )}
         </div>
       </div>
 
       {/* Black Category Navbar */}
-      <nav className="bg-black border-t">
-        <div className="container mx-auto px-4">
-          <div className="hidden md:flex items-center justify-center gap-6 lg:gap-8 h-12 overflow-x-auto">
-            <Link to="/" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
+      <nav className="bg-black border-t h-12">
+        <div className="container mx-auto px-4 h-full">
+          {/* Desktop & Tablet: Horizontal navigation */}
+          <div className="hidden md:flex items-center justify-center gap-4 lg:gap-6 h-full overflow-x-auto scrollbar-hide">
+            <Link to="/" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
               Home
             </Link>
             
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-white hover:text-primary font-medium bg-transparent hover:bg-transparent data-[state=open]:bg-transparent h-auto py-0 text-sm">
+                  <NavigationMenuTrigger className="text-white hover:text-primary font-medium bg-transparent hover:bg-transparent data-[state=open]:bg-transparent h-auto py-0 text-sm whitespace-nowrap">
                     MEN'S FASHION
-                    <ChevronDown className="ml-1 h-4 w-4" />
+                    <ChevronDown className="ml-1 h-4 w-4 inline" />
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="w-56 p-2 bg-background shadow-lg rounded-md">
@@ -309,22 +344,47 @@ export const Header = () => {
               </NavigationMenuList>
             </NavigationMenu>
 
-            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
+            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
               WOMENS FASHION
             </Link>
-            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
+            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
               WINTER COLLECTIONS
             </Link>
-            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
+            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
               GADGET & ELECTRONICS
             </Link>
-            <Link to="/reviews" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
+            <Link to="/reviews" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
               Reviews
             </Link>
-            <Link to="/best-selling" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
+            <Link to="/best-selling" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
               Best Selling
             </Link>
-            <Link to="/flash-selling" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
+            <Link to="/flash-selling" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
+              Flash Selling
+            </Link>
+          </div>
+          
+          {/* Mobile: Horizontal scroll navbar */}
+          <div className="md:hidden flex items-center gap-4 h-full overflow-x-auto scrollbar-hide px-2">
+            <Link to="/" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
+              Home
+            </Link>
+            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
+              MEN'S FASHION
+            </Link>
+            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
+              WOMENS FASHION
+            </Link>
+            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
+              WINTER COLLECTIONS
+            </Link>
+            <Link to="/reviews" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
+              Reviews
+            </Link>
+            <Link to="/best-selling" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
+              Best Selling
+            </Link>
+            <Link to="/flash-selling" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
               Flash Selling
             </Link>
           </div>
