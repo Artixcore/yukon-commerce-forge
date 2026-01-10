@@ -170,7 +170,7 @@ export function ProductSelector({ selectedProducts, onProductsChange }: ProductS
       </div>
 
       {/* Product List */}
-      <ScrollArea className="h-48 border rounded-lg p-2">
+      <ScrollArea className="h-64 border rounded-lg p-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
