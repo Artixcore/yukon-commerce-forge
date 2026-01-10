@@ -7,12 +7,29 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { showSuccess, showError } from "@/lib/sweetalert";
 import { useState } from "react";
 import { Phone, MapPin, MessageSquare } from "lucide-react";
-import { Database } from "@/integrations/supabase/types";
 
-type OrderStatus = Database["public"]["Enums"]["order_status"];
+type OrderStatus = "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled";
+
+interface UnifiedOrder {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  customer_phone: string | null;
+  city: string;
+  delivery_location: string;
+  shipping_address: string;
+  message: string | null;
+  total_amount: number;
+  delivery_charge: number;
+  status: string;
+  created_at: string;
+  source: 'regular' | 'landing_page';
+  landing_page_slug?: string;
+  items?: any[];
+}
 
 interface OrderDetailDialogProps {
-  orderId: string | null;
+  order: UnifiedOrder | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -35,51 +52,46 @@ const statusLabels: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDialogProps) => {
+export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDialogProps) => {
   const queryClient = useQueryClient();
   const [newStatus, setNewStatus] = useState<OrderStatus | "">("");
 
-  const { data: order, isLoading } = useQuery({
-    queryKey: ["order-detail", orderId],
-    queryFn: async () => {
-      if (!orderId) return null;
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!orderId,
-  });
-
+  // Fetch order items only for regular orders (LP orders have items embedded)
   const { data: orderItems } = useQuery({
-    queryKey: ["order-items", orderId],
+    queryKey: ["order-items", order?.id, order?.source],
     queryFn: async () => {
-      if (!orderId) return [];
+      if (!order || order.source !== 'regular') return [];
       const { data, error } = await supabase
         .from("order_items")
         .select("*")
-        .eq("order_id", orderId);
+        .eq("order_id", order.id);
       if (error) throw error;
       return data;
     },
-    enabled: !!orderId,
+    enabled: !!order && order.source === 'regular',
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: async (status: OrderStatus) => {
-      if (!orderId) return;
-      const { error } = await supabase
-        .from("orders")
-        .update({ status })
-        .eq("id", orderId);
-      if (error) throw error;
+      if (!order) return;
+      
+      if (order.source === 'regular') {
+        const { error } = await supabase
+          .from("orders")
+          .update({ status })
+          .eq("id", order.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("landing_page_orders")
+          .update({ status })
+          .eq("id", order.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["order-detail", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-landing-page-orders"] });
       showSuccess("Updated!", "Order status updated successfully");
     },
     onError: (error: any) => {
@@ -104,13 +116,25 @@ export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDi
 
   if (!order) return null;
 
-  const subtotal = (order as any).total_amount - (order as any).delivery_charge;
+  const subtotal = order.total_amount - order.delivery_charge;
+  
+  // Get items based on order source
+  const displayItems = order.source === 'landing_page' 
+    ? (order.items || []) 
+    : (orderItems || []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Order Details</DialogTitle>
+          <DialogTitle className="text-2xl flex items-center gap-3">
+            Order Details
+            {order.source === 'landing_page' && (
+              <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                LP-{order.landing_page_slug}
+              </Badge>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -126,11 +150,15 @@ export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDi
             </div>
             <div>
               <p className="text-sm text-muted-foreground">City</p>
-              <p className="font-semibold">{(order as any).city}</p>
+              <p className="font-semibold">{order.city}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Delivery Location</p>
-              <Badge className={statusColors[order.status]}>{statusLabels[order.status]}</Badge>
+              <p className="text-sm text-muted-foreground">Status</p>
+              <Badge className={statusColors[order.status]}>{statusLabels[order.status] || order.status}</Badge>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Source</p>
+              <p className="font-semibold">{order.source === 'landing_page' ? `Landing Page (${order.landing_page_slug})` : 'Website'}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Payment Method</p>
@@ -155,25 +183,25 @@ export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDi
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">City:</span>
-                <span className="font-medium">{(order as any).city}</span>
+                <span className="font-medium">{order.city}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Delivery Location:</span>
                 <span className="font-medium">
-                  {(order as any).delivery_location === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka"}
+                  {order.delivery_location === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka"}
                 </span>
               </div>
               <div className="pt-2 border-t">
                 <p className="text-sm text-muted-foreground mb-1">Address:</p>
                 <p className="font-medium">{order.shipping_address}</p>
               </div>
-              {(order as any).message && (
+              {order.message && (
                 <div className="pt-2 border-t">
                   <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
                     <MessageSquare className="w-3 h-3" />
                     Special Instructions:
                   </p>
-                  <p className="font-medium text-sm">{(order as any).message}</p>
+                  <p className="font-medium text-sm">{order.message}</p>
                 </div>
               )}
             </div>
@@ -183,8 +211,8 @@ export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDi
           <div className="border rounded-lg p-4">
             <h3 className="font-semibold mb-3">Order Items</h3>
             <div className="space-y-3">
-              {orderItems?.map((item) => (
-                <div key={item.id} className="flex justify-between py-2 border-b last:border-0">
+              {displayItems.map((item: any, index: number) => (
+                <div key={item.id || index} className="flex justify-between py-2 border-b last:border-0">
                   <div>
                     <p className="font-medium">{item.product_name}</p>
                     <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
@@ -197,6 +225,9 @@ export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDi
                   </div>
                 </div>
               ))}
+              {displayItems.length === 0 && (
+                <p className="text-muted-foreground text-sm">No items found</p>
+              )}
             </div>
           </div>
 
@@ -209,7 +240,7 @@ export const OrderDetailDialog = ({ orderId, open, onOpenChange }: OrderDetailDi
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Delivery Charge:</span>
-                <span className="font-medium">৳{Number((order as any).delivery_charge).toFixed(2)}</span>
+                <span className="font-medium">৳{Number(order.delivery_charge).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-lg font-bold border-t pt-2">
                 <span>Total Amount:</span>
