@@ -154,7 +154,7 @@ export const Header = () => {
           <div className="flex items-center justify-between h-full text-xs text-muted-foreground">
             {/* Left: Site Label */}
             <Link to="/" className="hover:text-primary transition-colors font-medium">
-              Rongbazar.com
+              Yukonlifestyle.com
             </Link>
             
             {/* Right: Order Tracking */}
