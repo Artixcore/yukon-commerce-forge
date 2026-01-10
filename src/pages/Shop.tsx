@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { CategoriesSidebar } from "@/components/shop/CategoriesSidebar";
 import { Search } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -60,7 +62,7 @@ const Shop = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Header />
 
       {/* Breadcrumb */}
@@ -73,9 +75,12 @@ const Shop = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar Filters */}
-          <aside className="w-full lg:w-64 shrink-0">
-            <Card className="p-6 sticky top-20">
+          {/* Categories Sidebar - Desktop Only */}
+          <CategoriesSidebar />
+
+          {/* Sidebar Filters - Mobile/Tablet */}
+          <aside className="w-full lg:hidden">
+            <Card className="p-6">
               <h2 className="font-bold text-lg mb-4">Filters</h2>
               
               {/* Search */}
@@ -172,6 +177,7 @@ const Shop = () => {
       </main>
 
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

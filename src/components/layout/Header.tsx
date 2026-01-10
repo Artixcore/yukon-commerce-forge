@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
@@ -147,11 +147,49 @@ export const Header = () => {
           You're currently offline. Some features may be limited.
         </div>
       )}
-      {/* Top bar with logo, search, phone, and cart */}
+      
+      {/* Top Mini Bar - Desktop Only */}
+      <div className="hidden lg:block border-b bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between py-2 text-sm">
+            {/* Left: Order Tracking */}
+            <Link to="/track" className="text-muted-foreground hover:text-primary transition-colors">
+              Order Tracking
+            </Link>
+            
+            {/* Center: Call Us Now */}
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Call Us Now</span>
+              <a href="tel:+8801906192164" className="text-primary font-medium hover:underline flex items-center gap-1">
+                <Phone className="h-3 w-3" />
+                +880 1906-192164
+              </a>
+            </div>
+            
+            {/* Right: Login/Signup + Cart */}
+            <div className="flex items-center gap-4">
+              <Link to="/admin/login" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                <User className="h-4 w-4" />
+                Login
+              </Link>
+              <Link to="/cart" className="relative">
+                <ShoppingCart className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartItemCount}
+                  </span>
+                )}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Header */}
       <div className="container mx-auto px-2 md:px-4">
-        <div className="flex items-center justify-between gap-2 py-2 md:py-0 md:h-20">
+        <div className="flex items-center justify-between gap-2 py-2 md:py-3 lg:py-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center shrink-0">
             <img 
               src={logo}
               alt="YUKON Lifestyle" 
@@ -164,37 +202,61 @@ export const Header = () => {
           </Link>
 
           {/* Search Bar - Mobile & Desktop */}
-          <div className="flex flex-1 md:max-w-2xl mx-2 md:mx-8">
-            <form onSubmit={handleSearch} className="relative w-full">
+          <div className="flex flex-1 md:max-w-2xl mx-2 md:mx-4 lg:mx-8">
+            {/* Mobile: Small Search Input (shown when menu is closed) */}
+            {!mobileMenuOpen && (
+              <form onSubmit={handleSearch} className="relative w-full md:hidden">
+                <Input
+                  type="text"
+                  placeholder="Search"
+                  className="w-full pr-10 h-9 text-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="absolute right-0 top-0 h-9 w-9"
+                  variant="ghost"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
+            )}
+            
+            {/* Desktop: Full Search Bar */}
+            <form onSubmit={handleSearch} className="relative w-full hidden md:block">
               <Input
                 type="text"
                 placeholder="Search product"
-                className="w-full pr-12 h-9 md:h-11 rounded-r-none border-r-0"
+                className="w-full pr-12 h-10 lg:h-11 rounded-r-none border-r-0"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Button
                 type="submit"
                 size="icon"
-                className="absolute right-0 top-0 h-9 md:h-11 rounded-l-none"
+                className="absolute right-0 top-0 h-10 lg:h-11 rounded-l-none"
               >
-                <Search className="h-3 w-3 md:h-4 md:w-4" />
+                <Search className="h-4 w-4" />
               </Button>
             </form>
           </div>
 
-          {/* Right Actions - Mobile & Desktop */}
-          <div className="flex items-center gap-1 md:gap-2 lg:gap-4">
-            <Button variant="destructive" className="hidden lg:flex items-center gap-2 h-11">
+          {/* Right Actions */}
+          <div className="flex items-center gap-1 md:gap-2 lg:gap-3">
+            {/* Phone - Desktop Only (mobile shows in bottom nav) */}
+            <a href="tel:+8801906192164" className="hidden lg:flex items-center gap-2 text-primary hover:underline">
               <Phone className="h-4 w-4" />
-              <span>+880 1906-192164</span>
-            </Button>
+              <span className="text-sm font-medium">+880 1906-192164</span>
+            </a>
 
+            {/* Cart Icon */}
             <Link to="/cart" className="block">
-              <Button size="icon" variant="destructive" className="relative h-9 w-9 md:h-11 md:w-11">
-                <ShoppingCart className="h-4 w-4 md:h-5 md:w-5" />
+              <Button size="icon" variant="ghost" className="relative h-9 w-9 md:h-10 md:w-10">
+                <ShoppingCart className="h-5 w-5" />
                 {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-background text-foreground text-[10px] md:text-xs font-bold rounded-full h-4 w-4 md:h-5 md:w-5 flex items-center justify-center border-2 border-primary">
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
                     {cartItemCount}
                   </span>
                 )}

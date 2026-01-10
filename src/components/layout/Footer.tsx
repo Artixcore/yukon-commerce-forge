@@ -3,88 +3,81 @@ import { Facebook, Instagram, Youtube } from "lucide-react";
 
 export const Footer = () => {
   return (
-    <footer className="bg-background text-foreground py-8 md:py-12 border-t mt-12 font-bricolage">
+    <footer className="bg-background text-foreground py-8 md:py-12 border-t mt-12">
       <div className="container mx-auto px-4">
-        <div className="space-y-6 md:space-y-8">
-          {/* Mobile: 3 lines | Desktop: Single line with 3 columns */}
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 md:gap-16">
-            {/* About Section */}
-            <div className="text-center md:text-left md:flex-1">
-              <h3 className="font-bold text-base md:text-xl mb-2 md:mb-5">About</h3>
-              <p className="text-xs md:text-base leading-relaxed opacity-90">
-                Yukon Lifestyle - Your trusted destination for quality products and exceptional service.
-              </p>
-            </div>
-
-            {/* Mobile: Quick Links and Customer Service side by side | Desktop: Continue in same row */}
-            <div className="grid grid-cols-2 md:grid-cols-2 gap-6 md:gap-16 md:flex-1">
-              {/* Quick Links */}
-              <div>
-                <h3 className="font-bold text-base md:text-xl mb-2 md:mb-5">Quick Links</h3>
-                <ul className="space-y-1 md:space-y-3">
-                  <li>
-                    <Link to="/" className="text-xs md:text-base hover:text-primary transition-colors">
-                      Home
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/shop" className="text-xs md:text-base hover:text-primary transition-colors">
-                      Shop
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/about" className="text-xs md:text-base hover:text-primary transition-colors">
-                      About Us
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/contact" className="text-xs md:text-base hover:text-primary transition-colors">
-                      Contact
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Customer Service */}
-              <div>
-                <h3 className="font-bold text-base md:text-xl mb-2 md:mb-5">Customer Service</h3>
-                <ul className="space-y-1 md:space-y-3">
-                  <li>
-                    <Link to="/contact" className="text-xs md:text-base hover:text-primary transition-colors">
-                      Help Center
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/returns" className="text-xs md:text-base hover:text-primary transition-colors">
-                      Returns
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/shipping" className="text-xs md:text-base hover:text-primary transition-colors">
-                      Shipping Info
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/track" className="text-xs md:text-base hover:text-primary transition-colors">
-                      Track Order
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
+        {/* Main Footer Content - Multi-column layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 mb-8">
+          {/* About Section */}
+          <div className="lg:col-span-1">
+            <h3 className="font-bold text-lg mb-4 text-foreground">About</h3>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Yukon Lifestyle - Your trusted destination for quality products and exceptional service.
+            </p>
           </div>
-        </div>
 
-        {/* Bottom section with social links and copyright */}
-        <div className="border-t border-border/20 mt-6 md:mt-8 pt-6 md:pt-8">
-          <div className="flex flex-col items-center gap-4">
-            {/* Social Links */}
-            <div className="flex gap-4">
+          {/* Quick Links */}
+          <div>
+            <h3 className="font-bold text-lg mb-4 text-foreground">Quick Links</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link to="/shop" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Shop
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Contact
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Customer Service */}
+          <div>
+            <h3 className="font-bold text-lg mb-4 text-foreground">Customer Service</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Help Center
+                </Link>
+              </li>
+              <li>
+                <Link to="/returns" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Returns
+                </Link>
+              </li>
+              <li>
+                <Link to="/shipping" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Shipping Info
+                </Link>
+              </li>
+              <li>
+                <Link to="/track" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Track Order
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Information / Social */}
+          <div>
+            <h3 className="font-bold text-lg mb-4 text-foreground">Follow Us</h3>
+            <div className="flex gap-4 mb-4">
               <a 
                 href="https://www.facebook.com/YUKONLifestyle/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="hover:text-primary transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Visit our Facebook page"
               >
                 <Facebook className="h-5 w-5" />
@@ -93,7 +86,7 @@ export const Footer = () => {
                 href="https://www.instagram.com/yukonlifestyle06/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="hover:text-primary transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Visit our Instagram page"
               >
                 <Instagram className="h-5 w-5" />
@@ -102,7 +95,7 @@ export const Footer = () => {
                 href="https://www.youtube.com/@YUKONLifestyle" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="hover:text-primary transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Visit our YouTube channel"
               >
                 <Youtube className="h-5 w-5" />
@@ -111,7 +104,7 @@ export const Footer = () => {
                 href="https://www.tiktok.com/@yukonlifestyle?lang=en" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="hover:text-primary transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Visit our TikTok page"
               >
                 <svg 
@@ -124,11 +117,22 @@ export const Footer = () => {
                 </svg>
               </a>
             </div>
-            
+          </div>
+        </div>
+
+        {/* Bottom section with copyright */}
+        <div className="border-t border-border/20 pt-6 md:pt-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Copyright */}
-            <p className="text-xs md:text-base opacity-90 text-center">
+            <p className="text-sm text-muted-foreground text-center md:text-left">
               © {new Date().getFullYear()} Yukon Lifestyle. All rights reserved.
             </p>
+            
+            {/* Payment methods - Visual only if needed */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>We accept:</span>
+              <span className="font-medium">Cash on Delivery</span>
+            </div>
           </div>
         </div>
       </div>

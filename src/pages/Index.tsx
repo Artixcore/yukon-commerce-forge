@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { HeroSection } from "@/components/home/HeroSection";
 import { Features } from "@/components/home/Features";
 
@@ -17,7 +18,7 @@ const SectionLoader = ({ height = "h-96" }: { height?: string }) => (
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Header />
       <HeroSection />
       <Suspense fallback={<SectionLoader />}>
@@ -34,6 +35,7 @@ const Index = () => {
         <CustomerReviews />
       </Suspense>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };
