@@ -20,20 +20,27 @@ import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { ProductSelector } from "@/components/admin/ProductSelector";
 import { Plus, Trash2, GripVertical } from "lucide-react";
-import { showSuccess } from "@/lib/sweetalert";
+import { showSuccess, showError } from "@/lib/sweetalert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const landingPageSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  slug: z.string().min(1, "Slug is required"),
+  slug: z.string()
+    .min(1, "Slug is required")
+    .regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens")
+    .refine((val) => !val.startsWith("-") && !val.endsWith("-"), {
+      message: "Slug cannot start or end with a hyphen",
+    }),
   hero_image_url: z.string().optional(),
   hero_title: z.string().optional(),
   hero_subtitle: z.string().optional(),
   hero_cta_text: z.string().optional(),
   hero_stats_text: z.string().optional(),
+  // SEO Settings - will be saved with tag lp-{slug}
   meta_title: z.string().optional(),
   meta_description: z.string().optional(),
   meta_keywords: z.string().optional(),
+  // Facebook/Meta Pixel Settings - will be saved with tag lp-{slug}
   fb_pixel_id: z.string().optional(),
   fb_access_token: z.string().optional(),
   fb_test_event_code: z.string().optional(),
@@ -196,21 +203,41 @@ export function LandingPageDialog({ open, onOpenChange, landingPage }: LandingPa
 
   const mutation = useMutation({
     mutationFn: async (data: LandingPageFormData) => {
+      // Validate slug is present before saving SEO/FB settings
+      if (!data.slug || data.slug.trim() === "") {
+        throw new Error("Slug is required. SEO and Facebook Pixel settings must be associated with a valid landing page slug.");
+      }
+
+      // Normalize slug (remove leading/trailing spaces and ensure lowercase)
+      const normalizedSlug = data.slug.trim().toLowerCase();
+
+      // Prepare SEO settings - convert empty strings to null
+      const seoSettings = {
+        meta_title: data.meta_title?.trim() || null,
+        meta_description: data.meta_description?.trim() || null,
+        meta_keywords: data.meta_keywords?.trim() || null,
+      };
+
+      // Prepare Facebook/Meta Pixel settings - convert empty strings to null
+      const fbPixelSettings = {
+        fb_pixel_id: data.fb_pixel_id?.trim() || null,
+        fb_access_token: data.fb_access_token?.trim() || null,
+        fb_test_event_code: data.fb_test_event_code?.trim() || null,
+        fb_dataset_id: data.fb_dataset_id?.trim() || null,
+      };
+
       const landingPageData = {
         title: data.title,
-        slug: data.slug,
+        slug: normalizedSlug,
         hero_image_url: data.hero_image_url || null,
         hero_title: data.hero_title || null,
         hero_subtitle: data.hero_subtitle || null,
         hero_cta_text: data.hero_cta_text || "অর্ডার করুন",
         hero_stats_text: data.hero_stats_text || null,
-        meta_title: data.meta_title || null,
-        meta_description: data.meta_description || null,
-        meta_keywords: data.meta_keywords || null,
-        fb_pixel_id: data.fb_pixel_id || null,
-        fb_access_token: data.fb_access_token || null,
-        fb_test_event_code: data.fb_test_event_code || null,
-        fb_dataset_id: data.fb_dataset_id || null,
+        // SEO Settings - saved with slug tag (lp-{slug})
+        ...seoSettings,
+        // Facebook/Meta Pixel Settings - saved with slug tag (lp-{slug})
+        ...fbPixelSettings,
         features: features,
         delivery_charge_inside: data.delivery_charge_inside,
         delivery_charge_outside: data.delivery_charge_outside,
@@ -218,22 +245,33 @@ export function LandingPageDialog({ open, onOpenChange, landingPage }: LandingPa
       };
 
       let pageId: string;
+      const slugTag = `lp-${normalizedSlug}`;
 
-      if (landingPage) {
-        const { error } = await supabase
-          .from("landing_pages")
-          .update(landingPageData)
-          .eq("id", landingPage.id);
-        if (error) throw error;
-        pageId = landingPage.id;
-      } else {
-        const { data: newPage, error } = await supabase
-          .from("landing_pages")
-          .insert(landingPageData)
-          .select()
-          .single();
-        if (error) throw error;
-        pageId = newPage.id;
+      try {
+        if (landingPage) {
+          const { error } = await supabase
+            .from("landing_pages")
+            .update(landingPageData)
+            .eq("id", landingPage.id);
+          if (error) {
+            throw new Error(`Failed to update landing page settings for slug "${normalizedSlug}" (tag: ${slugTag}): ${error.message}`);
+          }
+          pageId = landingPage.id;
+        } else {
+          const { data: newPage, error } = await supabase
+            .from("landing_pages")
+            .insert(landingPageData)
+            .select()
+            .single();
+          if (error) {
+            throw new Error(`Failed to create landing page with slug "${normalizedSlug}" (tag: ${slugTag}): ${error.message}`);
+          }
+          pageId = newPage.id;
+        }
+      } catch (error: any) {
+        // Re-throw with slug context for better debugging
+        const errorMessage = error.message || "Unknown error occurred";
+        throw new Error(`Error saving settings for landing page slug "${normalizedSlug}" (tag: ${slugTag}): ${errorMessage}`);
       }
 
       // Update products
@@ -265,10 +303,19 @@ export function LandingPageDialog({ open, onOpenChange, landingPage }: LandingPa
         if (reviewsError) throw reviewsError;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["admin-landing-pages"] });
-      showSuccess("Success!", landingPage ? "Landing page updated successfully" : "Landing page created successfully");
+      const slugTag = `lp-${variables.slug}`;
+      showSuccess(
+        "Success!", 
+        landingPage 
+          ? `Landing page updated successfully. SEO and Facebook Pixel settings saved with tag: ${slugTag}`
+          : `Landing page created successfully. SEO and Facebook Pixel settings saved with tag: ${slugTag}`
+      );
       onOpenChange(false);
+    },
+    onError: (error: any) => {
+      showError("Save Failed", error.message || "Failed to save landing page settings");
     },
   });
 
