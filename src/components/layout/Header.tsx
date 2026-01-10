@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight, User } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight, User, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
@@ -148,39 +148,19 @@ export const Header = () => {
         </div>
       )}
       
-      {/* Top Mini Bar - Desktop Only */}
+      {/* Top Utility Bar - Desktop Only */}
       <div className="hidden lg:block border-b bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-2 text-sm">
-            {/* Left: Order Tracking */}
-            <Link to="/track" className="text-muted-foreground hover:text-primary transition-colors">
-              Order Tracking
+          <div className="flex items-center justify-between py-2 text-xs text-muted-foreground">
+            {/* Left: Site Label */}
+            <Link to="/" className="hover:text-primary transition-colors font-medium">
+              Rongbazar.com
             </Link>
             
-            {/* Center: Call Us Now */}
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Call Us Now</span>
-              <a href="tel:+8801906192164" className="text-primary font-medium hover:underline flex items-center gap-1">
-                <Phone className="h-3 w-3" />
-                +880 1906-192164
-              </a>
-            </div>
-            
-            {/* Right: Login/Signup + Cart */}
-            <div className="flex items-center gap-4">
-              <Link to="/admin/login" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
-                <User className="h-4 w-4" />
-                Login
-              </Link>
-              <Link to="/cart" className="relative">
-                <ShoppingCart className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                    {cartItemCount}
-                  </span>
-                )}
-              </Link>
-            </div>
+            {/* Right: Order Tracking */}
+            <Link to="/track" className="hover:text-primary transition-colors">
+              Order Tracking
+            </Link>
           </div>
         </div>
       </div>
@@ -202,7 +182,7 @@ export const Header = () => {
           </Link>
 
           {/* Search Bar - Mobile & Desktop */}
-          <div className="flex flex-1 md:max-w-2xl mx-2 md:mx-4 lg:mx-8">
+          <div className="flex flex-1 mx-2 md:mx-4 lg:mx-8">
             {/* Mobile: Small Search Input (shown when menu is closed) */}
             {!mobileMenuOpen && (
               <form onSubmit={handleSearch} className="relative w-full md:hidden">
@@ -228,39 +208,52 @@ export const Header = () => {
             <form onSubmit={handleSearch} className="relative w-full hidden md:block">
               <Input
                 type="text"
-                placeholder="Search product"
-                className="w-full pr-12 h-10 lg:h-11 rounded-r-none border-r-0"
+                placeholder="Search for something..."
+                className="w-full pr-12 h-11 lg:h-12 text-base rounded-r-none border-r-0"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Button
                 type="submit"
                 size="icon"
-                className="absolute right-0 top-0 h-10 lg:h-11 rounded-l-none"
+                className="absolute right-0 top-0 h-11 lg:h-12 rounded-l-none"
               >
-                <Search className="h-4 w-4" />
+                <Search className="h-5 w-5" />
               </Button>
             </form>
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-1 md:gap-2 lg:gap-3">
-            {/* Phone - Desktop Only (mobile shows in bottom nav) */}
-            <a href="tel:+8801906192164" className="hidden lg:flex items-center gap-2 text-primary hover:underline">
-              <Phone className="h-4 w-4" />
-              <span className="text-sm font-medium">+880 1906-192164</span>
-            </a>
+          <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
+            {/* Desktop: Phone Block */}
+            <div className="hidden lg:flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Call Us Now:</span>
+              <a href="tel:+8801906192164" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+                <Phone className="h-4 w-4" />
+                01613035048
+              </a>
+            </div>
 
-            {/* Cart Icon */}
-            <Link to="/cart" className="block">
-              <Button size="icon" variant="ghost" className="relative h-9 w-9 md:h-10 md:w-10">
-                <ShoppingCart className="h-5 w-5" />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                    {cartItemCount}
-                  </span>
-                )}
-              </Button>
+            {/* Wishlist Icon - Desktop Only */}
+            <Button size="icon" variant="ghost" className="hidden lg:flex relative h-9 w-9 md:h-10 md:w-10">
+              <Heart className="h-5 w-5" />
+              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                0
+              </span>
+            </Button>
+
+            {/* User/Login - Desktop Only */}
+            <Link to="/admin/login" className="hidden lg:flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
+              <User className="h-5 w-5" />
+              <span>Hi, Login/Signup</span>
+            </Link>
+
+            {/* Cart Icon - Desktop Only (mobile shows in bottom nav) */}
+            <Link to="/cart" className="hidden lg:block relative">
+              <div className="flex flex-col items-center">
+                <ShoppingCart className="h-6 w-6 text-foreground" />
+                <span className="text-xs text-muted-foreground mt-1">{cartItemCount} items</span>
+              </div>
             </Link>
 
             {/* Mobile menu toggle */}
@@ -276,19 +269,20 @@ export const Header = () => {
         </div>
       </div>
 
-      {/* Navigation Bar */}
-      <nav className="bg-secondary border-t">
+      {/* Black Category Navbar */}
+      <nav className="bg-black border-t">
         <div className="container mx-auto px-4">
-          <div className="hidden md:flex items-center justify-center gap-8 h-12">
-            <Link to="/" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+          <div className="hidden md:flex items-center justify-center gap-6 lg:gap-8 h-12 overflow-x-auto">
+            <Link to="/" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
               Home
             </Link>
             
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-secondary-foreground hover:text-primary font-medium bg-transparent hover:bg-transparent data-[state=open]:bg-transparent h-auto py-0">
-                    Product
+                  <NavigationMenuTrigger className="text-white hover:text-primary font-medium bg-transparent hover:bg-transparent data-[state=open]:bg-transparent h-auto py-0 text-sm">
+                    MEN'S FASHION
+                    <ChevronDown className="ml-1 h-4 w-4" />
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="w-56 p-2 bg-background shadow-lg rounded-md">
@@ -315,13 +309,22 @@ export const Header = () => {
               </NavigationMenuList>
             </NavigationMenu>
 
-            <Link to="/reviews" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
+              WOMENS FASHION
+            </Link>
+            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
+              WINTER COLLECTIONS
+            </Link>
+            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
+              GADGET & ELECTRONICS
+            </Link>
+            <Link to="/reviews" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
               Reviews
             </Link>
-            <Link to="/best-selling" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+            <Link to="/best-selling" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
               Best Selling
             </Link>
-            <Link to="/flash-selling" className="text-secondary-foreground hover:text-primary transition-colors font-medium">
+            <Link to="/flash-selling" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap">
               Flash Selling
             </Link>
           </div>

@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "react-router-dom";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 
 export const FeaturedProducts = () => {
@@ -29,35 +28,24 @@ export const FeaturedProducts = () => {
   return (
     <section ref={elementRef} className="py-12 bg-background">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-foreground">New Arrivals</h2>
-          <Link to="/shop" className="text-foreground hover:text-primary transition-colors font-medium">
-            Product
-          </Link>
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-foreground">New Arrival Products</h2>
         </div>
         
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+            {[...Array(6)].map((_, i) => (
               <Skeleton key={i} className="h-80 rounded-lg" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
             {products?.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
 
-        <div className="text-center mt-8">
-          <Link 
-            to="/shop" 
-            className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors font-medium"
-          >
-            See More
-          </Link>
-        </div>
       </div>
     </section>
   );

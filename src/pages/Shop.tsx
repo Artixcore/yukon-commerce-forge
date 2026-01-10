@@ -9,6 +9,7 @@ import { Search } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { FloatingCart } from "@/components/layout/FloatingCart";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -156,13 +157,13 @@ const Shop = () => {
 
             {/* Products Grid */}
             {isLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="bg-card rounded-lg h-80 animate-pulse" />
                 ))}
               </div>
             ) : products && products.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -178,6 +179,7 @@ const Shop = () => {
 
       <Footer />
       <MobileBottomNav />
+      <FloatingCart />
     </div>
   );
 };

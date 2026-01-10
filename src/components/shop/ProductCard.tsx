@@ -52,7 +52,7 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
           {product.discount_percentage > 0 && (
-            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold">
+            <div className="absolute top-2 left-2 bg-black text-white px-2 py-1 rounded text-xs font-bold">
               {product.discount_percentage}%
             </div>
           )}
@@ -91,7 +91,7 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
         <Button
           onClick={handleAddToCart}
           disabled={product.stock_quantity === 0}
-          className="w-full h-9 sm:h-10 text-sm rounded-t-none mt-auto"
+          className="w-full h-9 sm:h-10 text-sm rounded-t-none mt-auto bg-black text-white hover:bg-black/90 disabled:bg-muted disabled:text-muted-foreground"
           variant="default"
         >
           {product.stock_quantity === 0 ? "Out of Stock" : "Order Now"}

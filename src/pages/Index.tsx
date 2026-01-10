@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { FloatingCart } from "@/components/layout/FloatingCart";
 import { HeroSection } from "@/components/home/HeroSection";
 import { Features } from "@/components/home/Features";
 
@@ -36,6 +37,7 @@ const Index = () => {
       </Suspense>
       <Footer />
       <MobileBottomNav />
+      <FloatingCart />
     </div>
   );
 };
