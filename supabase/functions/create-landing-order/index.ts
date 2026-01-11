@@ -172,6 +172,7 @@ serve(async (req) => {
             pixel_id: orderData.fb_pixel_id,
             access_token: orderData.fb_access_token,
             test_event_code: orderData.fb_test_event_code || null,
+            dataset_id: orderData.fb_dataset_id || null,
           })
         });
         

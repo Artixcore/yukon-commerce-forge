@@ -129,15 +129,52 @@ const LandingPage = () => {
     }
   }, [landingPage?.fb_pixel_id]);
 
-  // Update page meta
+  // Update page meta and SEO
   useEffect(() => {
     if (landingPage) {
       document.title = landingPage.meta_title || landingPage.title;
       
-      const metaDescription = document.querySelector('meta[name="description"]');
-      if (metaDescription && landingPage.meta_description) {
-        metaDescription.setAttribute("content", landingPage.meta_description);
+      // Helper to update or create meta tags
+      const updateOrCreateMeta = (name: string, content: string, isProperty = false) => {
+        const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
+        let meta = document.querySelector(selector);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute(isProperty ? 'property' : 'name', name);
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute("content", content);
+      };
+
+      // Update description
+      if (landingPage.meta_description) {
+        updateOrCreateMeta('description', landingPage.meta_description);
       }
+
+      // Update keywords
+      if (landingPage.meta_keywords) {
+        updateOrCreateMeta('keywords', landingPage.meta_keywords);
+      }
+
+      // Open Graph tags for social sharing
+      updateOrCreateMeta('og:title', landingPage.meta_title || landingPage.title, true);
+      if (landingPage.meta_description) {
+        updateOrCreateMeta('og:description', landingPage.meta_description, true);
+      }
+      if (landingPage.hero_image_url) {
+        updateOrCreateMeta('og:image', landingPage.hero_image_url, true);
+      }
+      updateOrCreateMeta('og:type', 'product', true);
+      updateOrCreateMeta('og:url', window.location.href, true);
+
+      // Cleanup on unmount
+      return () => {
+        // Remove dynamically added OG tags
+        ['og:title', 'og:description', 'og:image', 'og:type', 'og:url'].forEach(prop => {
+          const meta = document.querySelector(`meta[property="${prop}"]`);
+          if (meta) meta.remove();
+        });
+      };
     }
   }, [landingPage]);
 

@@ -63,6 +63,7 @@ interface LandingOrderFormProps {
     fb_pixel_id?: string | null;
     fb_access_token?: string | null;
     fb_test_event_code?: string | null;
+    fb_dataset_id?: string | null;
   };
   products: Product[];
   quantities: Record<string, number>;
@@ -145,6 +146,7 @@ export function LandingOrderForm({
             fb_pixel_id: landingPage.fb_pixel_id,
             fb_access_token: landingPage.fb_access_token,
             fb_test_event_code: landingPage.fb_test_event_code,
+            fb_dataset_id: landingPage.fb_dataset_id,
           }),
         }
       );
