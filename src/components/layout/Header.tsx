@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight, User, Heart } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
@@ -168,7 +168,7 @@ export const Header = () => {
       {/* Main Header - Desktop: 3-column grid, Mobile: 2-row layout */}
       <div className="container mx-auto px-2 md:px-4">
         {/* Desktop & Tablet: 3-column grid layout */}
-        <div className="hidden md:grid grid-cols-[auto_1fr_auto] items-center gap-3 lg:gap-6 py-3 lg:py-4">
+        <div className="hidden md:grid grid-cols-[auto_1fr_auto] items-center gap-4 py-3 lg:py-4">
           {/* Column 1: Logo */}
           <Link to="/" className="flex items-center shrink-0">
             <img 
@@ -183,7 +183,7 @@ export const Header = () => {
           </Link>
 
           {/* Column 2: Search Bar Container */}
-          <div className="min-w-0">
+          <div className="min-w-0 max-w-2xl">
             <form onSubmit={handleSearch} className="relative w-full">
               <Input
                 type="text"
@@ -212,20 +212,6 @@ export const Header = () => {
                 <span className="truncate">01613035048</span>
               </a>
             </div>
-
-            {/* Wishlist Icon - Desktop Only */}
-            <Button size="icon" variant="ghost" className="hidden lg:flex relative h-9 md:h-10 w-9 md:w-10 shrink-0">
-              <Heart className="h-4 w-4 md:h-5 md:w-5" />
-              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                0
-              </span>
-            </Button>
-
-            {/* User/Login - Desktop Only */}
-            <Link to="/admin/login" className="hidden lg:flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors shrink-0">
-              <User className="h-5 w-5 shrink-0" />
-              <span className="whitespace-nowrap">Hi, Login/Signup</span>
-            </Link>
 
             {/* Cart Icon - Desktop Only */}
             <Link to="/cart" className="hidden lg:block relative shrink-0">
@@ -261,10 +247,6 @@ export const Header = () => {
                     {cartItemCount}
                   </span>
                 )}
-              </Link>
-              
-              <Link to="/admin/login">
-                <User className="h-5 w-5" />
               </Link>
               
               <Button
