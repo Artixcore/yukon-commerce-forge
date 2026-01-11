@@ -204,15 +204,6 @@ export const Header = () => {
 
           {/* Column 3: Right Actions Container */}
           <div className="flex items-center gap-2 lg:gap-3 whitespace-nowrap">
-            {/* Phone Block - Tablet: icon + number only, Desktop: full text */}
-            <div className="hidden md:flex items-center gap-1 lg:gap-2 overflow-hidden">
-              <span className="hidden lg:inline text-sm text-muted-foreground shrink-0">Call Us Now:</span>
-              <a href="tel:+8801906192164" className="text-sm font-medium text-primary hover:underline flex items-center gap-1 shrink-0">
-                <Phone className="h-4 w-4 shrink-0" />
-                <span className="truncate">01613035048</span>
-              </a>
-            </div>
-
             {/* Cart Icon - Desktop Only */}
             <Link to="/cart" className="hidden lg:block relative shrink-0">
               <div className="flex flex-col items-center">
