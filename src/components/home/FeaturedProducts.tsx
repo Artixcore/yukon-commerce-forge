@@ -15,7 +15,7 @@ export const FeaturedProducts = () => {
         .select("*, categories(name)")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
-        .limit(4);
+        .limit(8);
       
       if (error) throw error;
       return data;
@@ -27,19 +27,19 @@ export const FeaturedProducts = () => {
 
   return (
     <section ref={elementRef} className="py-12 bg-background">
-      <div className="container mx-auto px-4">
+      <div className="w-full max-w-[1920px] mx-auto px-4 lg:px-6 xl:px-8">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-foreground">New Arrival Products</h2>
         </div>
         
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-3 md:gap-4 lg:gap-5 xl:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-7 gap-3 md:gap-4 lg:gap-4 xl:gap-5 w-full">
             {[...Array(8)].map((_, i) => (
               <Skeleton key={i} className="h-80 rounded-lg" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-3 md:gap-4 lg:gap-5 xl:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-7 gap-3 md:gap-4 lg:gap-4 xl:gap-5 w-full">
             {products?.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

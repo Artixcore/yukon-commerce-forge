@@ -49,7 +49,7 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
             width={400}
             height={400}
             className="w-full h-full object-cover"
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, (max-width: 1536px) 14vw, 12vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 15vw, (max-width: 1536px) 13vw, 12vw"
           />
           {product.discount_percentage > 0 && (
             <div className="absolute top-2 left-2 bg-black text-white px-2 py-1 rounded text-xs font-bold">
@@ -58,14 +58,14 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
           )}
         </div>
         
-        <div className="p-3 sm:p-4 flex flex-col flex-1">
+        <div className="p-2 sm:p-3 flex flex-col flex-1">
           {/* Product Name */}
-          <h3 className="font-medium text-sm sm:text-base text-foreground line-clamp-2 mb-2 min-h-[2.5rem]">
+          <h3 className="font-medium text-sm sm:text-base text-foreground line-clamp-2 mb-1.5 min-h-[2.5rem]">
             {product.name}
           </h3>
 
           {/* Price Row */}
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-2">
             <span className="font-bold text-base sm:text-lg text-foreground">
               ৳{product.price}
             </span>
@@ -78,7 +78,7 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
 
           {/* Rating Section - Optional, smaller */}
           {stars && (
-            <div className="flex items-center gap-1 mb-3">
+            <div className="flex items-center gap-1 mb-2">
               {stars}
               <span className="text-xs text-muted-foreground">
                 ({product.review_count || 0})
@@ -91,7 +91,7 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
         <Button
           onClick={handleAddToCart}
           disabled={product.stock_quantity === 0}
-          className="w-full h-9 sm:h-10 text-sm rounded-t-none mt-auto bg-black text-white hover:bg-black/90 disabled:bg-muted disabled:text-muted-foreground"
+          className="w-full h-8 sm:h-9 text-sm rounded-t-none mt-auto bg-black text-white hover:bg-black/90 disabled:bg-muted disabled:text-muted-foreground"
           variant="default"
         >
           {product.stock_quantity === 0 ? "Out of Stock" : "Order Now"}
