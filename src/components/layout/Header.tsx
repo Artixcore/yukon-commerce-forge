@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, Phone, ChevronDown, ChevronRight } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
@@ -280,85 +280,88 @@ export const Header = () => {
       <nav className="bg-black border-t h-12">
         <div className="container mx-auto px-4 h-full">
           {/* Desktop & Tablet: Horizontal navigation */}
-          <div className="hidden md:flex items-center justify-center gap-4 lg:gap-6 h-full overflow-x-auto scrollbar-hide">
-            <Link to="/" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
+          <div className="hidden md:flex items-center justify-center gap-1 lg:gap-2 h-full overflow-x-auto scrollbar-hide">
+            <Link to="/" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0 px-3 py-2">
               Home
             </Link>
             
+            {/* Dynamic Category Dropdowns */}
             <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-white hover:text-primary font-medium bg-transparent hover:bg-transparent data-[state=open]:bg-transparent h-auto py-0 text-sm whitespace-nowrap">
-                    MEN'S FASHION
-                    <ChevronDown className="ml-1 h-4 w-4 inline" />
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="w-56 p-2 bg-background shadow-lg rounded-md">
-                      {/* All Products Link */}
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <Link
-                            to="/shop"
-                            className="block px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-primary rounded-md transition-colors"
-                          >
-                            All Products
-                          </Link>
-                        </NavigationMenuLink>
-                      </li>
-                      
-                      {/* Separator */}
-                      <li className="my-1 h-px bg-border" />
-                      
-                      {/* Category Items - Recursive rendering */}
-                      {categoryTree.map((category) => renderDesktopCategory(category))}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
+              <NavigationMenuList className="gap-0">
+                {categoryTree.map((rootCategory) => (
+                  <NavigationMenuItem key={rootCategory.id}>
+                    {rootCategory.children.length > 0 ? (
+                      <>
+                        <NavigationMenuTrigger className="text-white hover:text-primary font-medium bg-transparent hover:bg-white/10 data-[state=open]:bg-white/10 h-auto py-2 px-3 text-sm whitespace-nowrap">
+                          {rootCategory.name}
+                        </NavigationMenuTrigger>
+                        <NavigationMenuContent>
+                          <ul className="w-56 p-2 bg-background shadow-lg rounded-md border border-border">
+                            {/* View All Link */}
+                            <li>
+                              <NavigationMenuLink asChild>
+                                <Link
+                                  to={`/shop?category=${rootCategory.id}`}
+                                  className="block px-3 py-2 text-sm font-medium text-primary hover:bg-accent rounded-md transition-colors"
+                                >
+                                  View All {rootCategory.name}
+                                </Link>
+                              </NavigationMenuLink>
+                            </li>
+                            
+                            {/* Separator */}
+                            <li className="my-1 h-px bg-border" />
+                            
+                            {/* Subcategory Items */}
+                            {rootCategory.children.map((child) => renderDesktopCategory(child))}
+                          </ul>
+                        </NavigationMenuContent>
+                      </>
+                    ) : (
+                      <NavigationMenuLink asChild>
+                        <Link
+                          to={`/shop?category=${rootCategory.id}`}
+                          className="text-white hover:text-primary font-medium text-sm whitespace-nowrap px-3 py-2 hover:bg-white/10 rounded-md transition-colors"
+                        >
+                          {rootCategory.name}
+                        </Link>
+                      </NavigationMenuLink>
+                    )}
+                  </NavigationMenuItem>
+                ))}
               </NavigationMenuList>
             </NavigationMenu>
 
-            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
-              WOMENS FASHION
-            </Link>
-            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
-              WINTER COLLECTIONS
-            </Link>
-            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
-              GADGET & ELECTRONICS
-            </Link>
-            <Link to="/reviews" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
+            <Link to="/reviews" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0 px-3 py-2 hover:bg-white/10 rounded-md">
               Reviews
             </Link>
-            <Link to="/best-selling" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
+            <Link to="/best-selling" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0 px-3 py-2 hover:bg-white/10 rounded-md">
               Best Selling
             </Link>
-            <Link to="/flash-selling" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0">
+            <Link to="/flash-selling" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0 px-3 py-2 hover:bg-white/10 rounded-md">
               Flash Selling
             </Link>
           </div>
           
-          {/* Mobile: Horizontal scroll navbar */}
-          <div className="md:hidden flex items-center gap-4 h-full overflow-x-auto scrollbar-hide px-2">
+          {/* Mobile: Horizontal scroll navbar with dynamic categories */}
+          <div className="md:hidden flex items-center gap-3 h-full overflow-x-auto scrollbar-hide px-2">
             <Link to="/" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
               Home
             </Link>
-            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
-              MEN'S FASHION
-            </Link>
-            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
-              WOMENS FASHION
-            </Link>
-            <Link to="/shop" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
-              WINTER COLLECTIONS
-            </Link>
+            {categoryTree.map((category) => (
+              <Link 
+                key={category.id}
+                to={`/shop?category=${category.id}`} 
+                className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0"
+              >
+                {category.name}
+              </Link>
+            ))}
             <Link to="/reviews" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
               Reviews
             </Link>
             <Link to="/best-selling" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
               Best Selling
-            </Link>
-            <Link to="/flash-selling" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
-              Flash Selling
             </Link>
           </div>
         </div>
