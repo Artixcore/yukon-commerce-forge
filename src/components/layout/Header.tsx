@@ -9,14 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { buildCategoryTree, CategoryTree } from "@/lib/categoryUtils";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
+import { CategoryDropdown } from "@/components/layout/CategoryDropdown";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,32 +59,6 @@ export const Header = () => {
       }
       return newSet;
     });
-  };
-
-  // Recursive render for desktop sub-dropdowns with slide-in animation
-  const renderDesktopCategory = (category: CategoryTree, level: number = 0): JSX.Element => {
-    const hasChildren = category.children.length > 0;
-    
-    return (
-      <li key={category.id} className="relative group/item">
-        <NavigationMenuLink asChild>
-          <Link
-            to={`/shop?category=${category.id}`}
-            className="flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-primary rounded-md transition-colors"
-          >
-            {category.name}
-            {hasChildren && <ChevronRight className="h-4 w-4" />}
-          </Link>
-        </NavigationMenuLink>
-        
-        {/* Sub-dropdown with slide-in animation */}
-        {hasChildren && (
-          <ul className="absolute left-full top-0 ml-1 w-48 p-2 bg-background shadow-lg rounded-md border border-border opacity-0 invisible translate-x-2 group-hover/item:opacity-100 group-hover/item:visible group-hover/item:translate-x-0 transition-all duration-200 ease-out z-50">
-            {category.children.map((child) => renderDesktopCategory(child, level + 1))}
-          </ul>
-        )}
-      </li>
-    );
   };
 
   // Recursive render for mobile categories with multi-level support
@@ -280,57 +247,15 @@ export const Header = () => {
       <nav className="bg-black border-t h-12 relative z-50">
         <div className="container mx-auto px-4 h-full">
           {/* Desktop & Tablet: Horizontal navigation */}
-          <div className="hidden md:flex items-center justify-center gap-1 lg:gap-2 h-full overflow-x-auto scrollbar-hide">
+          <div className="hidden md:flex items-center justify-center gap-1 lg:gap-2 h-full overflow-visible">
             <Link to="/" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0 px-3 py-2">
               Home
             </Link>
             
             {/* Dynamic Category Dropdowns */}
-            <NavigationMenu className="relative z-[60]">
-              <NavigationMenuList className="gap-0">
-                {categoryTree.map((rootCategory) => (
-                  <NavigationMenuItem key={rootCategory.id}>
-                    {rootCategory.children.length > 0 ? (
-                      <>
-                        <NavigationMenuTrigger className="text-white hover:text-primary font-medium bg-transparent hover:bg-white/10 data-[state=open]:bg-white/10 h-auto py-2 px-3 text-sm whitespace-nowrap">
-                          {rootCategory.name}
-                        </NavigationMenuTrigger>
-                        <NavigationMenuContent className="z-[60]">
-                          <ul className="w-56 p-2 bg-background shadow-lg rounded-md border border-border z-[60]">
-                            {/* View All Link */}
-                            <li>
-                              <NavigationMenuLink asChild>
-                                <Link
-                                  to={`/shop?category=${rootCategory.id}`}
-                                  className="block px-3 py-2 text-sm font-medium text-primary hover:bg-accent rounded-md transition-colors"
-                                >
-                                  View All {rootCategory.name}
-                                </Link>
-                              </NavigationMenuLink>
-                            </li>
-                            
-                            {/* Separator */}
-                            <li className="my-1 h-px bg-border" />
-                            
-                            {/* Subcategory Items */}
-                            {rootCategory.children.map((child) => renderDesktopCategory(child))}
-                          </ul>
-                        </NavigationMenuContent>
-                      </>
-                    ) : (
-                      <NavigationMenuLink asChild>
-                        <Link
-                          to={`/shop?category=${rootCategory.id}`}
-                          className="text-white hover:text-primary font-medium text-sm whitespace-nowrap px-3 py-2 hover:bg-white/10 rounded-md transition-colors"
-                        >
-                          {rootCategory.name}
-                        </Link>
-                      </NavigationMenuLink>
-                    )}
-                  </NavigationMenuItem>
-                ))}
-              </NavigationMenuList>
-            </NavigationMenu>
+            {categoryTree.map((rootCategory) => (
+              <CategoryDropdown key={rootCategory.id} category={rootCategory} isMobile={false} />
+            ))}
 
             <Link to="/reviews" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0 px-3 py-2 hover:bg-white/10 rounded-md">
               Reviews
@@ -344,18 +269,12 @@ export const Header = () => {
           </div>
           
           {/* Mobile: Horizontal scroll navbar with dynamic categories */}
-          <div className="md:hidden flex items-center gap-3 h-full overflow-x-auto scrollbar-hide px-2">
+          <div className="md:hidden flex items-center gap-3 h-full overflow-x-auto scrollbar-hide px-2 overflow-y-visible">
             <Link to="/" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
               Home
             </Link>
             {categoryTree.map((category) => (
-              <Link 
-                key={category.id}
-                to={`/shop?category=${category.id}`} 
-                className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0"
-              >
-                {category.name}
-              </Link>
+              <CategoryDropdown key={category.id} category={category} isMobile={true} />
             ))}
             <Link to="/reviews" className="text-white hover:text-primary transition-colors font-medium text-xs whitespace-nowrap shrink-0">
               Reviews
