@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,9 +15,20 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const Shop = () => {
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [priceRange, setPriceRange] = useState<string>("all");
+
+  // Read category from URL query params and sync with state
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category");
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl);
+    } else {
+      setSelectedCategory("all");
+    }
+  }, [searchParams]);
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -106,7 +118,13 @@ const Shop = () => {
                     <Checkbox
                       id="all"
                       checked={selectedCategory === "all"}
-                      onCheckedChange={() => setSelectedCategory("all")}
+                      onCheckedChange={() => {
+                        setSelectedCategory("all");
+                        // Update URL to remove category param
+                        const newSearchParams = new URLSearchParams(searchParams);
+                        newSearchParams.delete("category");
+                        window.history.replaceState({}, "", `/shop?${newSearchParams.toString()}`);
+                      }}
                     />
                     <label htmlFor="all" className="text-sm cursor-pointer">
                       All Categories
@@ -117,7 +135,13 @@ const Shop = () => {
                       <Checkbox
                         id={category.id}
                         checked={selectedCategory === category.id}
-                        onCheckedChange={() => setSelectedCategory(category.id)}
+                        onCheckedChange={() => {
+                          setSelectedCategory(category.id);
+                          // Update URL with category param
+                          const newSearchParams = new URLSearchParams(searchParams);
+                          newSearchParams.set("category", category.id);
+                          window.history.replaceState({}, "", `/shop?${newSearchParams.toString()}`);
+                        }}
                       />
                       <label htmlFor={category.id} className="text-sm cursor-pointer">
                         {category.name}

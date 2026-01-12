@@ -277,7 +277,7 @@ export const Header = () => {
       </div>
 
       {/* Black Category Navbar */}
-      <nav className="bg-black border-t h-12">
+      <nav className="bg-black border-t h-12 relative z-50">
         <div className="container mx-auto px-4 h-full">
           {/* Desktop & Tablet: Horizontal navigation */}
           <div className="hidden md:flex items-center justify-center gap-1 lg:gap-2 h-full overflow-x-auto scrollbar-hide">
@@ -286,7 +286,7 @@ export const Header = () => {
             </Link>
             
             {/* Dynamic Category Dropdowns */}
-            <NavigationMenu>
+            <NavigationMenu className="relative z-[60]">
               <NavigationMenuList className="gap-0">
                 {categoryTree.map((rootCategory) => (
                   <NavigationMenuItem key={rootCategory.id}>
@@ -295,8 +295,8 @@ export const Header = () => {
                         <NavigationMenuTrigger className="text-white hover:text-primary font-medium bg-transparent hover:bg-white/10 data-[state=open]:bg-white/10 h-auto py-2 px-3 text-sm whitespace-nowrap">
                           {rootCategory.name}
                         </NavigationMenuTrigger>
-                        <NavigationMenuContent>
-                          <ul className="w-56 p-2 bg-background shadow-lg rounded-md border border-border">
+                        <NavigationMenuContent className="z-[60]">
+                          <ul className="w-56 p-2 bg-background shadow-lg rounded-md border border-border z-[60]">
                             {/* View All Link */}
                             <li>
                               <NavigationMenuLink asChild>
