@@ -49,7 +49,7 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
             width={400}
             height={400}
             className="w-full h-full object-cover"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, (max-width: 1536px) 14vw, 12vw"
           />
           {product.discount_percentage > 0 && (
             <div className="absolute top-2 left-2 bg-black text-white px-2 py-1 rounded text-xs font-bold">
