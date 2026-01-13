@@ -411,18 +411,18 @@ const ProductDetail = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                  <span className="text-sm">01613035048</span>
+                  <span className="text-sm"></span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                  <span className="text-sm">01728703400</span>
+                  <span className="text-sm"></span>
                   <Button variant="outline" size="sm" className="ml-2 h-7 text-xs border-red-500 text-red-500 hover:bg-red-50">
                     Bkash Personal
                   </Button>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                  <span className="text-sm">01728703400</span>
+                  <span className="text-sm"></span>
                   <Button variant="outline" size="sm" className="ml-2 h-7 text-xs border-red-500 text-red-500 hover:bg-red-50">
                     Nagad Personal
                   </Button>
