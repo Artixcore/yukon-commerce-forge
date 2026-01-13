@@ -2,10 +2,11 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Minus, Plus, Star, Check, ThumbsUp, HandCoins, Truck, Phone } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Star, Check, ThumbsUp, HandCoins, Truck, Phone, Heart, ShoppingCart } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
@@ -171,20 +172,10 @@ const ProductDetail = () => {
           </Button>
         </Link>
 
-        {/* Order Now Button - Prominent at top */}
-        {product.stock_quantity > 0 && (
-          <Button 
-            onClick={handleBuyNow} 
-            size="lg" 
-            className="w-full h-14 mb-6 bg-black text-white hover:bg-black/90 text-lg font-semibold"
-          >
-            Order Now <Check className="ml-2 h-5 w-5" />
-          </Button>
-        )}
-
-        <div className="grid md:grid-cols-2 gap-8 mb-8">
+        {/* 3-Column Layout: Image | Product Info | Delivery Box */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
           {/* Image Gallery */}
-          <div className="space-y-4">
+          <div className="space-y-4 md:col-span-2 lg:col-span-1">
             <div className="bg-white rounded-lg aspect-square overflow-hidden" ref={emblaRef}>
               <div className="flex h-full">
                 {allImages.length > 0 ? (
@@ -231,12 +222,75 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Details */}
-          <div className="flex flex-col space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-              <div className="text-3xl font-bold mb-4">৳{product.price}</div>
+          {/* Middle Column: Product Info Block */}
+          <div className="flex flex-col space-y-4">
+            {/* Breadcrumb */}
+            <Breadcrumb>
+              <BreadcrumbList className="text-xs text-muted-foreground">
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to="/">Home</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  {product.categories?.name ? (
+                    <BreadcrumbLink asChild>
+                      <Link to={`/shop?category=${product.category_id}`}>{product.categories.name}</Link>
+                    </BreadcrumbLink>
+                  ) : (
+                    <span className="text-muted-foreground">Category</span>
+                  )}
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="text-foreground">{product.name}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+
+            {/* Product Title */}
+            <h1 className="text-2xl lg:text-3xl font-bold">{product.name}</h1>
+
+            {/* Ask for details link */}
+            <Link to="/contact" className="text-green-600 hover:text-green-700 text-sm w-fit">
+              Ask for details
+            </Link>
+
+            {/* Code line */}
+            <div className="text-sm text-muted-foreground">
+              Code: {product.id.slice(0, 8).toUpperCase()}
             </div>
+
+            {/* Price Row */}
+            <div className="flex items-center gap-3">
+              <span className="text-2xl lg:text-3xl font-bold">৳{product.price}</span>
+              {product.original_price && product.original_price > product.price && (
+                <span className="text-lg text-red-600 line-through">৳{product.original_price}</span>
+              )}
+            </div>
+
+            {/* Size Selector */}
+            {product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-2">Size:</div>
+                <div className="flex flex-wrap gap-2">
+                  {(product.sizes as string[]).map((size: string) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`px-3 py-1.5 text-sm border rounded transition-all ${
+                        selectedSize === size
+                          ? 'bg-black text-white border-black'
+                          : 'bg-background text-foreground border-border hover:border-black'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Color Selector */}
             {product.colors && Array.isArray(product.colors) && product.colors.length > 0 && (
@@ -257,37 +311,11 @@ const ProductDetail = () => {
                     />
                   ))}
                 </div>
-                {selectedColor && (
-                  <div className="text-sm text-muted-foreground mt-1">
-                    Selected: {selectedColor}
-                  </div>
-                )}
               </div>
             )}
 
-            {/* Size Selector */}
-            {product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0 && (
-              <div>
-                <div className="text-sm font-medium mb-2">Size:</div>
-                <div className="flex flex-wrap gap-2">
-                  {(product.sizes as string[]).map((size: string) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`px-4 py-2 border rounded transition-all ${
-                        selectedSize === size
-                          ? 'bg-foreground text-background border-foreground'
-                          : 'bg-background text-foreground border-border hover:border-foreground'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
+            {/* Stock Info */}
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
               <span className="text-sm font-medium">Stock:</span>
               {product.stock_quantity > 0 ? (
                 <span className="text-red-600 font-bold">{product.stock_quantity} available</span>
@@ -296,85 +324,109 @@ const ProductDetail = () => {
               )}
             </div>
 
+            {/* Qty + Add to Cart inline */}
             {product.stock_quantity > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={quantity <= 1}
-                    className="h-10 w-10"
+                  <div className="flex items-center gap-2 border rounded">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                      className="h-10 w-10"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-12 text-center font-medium">{quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
+                      disabled={quantity >= product.stock_quantity}
+                      className="h-10 w-10"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Button 
+                    onClick={handleAddToCart} 
+                    size="lg" 
+                    className="flex-1 h-10 bg-muted text-foreground hover:bg-muted/80"
                   >
-                    <Minus className="h-4 w-4" />
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Add to Cart
                   </Button>
-                  <span className="w-12 text-center font-medium">{quantity}</span>
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
-                    disabled={quantity >= product.stock_quantity}
                     className="h-10 w-10"
+                    title="Add to Wishlist"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Heart className="h-4 w-4" />
                   </Button>
                 </div>
 
-                <Button onClick={handleAddToCart} size="lg" className="w-full h-12 bg-muted text-foreground hover:bg-muted/80">
-                  Add to Cart
+                {/* Big Order Now Button */}
+                <Button 
+                  onClick={handleBuyNow} 
+                  size="lg" 
+                  className="w-full h-12 bg-black text-white hover:bg-black/90 text-base font-semibold"
+                >
+                  Order Now
                 </Button>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Two-column Info Section with Dotted Borders */}
-        <div className="grid md:grid-cols-2 gap-4 mb-8">
-          {/* Left: Product Features/Delivery Info */}
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <span className="text-sm">Home delivery all over the country.</span>
+          {/* Right Column: Delivery + Contact Box */}
+          <div className="space-y-4">
+            {/* Delivery Features Card */}
+            <div className="border rounded-lg p-4 space-y-3 bg-white">
+              <div className="flex items-center gap-3">
+                <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <span className="text-sm">Home delivery all over the country.</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <ThumbsUp className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                <span className="text-sm">Quality Product</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <HandCoins className="h-5 w-5 text-orange-600 flex-shrink-0" />
+                <span className="text-sm">Cash On Delivery Available</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Truck className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                <span className="text-sm">Delivery Charge Inside Dhaka 60 TK</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Truck className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                <span className="text-sm">Delivery Charge Outside Dhaka 120 TK</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <ThumbsUp className="h-5 w-5 text-blue-600 flex-shrink-0" />
-              <span className="text-sm">Quality Product</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <HandCoins className="h-5 w-5 text-orange-600 flex-shrink-0" />
-              <span className="text-sm">Cash On Delivery Available</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Truck className="h-5 w-5 text-purple-600 flex-shrink-0" />
-              <span className="text-sm">Delivery Charge Inside Dhaka 60 TK</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Truck className="h-5 w-5 text-purple-600 flex-shrink-0" />
-              <span className="text-sm">Delivery Charge Outside Dhaka 120 TK</span>
-            </div>
-          </div>
 
-          {/* Right: Contact Information */}
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-            <h3 className="font-semibold mb-3 text-sm">Have question about this product? please call</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                <span className="text-sm">01613035048</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                <span className="text-sm">01728703400</span>
-                <Button variant="outline" size="sm" className="ml-2 h-7 text-xs border-red-500 text-red-500 hover:bg-red-50">
-                  Bkash Personal
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                <span className="text-sm">01728703400</span>
-                <Button variant="outline" size="sm" className="ml-2 h-7 text-xs border-red-500 text-red-500 hover:bg-red-50">
-                  Nagad Personal
-                </Button>
+            {/* Contact Information */}
+            <div className="border rounded-lg p-4 bg-white">
+              <h3 className="font-semibold mb-3 text-sm">Have question about this product? please call</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                  <span className="text-sm">01613035048</span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                  <span className="text-sm">01728703400</span>
+                  <Button variant="outline" size="sm" className="ml-2 h-7 text-xs border-red-500 text-red-500 hover:bg-red-50">
+                    Bkash Personal
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                  <span className="text-sm">01728703400</span>
+                  <Button variant="outline" size="sm" className="ml-2 h-7 text-xs border-red-500 text-red-500 hover:bg-red-50">
+                    Nagad Personal
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -547,8 +599,8 @@ const ProductDetail = () => {
         {/* Related Products */}
         {relatedProducts && relatedProducts.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-3xl font-bold mb-8">You May Also Like</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <h2 className="text-3xl font-bold mb-8 text-center">Related Products</h2>
+            <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-6 gap-4 lg:gap-6">
               {relatedProducts.map((relatedProduct) => (
                 <ProductCard key={relatedProduct.id} product={relatedProduct} />
               ))}
