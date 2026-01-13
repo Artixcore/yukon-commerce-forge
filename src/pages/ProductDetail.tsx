@@ -2,10 +2,10 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Minus, Plus, Star } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Star, Check, ThumbsUp, HandCoins, Truck, Phone } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
@@ -171,7 +171,18 @@ const ProductDetail = () => {
           </Button>
         </Link>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        {/* Order Now Button - Prominent at top */}
+        {product.stock_quantity > 0 && (
+          <Button 
+            onClick={handleBuyNow} 
+            size="lg" 
+            className="w-full h-14 mb-6 bg-black text-white hover:bg-black/90 text-lg font-semibold"
+          >
+            Order Now <Check className="ml-2 h-5 w-5" />
+          </Button>
+        )}
+
+        <div className="grid md:grid-cols-2 gap-8 mb-8">
           {/* Image Gallery */}
           <div className="space-y-4">
             <div className="bg-white rounded-lg aspect-square overflow-hidden" ref={emblaRef}>
@@ -275,10 +286,6 @@ const ProductDetail = () => {
                 </div>
               </div>
             )}
-            
-            <p className="text-muted-foreground leading-relaxed">
-              {product.description || "No description available"}
-            </p>
 
             <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
               <span className="text-sm font-medium">Stock:</span>
@@ -316,21 +323,100 @@ const ProductDetail = () => {
                 <Button onClick={handleAddToCart} size="lg" className="w-full h-12 bg-muted text-foreground hover:bg-muted/80">
                   Add to Cart
                 </Button>
-                
-                <Button onClick={handleBuyNow} size="lg" className="w-full h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Buy Now
-                </Button>
               </div>
             )}
+          </div>
+        </div>
 
-            {/* Size Chart */}
-            {product.size_chart && Array.isArray(product.size_chart) && product.size_chart.length > 0 && (
-              <Collapsible defaultOpen>
-                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-semibold py-2 px-4 bg-muted hover:bg-muted/80 rounded-md transition-colors w-full justify-between">
-                  <span>Size Chart</span>
-                  <span className="text-xs text-muted-foreground">(Click to toggle)</span>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4">
+        {/* Two-column Info Section with Dotted Borders */}
+        <div className="grid md:grid-cols-2 gap-4 mb-8">
+          {/* Left: Product Features/Delivery Info */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+              <span className="text-sm">Home delivery all over the country.</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <ThumbsUp className="h-5 w-5 text-blue-600 flex-shrink-0" />
+              <span className="text-sm">Quality Product</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <HandCoins className="h-5 w-5 text-orange-600 flex-shrink-0" />
+              <span className="text-sm">Cash On Delivery Available</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Truck className="h-5 w-5 text-purple-600 flex-shrink-0" />
+              <span className="text-sm">Delivery Charge Inside Dhaka 60 TK</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Truck className="h-5 w-5 text-purple-600 flex-shrink-0" />
+              <span className="text-sm">Delivery Charge Outside Dhaka 120 TK</span>
+            </div>
+          </div>
+
+          {/* Right: Contact Information */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+            <h3 className="font-semibold mb-3 text-sm">Have question about this product? please call</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                <span className="text-sm">01613035048</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                <span className="text-sm">01728703400</span>
+                <Button variant="outline" size="sm" className="ml-2 h-7 text-xs border-red-500 text-red-500 hover:bg-red-50">
+                  Bkash Personal
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                <span className="text-sm">01728703400</span>
+                <Button variant="outline" size="sm" className="ml-2 h-7 text-xs border-red-500 text-red-500 hover:bg-red-50">
+                  Nagad Personal
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs Section */}
+        <Tabs defaultValue="description" className="mb-8">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-100 h-12 p-1">
+            <TabsTrigger 
+              value="description" 
+              className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-none"
+            >
+              DESCRIPTION
+            </TabsTrigger>
+            <TabsTrigger 
+              value="how-to-order"
+              className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-none"
+            >
+              HOW TO ORDER
+            </TabsTrigger>
+            <TabsTrigger 
+              value="reviews"
+              className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-none"
+            >
+              REVIEWS
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="description" className="mt-4">
+            <div className="space-y-4">
+              <p className="text-muted-foreground leading-relaxed">
+                {product.description || "No description available"}
+              </p>
+
+              {/* Size Chart */}
+              {product.size_chart && Array.isArray(product.size_chart) && product.size_chart.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="font-semibold mb-3">MEASUREMENT [Asian]</h3>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-green-600">👕</span>
+                    <span className="text-sm">Size Available: {product.sizes && Array.isArray(product.sizes) ? (product.sizes as string[]).join(", ") : "N/A"}</span>
+                  </div>
                   <div className="border-2 rounded-lg overflow-hidden shadow-sm">
                     <Table>
                       <TableHeader>
@@ -353,86 +439,110 @@ const ProductDetail = () => {
                       </TableBody>
                     </Table>
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-          </div>
-        </div>
+                </div>
+              )}
+            </div>
+          </TabsContent>
 
-        {/* Reviews Section */}
-        <div className="mt-16">
-          <h2 className="text-3xl font-bold mb-6">Customer Reviews</h2>
-          
-          {/* Review Summary */}
-          <div className="flex items-center gap-6 mb-8 p-6 bg-muted rounded-lg">
-            <div className="text-center">
-              <div className="text-4xl font-bold mb-2">{product.rating?.toFixed(1) || "0.0"}</div>
-              <div className="flex items-center gap-1 justify-center mb-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-5 w-5 ${
-                      i < Math.floor(product.rating || 0)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {product.review_count || 0} reviews
+          <TabsContent value="how-to-order" className="mt-4">
+            <div className="space-y-4">
+              <div className="prose max-w-none">
+                <h3 className="font-semibold mb-3">How to Order</h3>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                  <li>Select your preferred size and color from the options above</li>
+                  <li>Click on "Add to Cart" or "Order Now" button</li>
+                  <li>Review your order in the cart</li>
+                  <li>Proceed to checkout and fill in your delivery details</li>
+                  <li>Choose your payment method (Cash on Delivery available)</li>
+                  <li>Confirm your order</li>
+                  <li>You will receive a confirmation message with your order details</li>
+                </ol>
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium mb-2">Delivery Information:</p>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                    <li>Inside Dhaka: 60 TK delivery charge</li>
+                    <li>Outside Dhaka: 120 TK delivery charge</li>
+                    <li>Delivery time: 2-5 business days</li>
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
+          </TabsContent>
 
-          {/* Review List */}
-          {reviews && reviews.length > 0 ? (
-            <div className="space-y-4 mb-6">
-              {reviews.map((review) => (
-                <Card key={review.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="font-medium">{review.customer_name}</div>
-                        <div className="flex items-center gap-1 mt-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < review.rating
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          ))}
+          <TabsContent value="reviews" className="mt-4">
+            <div className="space-y-6">
+              {/* Review Summary */}
+              <div className="flex items-center gap-6 p-6 bg-muted rounded-lg">
+                <div className="text-center">
+                  <div className="text-4xl font-bold mb-2">{product.rating?.toFixed(1) || "0.0"}</div>
+                  <div className="flex items-center gap-1 justify-center mb-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-5 w-5 ${
+                          i < Math.floor(product.rating || 0)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {product.review_count || 0} reviews
+                  </div>
+                </div>
+              </div>
+
+              {/* Review List */}
+              {reviews && reviews.length > 0 ? (
+                <div className="space-y-4">
+                  {reviews.map((review) => (
+                    <Card key={review.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <div className="font-medium">{review.customer_name}</div>
+                            <div className="flex items-center gap-1 mt-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < review.rating
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {format(new Date(review.created_at), "MMM d, yyyy")}
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {format(new Date(review.created_at), "MMM d, yyyy")}
-                      </div>
-                    </div>
-                    {review.review_text && (
-                      <p className="text-sm text-muted-foreground mt-2">{review.review_text}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No reviews yet. Be the first to review this product!
-            </div>
-          )}
+                        {review.review_text && (
+                          <p className="text-sm text-muted-foreground mt-2">{review.review_text}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No reviews yet. Be the first to review this product!
+                </div>
+              )}
 
-          {/* Add Review Button */}
-          <Button 
-            onClick={() => setShowReviewDialog(true)}
-            variant="outline"
-            className="w-full sm:w-auto"
-          >
-            Write a Review
-          </Button>
-        </div>
+              {/* Add Review Button */}
+              <Button 
+                onClick={() => setShowReviewDialog(true)}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
+                Write a Review
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Related Products */}
         {relatedProducts && relatedProducts.length > 0 && (
