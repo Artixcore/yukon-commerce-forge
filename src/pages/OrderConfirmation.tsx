@@ -14,12 +14,21 @@ interface Order {
   customer_phone: string;
   delivery_location: string;
   total_amount: number;
+  delivery_charge: number;
   created_at: string;
+}
+
+interface OrderItem {
+  id: string;
+  product_name: string;
+  quantity: number;
+  price: number;
 }
 
 const OrderConfirmation = () => {
   const { orderId } = useParams();
   const [order, setOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,11 +46,23 @@ const OrderConfirmation = () => {
       } else {
         setOrder(data as any);
         
+        // Fetch order items
+        const { data: items, error: itemsError } = await supabase
+          .from("order_items")
+          .select("*")
+          .eq("order_id", orderId);
+        
+        if (itemsError) {
+          console.error("Error fetching order items:", itemsError);
+        } else {
+          setOrderItems(items || []);
+        }
+        
         // Track Purchase event with Meta Conversion API
         trackMetaEvent('Purchase', {
           value: data.total_amount,
           currency: 'BDT',
-          num_items: 1,
+          num_items: items?.length || 0,
         }, {
           ph: data.customer_phone,
         });
@@ -82,7 +103,7 @@ const OrderConfirmation = () => {
           <CheckCircle2 className="w-20 h-20 text-green-500" />
         </div>
         
-        <h1 className="text-3xl font-bold mb-4">Order Placed Successfully!</h1>
+        <h1 className="text-3xl font-bold mb-4">Your order has been placed!</h1>
         <p className="text-lg text-muted-foreground mb-8">
           Thank you for your order, {order.customer_name}
         </p>
@@ -94,10 +115,6 @@ const OrderConfirmation = () => {
               <span className="font-semibold">{order.order_number}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Order Total:</span>
-              <span className="font-semibold">৳{Number(order.total_amount).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
               <span className="text-muted-foreground">Payment Method:</span>
               <span className="font-semibold">Cash on Delivery</span>
             </div>
@@ -107,6 +124,46 @@ const OrderConfirmation = () => {
             </div>
           </div>
         </div>
+
+        {/* Order Items */}
+        {orderItems.length > 0 && (
+          <div className="bg-muted rounded-lg p-6 mb-8 text-left">
+            <h2 className="text-xl font-semibold mb-4">Order Items</h2>
+            <div className="space-y-3">
+              {orderItems.map((item) => (
+                <div key={item.id} className="flex justify-between items-start py-2 border-b last:border-0">
+                  <div className="flex-1">
+                    <p className="font-medium">{item.product_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Quantity: {item.quantity} × ৳{Number(item.price).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">
+                      ৳{(Number(item.price) * item.quantity).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Pricing Breakdown */}
+            <div className="mt-4 pt-4 border-t space-y-2">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal:</span>
+                <span>৳{(Number(order.total_amount) - Number(order.delivery_charge || 0)).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Delivery Charge:</span>
+                <span>৳{Number(order.delivery_charge || 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-2">
+                <span>Total Amount:</span>
+                <span>৳{Number(order.total_amount).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-8">
           <h2 className="font-semibold mb-2">Estimated Delivery</h2>

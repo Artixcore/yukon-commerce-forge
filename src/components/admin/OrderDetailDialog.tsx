@@ -75,6 +75,57 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
     mutationFn: async (status: OrderStatus) => {
       if (!order) return;
       
+      // Check if transitioning to cancelled status (restock logic)
+      const isTransitioningToCancelled = status === "cancelled" && order.status !== "cancelled";
+      
+      if (isTransitioningToCancelled) {
+        // Get order items based on order source
+        let itemsToRestock: any[] = [];
+        
+        if (order.source === 'regular') {
+          // Fetch order items for regular orders
+          const { data: items, error: itemsError } = await supabase
+            .from("order_items")
+            .select("*")
+            .eq("order_id", order.id);
+          
+          if (itemsError) throw itemsError;
+          itemsToRestock = items || [];
+        } else {
+          // Use embedded items for landing page orders
+          itemsToRestock = order.items || [];
+        }
+        
+        // Restock each product
+        for (const item of itemsToRestock) {
+          if (item.product_id && item.quantity > 0) {
+            // Get current stock
+            const { data: product, error: productError } = await supabase
+              .from("products")
+              .select("stock_quantity")
+              .eq("id", item.product_id)
+              .single();
+            
+            if (productError) {
+              console.error(`Failed to fetch product ${item.product_id}:`, productError);
+              continue; // Skip this item but continue with others
+            }
+            
+            // Add quantity back to stock
+            const { error: updateError } = await supabase
+              .from("products")
+              .update({ stock_quantity: (product.stock_quantity || 0) + item.quantity })
+              .eq("id", item.product_id);
+            
+            if (updateError) {
+              console.error(`Failed to restock product ${item.product_id}:`, updateError);
+              // Continue with other items even if one fails
+            }
+          }
+        }
+      }
+      
+      // Update order status
       if (order.source === 'regular') {
         const { error } = await supabase
           .from("orders")
@@ -92,6 +143,7 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       queryClient.invalidateQueries({ queryKey: ["admin-landing-page-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] }); // Invalidate products to refresh stock
       showSuccess("Updated!", "Order status updated successfully");
     },
     onError: (error: any) => {
