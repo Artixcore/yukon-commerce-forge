@@ -1,10 +1,8 @@
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/hooks/useCart";
-import { toast } from "sonner";
 import { Star } from "lucide-react";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface ProductCardProps {
@@ -12,13 +10,6 @@ interface ProductCardProps {
 }
 
 const ProductCardComponent = ({ product }: ProductCardProps) => {
-  const { addItem } = useCart();
-
-  const handleAddToCart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    addItem(product, 1);
-    toast.success("Added to cart");
-  }, [addItem, product]);
 
   const stars = useMemo(() => {
     if (!product.rating) return null;
@@ -89,7 +80,6 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
         
         {/* Order Now Button - Full Width */}
         <Button
-          onClick={handleAddToCart}
           disabled={product.stock_quantity === 0}
           className="w-full h-8 sm:h-9 text-sm rounded-t-none mt-auto bg-black text-white hover:bg-black/90 disabled:bg-muted disabled:text-muted-foreground"
           variant="default"
