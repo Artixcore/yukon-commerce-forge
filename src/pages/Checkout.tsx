@@ -128,6 +128,33 @@ const Checkout = () => {
         country: 'bd',
       });
 
+      // Prepare order confirmation data
+      const orderItems = orderData.items.map((item: any) => ({
+        id: `temp-${Date.now()}-${Math.random()}`, // Temporary ID for display
+        product_name: item.product_name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
+      const confirmationData = {
+        orderId: order.id,
+        orderNumber: order.order_number,
+        customer_name: order.customer_name,
+        customer_phone: order.customer_phone,
+        delivery_location: order.delivery_location,
+        total_amount: order.total_amount,
+        delivery_charge: order.delivery_charge,
+        created_at: order.created_at || new Date().toISOString(),
+        items: orderItems,
+      };
+
+      // Store in localStorage as backup (for refresh support)
+      try {
+        localStorage.setItem(`lastOrderConfirmation_${order.id}`, JSON.stringify(confirmationData));
+      } catch (storageError) {
+        console.warn('Failed to store order in localStorage:', storageError);
+      }
+
       // Show thank you alert
       await Swal.fire({
         icon: 'success',
@@ -138,7 +165,23 @@ const Checkout = () => {
       });
 
       clearCart();
-      navigate(`/order-confirmation/${order.id}`);
+      
+      // Navigate with router state containing order data
+      navigate(`/order-confirmation/${order.id}`, {
+        state: {
+          order: {
+            id: order.id,
+            order_number: order.order_number,
+            customer_name: order.customer_name,
+            customer_phone: order.customer_phone,
+            delivery_location: order.delivery_location,
+            total_amount: order.total_amount,
+            delivery_charge: order.delivery_charge,
+            created_at: order.created_at,
+          },
+          orderItems: orderItems,
+        },
+      });
     } catch (error: any) {
       console.error("Error placing order:", error);
       Swal.fire({ icon: 'error', title: 'Order Failed', text: error.message || "Failed to place order" });
