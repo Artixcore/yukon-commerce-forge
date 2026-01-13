@@ -8,7 +8,7 @@ const corsHeaders = {
 
 function validateOrderData(orderData: any) {
   // Validate required fields exist and are strings
-  const requiredFields = ['customer_name', 'customer_phone', 'shipping_address', 'city'];
+  const requiredFields = ['customer_name', 'customer_phone', 'shipping_address'];
   for (const field of requiredFields) {
     if (!orderData[field] || typeof orderData[field] !== 'string' || !orderData[field].trim()) {
       throw new Error(`Invalid or missing field: ${field}`);
@@ -24,16 +24,8 @@ function validateOrderData(orderData: any) {
     throw new Error('Shipping address is too long (max 500 characters)');
   }
   
-  if (orderData.city.length > 100) {
-    throw new Error('City name is too long (max 100 characters)');
-  }
-  
   if (orderData.customer_email && orderData.customer_email.length > 255) {
     throw new Error('Email is too long (max 255 characters)');
-  }
-  
-  if (orderData.message && orderData.message.length > 1000) {
-    throw new Error('Message is too long (max 1000 characters)');
   }
   
   // Validate phone format (Bangladesh format)
@@ -126,10 +118,8 @@ serve(async (req) => {
         customer_name: orderData.customer_name,
         customer_phone: orderData.customer_phone,
         customer_email: orderData.customer_email || null,
-        city: orderData.city,
         delivery_location: orderData.delivery_location,
         shipping_address: orderData.shipping_address,
-        message: orderData.message || null,
         total_amount: orderData.total_amount,
         delivery_charge: orderData.delivery_charge,
         status: 'pending',
@@ -174,7 +164,6 @@ serve(async (req) => {
         event_name: "Purchase",
         user_data: {
           ph: orderData.customer_phone,
-          ct: orderData.city,
           country: "bd"
         },
         custom_data: {

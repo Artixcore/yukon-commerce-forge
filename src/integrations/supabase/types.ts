@@ -183,7 +183,7 @@ export type Database = {
       }
       landing_page_orders: {
         Row: {
-          city: string
+          city: string | null
           created_at: string | null
           customer_name: string
           customer_phone: string
@@ -200,7 +200,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          city?: string
+          city?: string | null
           created_at?: string | null
           customer_name: string
           customer_phone: string
@@ -217,7 +217,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          city?: string
+          city?: string | null
           created_at?: string | null
           customer_name?: string
           customer_phone?: string
@@ -487,7 +487,7 @@ export type Database = {
       }
       orders: {
         Row: {
-          city: string
+          city: string | null
           created_at: string
           customer_email: string | null
           customer_name: string
@@ -503,7 +503,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          city?: string
+          city?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name: string
@@ -519,7 +519,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          city?: string
+          city?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string
