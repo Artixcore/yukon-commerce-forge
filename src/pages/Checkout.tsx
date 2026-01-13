@@ -3,7 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { trackMetaEvent } from "@/lib/metaTracking";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -13,12 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCart } from "@/hooks/useCart";
-import { toast } from "sonner";
 import bkashLogo from "@/assets/bkash.svg";
 import nagadLogo from "@/assets/nagad.png";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { IMAGE_SIZES } from "@/config/imageSizes";
-
+import Swal from 'sweetalert2';
 const checkoutSchema = z.object({
   name: z.string()
     .trim()
@@ -27,19 +25,11 @@ const checkoutSchema = z.object({
     .regex(/^[\p{L}\s'-]+$/u, "Name contains invalid characters"),
   phone: z.string()
     .regex(/^(\+8801|01)[3-9]\d{8}$/, "Please enter a valid Bangladesh phone number (e.g., 01XXXXXXXXX)"),
-  city: z.string()
-    .trim()
-    .min(2, "City is required")
-    .max(100, "City name is too long"),
   deliveryLocation: z.enum(["inside_dhaka", "outside_dhaka"]),
   address: z.string()
     .trim()
     .min(10, "Please provide a complete address")
     .max(500, "Address is too long"),
-  message: z.string()
-    .trim()
-    .max(1000, "Message is too long")
-    .optional(),
 });
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;
@@ -81,7 +71,7 @@ const Checkout = () => {
 
   const onSubmit = async (data: CheckoutForm) => {
     if (items.length === 0) {
-      toast.error("Your cart is empty");
+      Swal.fire({ icon: 'error', title: 'Cart Empty', text: 'Your cart is empty' });
       return;
     }
 
@@ -92,10 +82,8 @@ const Checkout = () => {
         customer_name: data.name,
         customer_phone: data.phone,
         customer_email: null,
-        city: data.city,
         delivery_location: data.deliveryLocation,
         shipping_address: data.address,
-        message: data.message || null,
         total_amount: finalTotal,
         delivery_charge: deliveryCharge,
         items: items.map((item) => ({
@@ -137,16 +125,23 @@ const Checkout = () => {
         ph: data.phone,
         fn: data.name.split(' ')[0],
         ln: data.name.split(' ').slice(1).join(' ') || '',
-        ct: data.city,
         country: 'bd',
       });
 
+      // Show thank you alert
+      await Swal.fire({
+        icon: 'success',
+        title: 'Thanks For Your Order!',
+        text: 'We will call you soon to confirm your order.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#000000',
+      });
+
       clearCart();
-      toast.success("Order placed successfully!");
       navigate(`/order-confirmation/${order.id}`);
     } catch (error: any) {
       console.error("Error placing order:", error);
-      toast.error(error.message || "Failed to place order");
+      Swal.fire({ icon: 'error', title: 'Order Failed', text: error.message || "Failed to place order" });
     } finally {
       setIsSubmitting(false);
     }
@@ -192,17 +187,6 @@ const Checkout = () => {
               )}
             </div>
 
-            <div>
-              <Label htmlFor="city">City *</Label>
-              <Input
-                id="city"
-                {...register("city")}
-                placeholder="Enter your city"
-              />
-              {errors.city && (
-                <p className="text-sm text-destructive mt-1">{errors.city.message}</p>
-              )}
-            </div>
 
             <div>
               <Label>Delivery Location *</Label>
@@ -247,15 +231,6 @@ const Checkout = () => {
               )}
             </div>
 
-            <div>
-              <Label htmlFor="message">Special Instructions (Optional)</Label>
-              <Textarea
-                id="message"
-                {...register("message")}
-                placeholder="Any special instructions for delivery"
-                rows={2}
-              />
-            </div>
 
             <Button
               type="submit"
