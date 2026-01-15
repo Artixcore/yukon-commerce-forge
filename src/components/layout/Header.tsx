@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, ChevronDown, ChevronRight, Heart, PhoneCall } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, ChevronDown, Heart, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
@@ -135,7 +135,7 @@ export const Header = () => {
       {/* Main Header - Desktop: 3-column grid, Mobile: 2-row layout */}
       <div className="container mx-auto px-2 md:px-4 border-b border-border/20">
         {/* Desktop & Tablet: main row */}
-        <div className="hidden md:flex items-center gap-4 py-1.5 lg:py-2">
+        <div className="hidden md:flex items-center gap-4 py-2 lg:py-2.5">
           {/* Column 1: Logo */}
           <Link to="/" className="flex items-center shrink-0">
             <img 
@@ -150,7 +150,7 @@ export const Header = () => {
           </Link>
 
           {/* Column 2: Search Bar Container */}
-          <div className="flex-1 min-w-0 max-w-2xl">
+          <div className="flex-1 min-w-0 max-w-[620px]">
             <form onSubmit={handleSearch} className="relative w-full">
               <Input
                 type="text"
@@ -176,7 +176,10 @@ export const Header = () => {
               <span className="h-9 w-9 rounded-full border border-border flex items-center justify-center">
                 <PhoneCall className="h-4 w-4" />
               </span>
-              <span className="font-medium">Call Us Now: 01924492356</span>
+              <div className="flex flex-col leading-tight">
+                <span className="text-xs text-muted-foreground">Call Us Now:</span>
+                <span className="font-semibold">01924492356</span>
+              </div>
             </div>
             <button
               type="button"
