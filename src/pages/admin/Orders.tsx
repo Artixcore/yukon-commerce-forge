@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { OrderDetailDialog } from "@/components/admin/OrderDetailDialog";
 import { useState } from "react";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2, Download } from "lucide-react";
 import Swal from "sweetalert2";
 
 const statusColors: Record<string, string> = {
@@ -200,6 +201,96 @@ const Orders = () => {
 
   const isLoading = loadingRegular || loadingLP;
 
+  // Download helper function
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Generate export data
+  const generateExportData = () => {
+    const headers = [
+      'Order Number',
+      'Source',
+      'Customer Name',
+      'Phone',
+      'Delivery Location',
+      'Address',
+      'Items',
+      'Subtotal',
+      'Delivery Charge',
+      'Total Amount',
+      'Status',
+      'Date'
+    ];
+
+    const rows = filteredOrders.map(order => [
+      order.order_number,
+      order.source === 'landing_page' ? `LP-${order.landing_page_slug}` : 'Website',
+      order.customer_name,
+      order.customer_phone || '',
+      order.delivery_location === 'inside_dhaka' ? 'Inside Dhaka' : 'Outside Dhaka',
+      order.shipping_address.replace(/[\n\r]/g, ' '),
+      getTotalItems(order),
+      (order.total_amount - order.delivery_charge).toFixed(2),
+      order.delivery_charge.toFixed(2),
+      order.total_amount.toFixed(2),
+      statusLabels[order.status] || order.status,
+      new Date(order.created_at).toLocaleDateString()
+    ]);
+
+    return { headers, rows };
+  };
+
+  // Export as CSV
+  const handleExportCSV = () => {
+    if (!filteredOrders || filteredOrders.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Orders',
+        text: 'There are no orders to export.',
+        confirmButtonColor: '#000000',
+      });
+      return;
+    }
+
+    const { headers, rows } = generateExportData();
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    downloadFile(csvContent, `orders-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv;charset=utf-8;');
+  };
+
+  // Export as Excel (tab-separated)
+  const handleExportExcel = () => {
+    if (!filteredOrders || filteredOrders.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Orders',
+        text: 'There are no orders to export.',
+        confirmButtonColor: '#000000',
+      });
+      return;
+    }
+
+    const { headers, rows } = generateExportData();
+    const excelContent = [
+      headers.join('\t'),
+      ...rows.map(row => row.map(cell => String(cell).replace(/\t/g, ' ')).join('\t'))
+    ].join('\n');
+
+    downloadFile(excelContent, `orders-${new Date().toISOString().split('T')[0]}.xls`, 'application/vnd.ms-excel');
+  };
+
   // Filter orders
   const filteredOrders = allOrders.filter((order) => {
     const matchesSearch =
@@ -217,10 +308,28 @@ const Orders = () => {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex justify-between items-center mb-4 md:mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 md:mb-8">
         <h1 className="text-2xl md:text-4xl font-bold">Orders Management</h1>
-        <div className="text-sm text-muted-foreground">
-          Total Orders: {filteredOrders?.length || 0}
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Total Orders: {filteredOrders?.length || 0}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportCSV}>
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportExcel}>
+                Export as Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
