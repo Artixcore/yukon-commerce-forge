@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { showSuccess, showError } from "@/lib/sweetalert";
@@ -63,12 +64,30 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
       if (!order || order.source !== 'regular') return [];
       const { data, error } = await supabase
         .from("order_items")
-        .select("*")
+        .select("*, products(name, image_url, product_code)")
         .eq("order_id", order.id);
       if (error) throw error;
       return data;
     },
     enabled: !!order && order.source === 'regular',
+  });
+
+  const { data: landingProducts } = useQuery({
+    queryKey: ["landing-order-products", order?.id],
+    queryFn: async () => {
+      if (!order || order.source !== "landing_page") return [];
+      const ids = (order.items || [])
+        .map((item: any) => item.product_id)
+        .filter((id: string | null) => !!id);
+      if (ids.length === 0) return [];
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, image_url, product_code")
+        .in("id", ids);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!order && order.source === "landing_page",
   });
 
   const updateStatusMutation = useMutation({
@@ -170,10 +189,32 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
 
   const subtotal = order.total_amount - order.delivery_charge;
   
+  const landingProductMap = (landingProducts || []).reduce<Record<string, any>>((acc, product) => {
+    acc[product.id] = product;
+    return acc;
+  }, {});
+
   // Get items based on order source
-  const displayItems = order.source === 'landing_page' 
-    ? (order.items || []) 
-    : (orderItems || []);
+  const displayItems = order.source === 'landing_page'
+    ? (order.items || []).map((item: any) => {
+        const product = item.product_id ? landingProductMap[item.product_id] : null;
+        return {
+          id: item.id || item.product_id || item.product_name,
+          product_name: item.product_name || item.name || product?.name || "Unknown Product",
+          quantity: item.quantity || 1,
+          price: Number(item.price ?? item.unit_price ?? 0),
+          product_code: product?.product_code || null,
+          image_url: product?.image_url || null,
+        };
+      })
+    : (orderItems || []).map((item: any) => ({
+        id: item.id,
+        product_name: item.product_name || item.products?.name || "Unknown Product",
+        quantity: item.quantity,
+        price: Number(item.price ?? 0),
+        product_code: item.products?.product_code || null,
+        image_url: item.products?.image_url || null,
+      }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -262,24 +303,58 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
           {/* Order Items */}
           <div className="border rounded-lg p-4">
             <h3 className="font-semibold mb-3">Order Items</h3>
-            <div className="space-y-3">
-              {displayItems.map((item: any, index: number) => (
-                <div key={item.id || index} className="flex justify-between py-2 border-b last:border-0">
-                  <div>
-                    <p className="font-medium">{item.product_name}</p>
-                    <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">৳{Number(item.price).toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Total: ৳{(Number(item.price) * item.quantity).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {displayItems.length === 0 && (
-                <p className="text-muted-foreground text-sm">No items found</p>
-              )}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead className="text-center">Qty</TableHead>
+                    <TableHead className="text-right">Unit Price</TableHead>
+                    <TableHead className="text-right">Subtotal</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayItems.map((item: any, index: number) => (
+                    <TableRow key={item.id || index}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.product_name}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <span className="text-xs text-muted-foreground">No image</span>
+                            )}
+                          </div>
+                          <span className="font-medium">{item.product_name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs bg-muted px-2 py-1 rounded">
+                          {item.product_code || "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">{item.quantity}</TableCell>
+                      <TableCell className="text-right">৳{Number(item.price).toFixed(2)}</TableCell>
+                      <TableCell className="text-right">
+                        ৳{(Number(item.price) * Number(item.quantity)).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {displayItems.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        No items found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </div>
 

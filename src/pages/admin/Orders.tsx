@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { OrderDetailDialog } from "@/components/admin/OrderDetailDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { Eye, Trash2, Download } from "lucide-react";
 import Swal from "sweetalert2";
@@ -56,6 +57,7 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
 
   // Fetch regular orders with order items count
   const { data: regularOrders, isLoading: loadingRegular } = useQuery({
@@ -306,11 +308,103 @@ const Orders = () => {
     return matchesSearch && matchesStatus && matchesLocation && matchesSource;
   });
 
+  const getOrderKey = (order: UnifiedOrder) => `${order.source}-${order.id}`;
+
+  const toggleOrderSelection = (order: UnifiedOrder, checked: boolean) => {
+    setSelectedOrders((prev) => {
+      const next = new Set(prev);
+      const key = getOrderKey(order);
+      if (checked) {
+        next.add(key);
+      } else {
+        next.delete(key);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedOrders(new Set(filteredOrders.map(getOrderKey)));
+    } else {
+      setSelectedOrders(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedOrders.size === 0) return;
+    const selectedList = filteredOrders.filter((order) => selectedOrders.has(getOrderKey(order)));
+    const regularIds = selectedList.filter((order) => order.source === "regular").map((order) => order.id);
+    const landingIds = selectedList.filter((order) => order.source === "landing_page").map((order) => order.id);
+
+    const result = await Swal.fire({
+      title: "Delete selected orders?",
+      text: `You are about to delete ${selectedList.length} orders. This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      if (regularIds.length > 0) {
+        const { error: itemsError } = await supabase
+          .from("order_items")
+          .delete()
+          .in("order_id", regularIds);
+        if (itemsError) throw itemsError;
+
+        const { error: ordersError } = await supabase
+          .from("orders")
+          .delete()
+          .in("id", regularIds);
+        if (ordersError) throw ordersError;
+      }
+
+      if (landingIds.length > 0) {
+        const { error: landingError } = await supabase
+          .from("landing_page_orders")
+          .delete()
+          .in("id", landingIds);
+        if (landingError) throw landingError;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-landing-page-orders"] });
+      setSelectedOrders(new Set());
+      Swal.fire({
+        icon: "success",
+        title: "Deleted!",
+        text: "Selected orders have been deleted.",
+        confirmButtonColor: "#000000",
+      });
+    } catch (error: any) {
+      Swal.fire({
+        icon: "error",
+        title: "Delete Failed",
+        text: error.message || "Failed to delete orders",
+        confirmButtonColor: "#000000",
+      });
+    }
+  };
+
   return (
     <div className="p-4 md:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 md:mb-8">
         <h1 className="text-2xl md:text-4xl font-bold">Orders Management</h1>
         <div className="flex items-center gap-4">
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={selectedOrders.size === 0}
+            onClick={handleBulkDelete}
+          >
+            Bulk Delete
+          </Button>
           <div className="text-sm text-muted-foreground">
             Total Orders: {filteredOrders?.length || 0}
           </div>
@@ -388,6 +482,13 @@ const Orders = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={filteredOrders.length > 0 && selectedOrders.size === filteredOrders.length}
+                    onCheckedChange={(checked) => toggleSelectAll(Boolean(checked))}
+                    aria-label="Select all orders"
+                  />
+                </TableHead>
                 <TableHead>Order #</TableHead>
                 <TableHead>Source</TableHead>
                 <TableHead>Items</TableHead>
@@ -404,13 +505,20 @@ const Orders = () => {
             <TableBody>
               {filteredOrders?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                     No orders found
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredOrders?.map((order) => (
                   <TableRow key={`${order.source}-${order.id}`}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedOrders.has(getOrderKey(order))}
+                        onCheckedChange={(checked) => toggleOrderSelection(order, Boolean(checked))}
+                        aria-label={`Select order ${order.order_number}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{order.order_number}</TableCell>
                     <TableCell>
                       {order.source === 'landing_page' ? (

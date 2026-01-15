@@ -8,10 +8,12 @@ import { Star, Check, X, Trash2 } from "lucide-react";
 import { showSuccess, showError, showConfirmation } from "@/lib/sweetalert";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Reviews = () => {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
+  const [selectedReviews, setSelectedReviews] = useState<Set<string>>(new Set());
   
   // Reviews management component
 
@@ -66,6 +68,45 @@ const Reviews = () => {
     },
   });
 
+  const toggleReviewSelection = (reviewId: string, checked: boolean) => {
+    setSelectedReviews((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(reviewId);
+      } else {
+        next.delete(reviewId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedReviews(new Set(reviews?.map((review) => review.id) || []));
+    } else {
+      setSelectedReviews(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedReviews.size === 0) return;
+    const confirmed = await showConfirmation(
+      "Delete Reviews",
+      `You are about to delete ${selectedReviews.size} reviews. This action cannot be undone.`,
+      "Delete"
+    );
+    if (confirmed) {
+      const { error } = await supabase
+        .from("reviews")
+        .delete()
+        .in("id", Array.from(selectedReviews));
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+      setSelectedReviews(new Set());
+      showSuccess("Deleted!", "Selected reviews deleted successfully");
+    }
+  };
+
   const handleApprove = (id: string) => {
     updateMutation.mutate({ id, is_approved: true });
   };
@@ -105,6 +146,13 @@ const Reviews = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Reviews Management</h1>
+          <Button
+            variant="destructive"
+            disabled={selectedReviews.size === 0}
+            onClick={handleBulkDelete}
+          >
+            Bulk Delete
+          </Button>
         </div>
 
         <Tabs value={filter} onValueChange={(v) => setFilter(v as any)} className="mb-6">
@@ -122,6 +170,13 @@ const Reviews = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={reviews?.length > 0 && selectedReviews.size === reviews.length}
+                    onCheckedChange={(checked) => toggleSelectAll(Boolean(checked))}
+                    aria-label="Select all reviews"
+                  />
+                </TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Rating</TableHead>
@@ -134,13 +189,20 @@ const Reviews = () => {
               <TableBody>
                 {reviews?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       No reviews found
                     </TableCell>
                   </TableRow>
                 ) : (
                   reviews?.map((review) => (
                     <TableRow key={review.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedReviews.has(review.id)}
+                        onCheckedChange={(checked) => toggleReviewSelection(review.id, Boolean(checked))}
+                        aria-label={`Select review from ${review.customer_name}`}
+                      />
+                    </TableCell>
                       <TableCell className="font-medium">
                         {review.products?.name || "N/A"}
                       </TableCell>

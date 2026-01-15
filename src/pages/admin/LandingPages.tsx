@@ -14,10 +14,12 @@ import {
 } from "@/components/ui/table";
 import { showSuccess, showConfirmation, showInfo } from "@/lib/sweetalert";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const LandingPages = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPage, setSelectedPage] = useState<any>(null);
+  const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
 
   const { data: landingPages, isLoading } = useQuery({
@@ -45,6 +47,45 @@ const LandingPages = () => {
       showSuccess("Deleted!", "Landing page has been deleted successfully");
     },
   });
+
+  const togglePageSelection = (pageId: string, checked: boolean) => {
+    setSelectedPages((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(pageId);
+      } else {
+        next.delete(pageId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedPages(new Set(landingPages?.map((page) => page.id) || []));
+    } else {
+      setSelectedPages(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedPages.size === 0) return;
+    const confirmed = await showConfirmation(
+      "Delete Landing Pages?",
+      `You are about to delete ${selectedPages.size} landing pages. This action cannot be undone.`,
+      "Yes, delete them!"
+    );
+    if (confirmed) {
+      const { error } = await supabase
+        .from("landing_pages")
+        .delete()
+        .in("id", Array.from(selectedPages));
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["admin-landing-pages"] });
+      setSelectedPages(new Set());
+      showSuccess("Deleted!", "Selected landing pages deleted successfully");
+    }
+  };
 
   const handleEdit = (page: any) => {
     setSelectedPage(page);
@@ -79,13 +120,18 @@ const LandingPages = () => {
           <h1 className="text-2xl md:text-4xl font-bold">Landing Pages</h1>
           <p className="text-muted-foreground mt-1">Create single-page sales funnels for your campaigns</p>
         </div>
-        <Button onClick={() => {
-          setSelectedPage(null);
-          setIsDialogOpen(true);
-        }}>
-          <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
-          <span className="text-sm md:text-base">Create New Page</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="destructive" disabled={selectedPages.size === 0} onClick={handleBulkDelete}>
+            Bulk Delete
+          </Button>
+          <Button onClick={() => {
+            setSelectedPage(null);
+            setIsDialogOpen(true);
+          }}>
+            <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+            <span className="text-sm md:text-base">Create New Page</span>
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -109,6 +155,13 @@ const LandingPages = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={landingPages?.length > 0 && selectedPages.size === landingPages.length}
+                    onCheckedChange={(checked) => toggleSelectAll(Boolean(checked))}
+                    aria-label="Select all landing pages"
+                  />
+                </TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead className="hidden sm:table-cell">Slug</TableHead>
                 <TableHead className="hidden md:table-cell">Orders</TableHead>
@@ -120,6 +173,13 @@ const LandingPages = () => {
             <TableBody>
               {landingPages?.map((page) => (
                 <TableRow key={page.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedPages.has(page.id)}
+                      onCheckedChange={(checked) => togglePageSelection(page.id, Boolean(checked))}
+                      aria-label={`Select landing page ${page.title}`}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">{page.title}</TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <div className="flex items-center gap-2">

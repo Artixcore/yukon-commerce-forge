@@ -10,11 +10,13 @@ import { showSuccess, showConfirmation } from "@/lib/sweetalert";
 import { buildCategoryTree, CategoryTree } from "@/lib/categoryUtils";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { IMAGE_SIZES } from "@/config/imageSizes";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Categories = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
 
   const { data: categories, isLoading } = useQuery({
@@ -36,6 +38,45 @@ const Categories = () => {
       showSuccess("Deleted!", "Category deleted successfully");
     },
   });
+
+  const toggleCategorySelection = (categoryId: string, checked: boolean) => {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(categoryId);
+      } else {
+        next.delete(categoryId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedCategories(new Set(categories?.map((category) => category.id) || []));
+    } else {
+      setSelectedCategories(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedCategories.size === 0) return;
+    const confirmed = await showConfirmation(
+      "Delete Categories?",
+      `You are about to delete ${selectedCategories.size} categories. This action cannot be undone.`,
+      "Yes, delete them!"
+    );
+    if (confirmed) {
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .in("id", Array.from(selectedCategories));
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      setSelectedCategories(new Set());
+      showSuccess("Deleted!", "Selected categories deleted successfully");
+    }
+  };
 
   const handleDelete = async (category: any) => {
     const hasChildren = categories?.some(c => c.parent_id === category.id);
@@ -71,6 +112,13 @@ const Categories = () => {
     return (
       <>
         <TableRow key={category.id}>
+          <TableCell>
+            <Checkbox
+              checked={selectedCategories.has(category.id)}
+              onCheckedChange={(checked) => toggleCategorySelection(category.id, Boolean(checked))}
+              aria-label={`Select category ${category.name}`}
+            />
+          </TableCell>
           <TableCell>
             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
               {category.image_url ? (
@@ -166,10 +214,19 @@ const Categories = () => {
             Manage product categories and subcategories (max 3 levels)
           </p>
         </div>
-        <Button onClick={() => { setSelectedCategory(null); setIsDialogOpen(true); }}>
-          <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
-          <span className="text-sm md:text-base">Add Category</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="destructive"
+            disabled={selectedCategories.size === 0}
+            onClick={handleBulkDelete}
+          >
+            Bulk Delete
+          </Button>
+          <Button onClick={() => { setSelectedCategory(null); setIsDialogOpen(true); }}>
+            <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+            <span className="text-sm md:text-base">Add Category</span>
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -191,6 +248,13 @@ const Categories = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={categories?.length > 0 && selectedCategories.size === categories.length}
+                    onCheckedChange={(checked) => toggleSelectAll(Boolean(checked))}
+                    aria-label="Select all categories"
+                  />
+                </TableHead>
                 <TableHead>Image</TableHead>
                 <TableHead>Category Name</TableHead>
                 <TableHead>Slug</TableHead>

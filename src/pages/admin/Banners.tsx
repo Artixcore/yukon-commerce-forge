@@ -8,10 +8,12 @@ import { showSuccess, showConfirmation } from "@/lib/sweetalert";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { IMAGE_SIZES } from "@/config/imageSizes";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Banners = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedBanner, setSelectedBanner] = useState<any>(null);
+  const [selectedBanners, setSelectedBanners] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
 
   const { data: banners, isLoading } = useQuery({
@@ -37,6 +39,45 @@ const Banners = () => {
     },
   });
 
+  const toggleBannerSelection = (bannerId: string, checked: boolean) => {
+    setSelectedBanners((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(bannerId);
+      } else {
+        next.delete(bannerId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedBanners(new Set(banners?.map((banner) => banner.id) || []));
+    } else {
+      setSelectedBanners(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedBanners.size === 0) return;
+    const confirmed = await showConfirmation(
+      "Delete Banners?",
+      `You are about to delete ${selectedBanners.size} banners. This action cannot be undone.`,
+      "Yes, delete them!"
+    );
+    if (confirmed) {
+      const { error } = await supabase
+        .from("hero_banners")
+        .delete()
+        .in("id", Array.from(selectedBanners));
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["admin-banners"] });
+      setSelectedBanners(new Set());
+      showSuccess("Deleted!", "Selected banners deleted successfully");
+    }
+  };
+
   const handleEdit = (banner: any) => {
     setSelectedBanner(banner);
     setIsDialogOpen(true);
@@ -57,13 +98,22 @@ const Banners = () => {
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-bold">Hero Banners</h1>
-        <Button onClick={() => {
-          setSelectedBanner(null);
-          setIsDialogOpen(true);
-        }}>
-          <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
-          <span className="text-sm md:text-base">Add Banner</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="destructive"
+            disabled={selectedBanners.size === 0}
+            onClick={handleBulkDelete}
+          >
+            Bulk Delete
+          </Button>
+          <Button onClick={() => {
+            setSelectedBanner(null);
+            setIsDialogOpen(true);
+          }}>
+            <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+            <span className="text-sm md:text-base">Add Banner</span>
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -73,6 +123,13 @@ const Banners = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={banners?.length > 0 && selectedBanners.size === banners.length}
+                    onCheckedChange={(checked) => toggleSelectAll(Boolean(checked))}
+                    aria-label="Select all banners"
+                  />
+                </TableHead>
                 <TableHead>Image</TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead className="hidden md:table-cell">Linked To</TableHead>
@@ -84,6 +141,13 @@ const Banners = () => {
             <TableBody>
               {banners?.map((banner) => (
                 <TableRow key={banner.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedBanners.has(banner.id)}
+                      onCheckedChange={(checked) => toggleBannerSelection(banner.id, Boolean(checked))}
+                      aria-label={`Select banner ${banner.title}`}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="w-16 h-10 md:w-20 md:h-12 overflow-hidden rounded">
                       <OptimizedImage
