@@ -1,13 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { OrderDetailDialog } from "@/components/admin/OrderDetailDialog";
 import { useState } from "react";
-import { Eye } from "lucide-react";
+import { Eye, Trash2, Download } from "lucide-react";
+import Swal from "sweetalert2";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-500",
@@ -43,9 +45,11 @@ interface UnifiedOrder {
   source: 'regular' | 'landing_page';
   landing_page_slug?: string;
   items?: any[];
+  itemCount?: number;
 }
 
 const Orders = () => {
+  const queryClient = useQueryClient();
   const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,13 +57,13 @@ const Orders = () => {
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
 
-  // Fetch regular orders
+  // Fetch regular orders with order items count
   const { data: regularOrders, isLoading: loadingRegular } = useQuery({
     queryKey: ["admin-orders"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select("*, order_items(quantity)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -79,23 +83,98 @@ const Orders = () => {
     },
   });
 
+  // Delete order mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (order: UnifiedOrder) => {
+      if (order.source === 'regular') {
+        // Delete order items first
+        const { error: itemsError } = await supabase
+          .from("order_items")
+          .delete()
+          .eq("order_id", order.id);
+        if (itemsError) throw itemsError;
+
+        // Then delete order
+        const { error } = await supabase
+          .from("orders")
+          .delete()
+          .eq("id", order.id);
+        if (error) throw error;
+      } else {
+        // Landing page orders
+        const { error } = await supabase
+          .from("landing_page_orders")
+          .delete()
+          .eq("id", order.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-landing-page-orders"] });
+      Swal.fire({
+        icon: 'success',
+        title: 'Deleted!',
+        text: 'Order has been deleted successfully.',
+        confirmButtonColor: '#000000',
+      });
+    },
+    onError: (error: any) => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Delete Failed',
+        text: error.message || 'Failed to delete order',
+        confirmButtonColor: '#000000',
+      });
+    },
+  });
+
+  const handleDelete = async (order: UnifiedOrder) => {
+    const result = await Swal.fire({
+      title: 'Delete Order?',
+      text: `Are you sure you want to delete order ${order.order_number}? This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (result.isConfirmed) {
+      deleteMutation.mutate(order);
+    }
+  };
+
+  // Calculate total items for an order
+  const getTotalItems = (order: UnifiedOrder): number => {
+    if (order.source === 'landing_page' && order.items) {
+      return order.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    }
+    return order.itemCount || 0;
+  };
+
   // Combine and normalize orders
   const allOrders: UnifiedOrder[] = [
-    ...(regularOrders?.map(order => ({
-      id: order.id,
-      order_number: order.order_number,
-      customer_name: order.customer_name,
-      customer_phone: order.customer_phone,
-      city: order.city,
-      delivery_location: order.delivery_location,
-      shipping_address: order.shipping_address,
-      message: order.message,
-      total_amount: order.total_amount,
-      delivery_charge: order.delivery_charge,
-      status: order.status,
-      created_at: order.created_at,
-      source: 'regular' as const,
-    })) || []),
+    ...(regularOrders?.map(order => {
+      const itemCount = order.order_items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
+      return {
+        id: order.id,
+        order_number: order.order_number,
+        customer_name: order.customer_name,
+        customer_phone: order.customer_phone,
+        city: order.city,
+        delivery_location: order.delivery_location,
+        shipping_address: order.shipping_address,
+        message: order.message,
+        total_amount: order.total_amount,
+        delivery_charge: order.delivery_charge,
+        status: order.status,
+        created_at: order.created_at,
+        source: 'regular' as const,
+        itemCount,
+      };
+    }) || []),
     ...(landingPageOrders?.map(order => ({
       id: order.id,
       order_number: order.order_number,
@@ -122,6 +201,96 @@ const Orders = () => {
 
   const isLoading = loadingRegular || loadingLP;
 
+  // Download helper function
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Generate export data
+  const generateExportData = () => {
+    const headers = [
+      'Order Number',
+      'Source',
+      'Customer Name',
+      'Phone',
+      'Delivery Location',
+      'Address',
+      'Items',
+      'Subtotal',
+      'Delivery Charge',
+      'Total Amount',
+      'Status',
+      'Date'
+    ];
+
+    const rows = filteredOrders.map(order => [
+      order.order_number,
+      order.source === 'landing_page' ? `LP-${order.landing_page_slug}` : 'Website',
+      order.customer_name,
+      order.customer_phone || '',
+      order.delivery_location === 'inside_dhaka' ? 'Inside Dhaka' : 'Outside Dhaka',
+      order.shipping_address.replace(/[\n\r]/g, ' '),
+      getTotalItems(order),
+      (order.total_amount - order.delivery_charge).toFixed(2),
+      order.delivery_charge.toFixed(2),
+      order.total_amount.toFixed(2),
+      statusLabels[order.status] || order.status,
+      new Date(order.created_at).toLocaleDateString()
+    ]);
+
+    return { headers, rows };
+  };
+
+  // Export as CSV
+  const handleExportCSV = () => {
+    if (!filteredOrders || filteredOrders.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Orders',
+        text: 'There are no orders to export.',
+        confirmButtonColor: '#000000',
+      });
+      return;
+    }
+
+    const { headers, rows } = generateExportData();
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    downloadFile(csvContent, `orders-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv;charset=utf-8;');
+  };
+
+  // Export as Excel (tab-separated)
+  const handleExportExcel = () => {
+    if (!filteredOrders || filteredOrders.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Orders',
+        text: 'There are no orders to export.',
+        confirmButtonColor: '#000000',
+      });
+      return;
+    }
+
+    const { headers, rows } = generateExportData();
+    const excelContent = [
+      headers.join('\t'),
+      ...rows.map(row => row.map(cell => String(cell).replace(/\t/g, ' ')).join('\t'))
+    ].join('\n');
+
+    downloadFile(excelContent, `orders-${new Date().toISOString().split('T')[0]}.xls`, 'application/vnd.ms-excel');
+  };
+
   // Filter orders
   const filteredOrders = allOrders.filter((order) => {
     const matchesSearch =
@@ -139,10 +308,28 @@ const Orders = () => {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex justify-between items-center mb-4 md:mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 md:mb-8">
         <h1 className="text-2xl md:text-4xl font-bold">Orders Management</h1>
-        <div className="text-sm text-muted-foreground">
-          Total Orders: {filteredOrders?.length || 0}
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Total Orders: {filteredOrders?.length || 0}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportCSV}>
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportExcel}>
+                Export as Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -203,6 +390,7 @@ const Orders = () => {
               <TableRow>
                 <TableHead>Order #</TableHead>
                 <TableHead>Source</TableHead>
+                <TableHead>Items</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead className="hidden sm:table-cell">Phone</TableHead>
                 <TableHead className="hidden md:table-cell">City</TableHead>
@@ -216,7 +404,7 @@ const Orders = () => {
             <TableBody>
               {filteredOrders?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     No orders found
                   </TableCell>
                 </TableRow>
@@ -235,6 +423,11 @@ const Orders = () => {
                         </Badge>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="font-medium">
+                        {getTotalItems(order)}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{order.customer_name}</TableCell>
                     <TableCell className="hidden sm:table-cell">{order.customer_phone}</TableCell>
                     <TableCell className="hidden md:table-cell">{order.city}</TableCell>
@@ -251,15 +444,26 @@ const Orders = () => {
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">{new Date(order.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => handleViewDetails(order)}
-                      >
-                        <Eye className="w-3 h-3 md:w-4 md:h-4 mr-1" />
-                        View
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => handleViewDetails(order)}
+                        >
+                          <Eye className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDelete(order)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
