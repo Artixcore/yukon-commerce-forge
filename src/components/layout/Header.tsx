@@ -135,7 +135,7 @@ export const Header = () => {
       {/* Main Header - Desktop: 3-column grid, Mobile: 2-row layout */}
       <div className="container mx-auto px-2 md:px-4">
         {/* Desktop & Tablet: 3-column grid layout */}
-        <div className="hidden md:grid grid-cols-[auto_1fr_auto] items-center gap-4 py-3 lg:py-4">
+        <div className="hidden md:grid grid-cols-[auto_1fr_auto] items-center gap-4 py-2 lg:py-3">
           {/* Column 1: Logo */}
           <Link to="/" className="flex items-center shrink-0">
             <img 
@@ -155,7 +155,7 @@ export const Header = () => {
               <Input
                 type="text"
                 placeholder="Search for something..."
-                className="w-full pr-12 h-11 lg:h-12 text-sm md:text-base"
+                className="w-full pr-12 h-9 lg:h-10 text-sm md:text-base"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -163,7 +163,7 @@ export const Header = () => {
                 type="submit"
                 size="icon"
                 variant="ghost"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
               >
                 <Search className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
@@ -199,7 +199,7 @@ export const Header = () => {
         {/* Mobile: 2-row layout */}
         <div className="md:hidden">
           {/* Row 1: Logo + Icons */}
-          <div className="flex items-center justify-between py-2">
+          <div className="flex items-center justify-between py-1.5">
             <Link to="/" className="flex items-center shrink-0">
               <img 
                 src={logo}
@@ -242,7 +242,7 @@ export const Header = () => {
           
           {/* Row 2: Full-width Search Bar */}
           {!mobileMenuOpen && (
-            <div className="pb-2">
+            <div className="pb-1.5">
               <form onSubmit={handleSearch} className="relative w-full">
                 <Input
                   type="text"
