@@ -108,7 +108,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b">
+    <header className="sticky top-0 z-50 w-full bg-white">
       {!isOnline && (
         <div className="bg-yellow-500 text-white text-center py-2 text-sm font-medium">
           You're currently offline. Some features may be limited.
@@ -133,9 +133,9 @@ export const Header = () => {
       </div>
 
       {/* Main Header - Desktop: 3-column grid, Mobile: 2-row layout */}
-      <div className="container mx-auto px-2 md:px-4">
-        {/* Desktop & Tablet: 3-column grid layout */}
-        <div className="hidden md:grid grid-cols-[auto_1fr_auto] items-center gap-4 py-2 lg:py-3">
+      <div className="container mx-auto px-2 md:px-4 border-b border-border/20">
+        {/* Desktop & Tablet: main row */}
+        <div className="hidden md:flex items-center gap-4 py-1.5 lg:py-2">
           {/* Column 1: Logo */}
           <Link to="/" className="flex items-center shrink-0">
             <img 
@@ -150,12 +150,12 @@ export const Header = () => {
           </Link>
 
           {/* Column 2: Search Bar Container */}
-          <div className="min-w-0 max-w-2xl">
+          <div className="flex-1 min-w-0 max-w-2xl">
             <form onSubmit={handleSearch} className="relative w-full">
               <Input
                 type="text"
                 placeholder="Search for something..."
-                className="w-full pr-12 h-9 lg:h-10 text-sm md:text-base"
+                className="w-full pr-12 h-10 text-sm md:text-base"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -171,7 +171,7 @@ export const Header = () => {
           </div>
 
           {/* Column 3: Right Actions Container */}
-          <div className="flex items-center gap-3 lg:gap-4 whitespace-nowrap">
+          <div className="flex items-center gap-3 lg:gap-4 whitespace-nowrap shrink-0">
             <div className="hidden lg:flex items-center gap-2 text-sm text-foreground">
               <span className="h-9 w-9 rounded-full border border-border flex items-center justify-center">
                 <PhoneCall className="h-4 w-4" />
@@ -199,7 +199,7 @@ export const Header = () => {
         {/* Mobile: 2-row layout */}
         <div className="md:hidden">
           {/* Row 1: Logo + Icons */}
-          <div className="flex items-center justify-between py-1.5">
+          <div className="flex items-center justify-between py-1">
             <Link to="/" className="flex items-center shrink-0">
               <img 
                 src={logo}
@@ -242,7 +242,7 @@ export const Header = () => {
           
           {/* Row 2: Full-width Search Bar */}
           {!mobileMenuOpen && (
-            <div className="pb-1.5">
+            <div className="pb-1">
               <form onSubmit={handleSearch} className="relative w-full">
                 <Input
                   type="text"
@@ -266,7 +266,7 @@ export const Header = () => {
       </div>
 
       {/* Black Category Navbar */}
-      <nav className="bg-black border-t h-12 relative z-50">
+      <nav className="bg-black h-12 relative z-50">
         <div className="container mx-auto px-4 h-full">
           {/* Desktop & Tablet: Horizontal navigation */}
           <div className="hidden md:flex items-center justify-start gap-1 lg:gap-4 h-full overflow-visible">
