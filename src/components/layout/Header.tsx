@@ -133,24 +133,27 @@ export const Header = () => {
       </div>
 
       {/* Main Header - Desktop: 3-column grid, Mobile: 2-row layout */}
-      <div className="container mx-auto px-2 md:px-4 border-b border-border/20">
+      <div className="container mx-auto px-4 lg:px-6 border-b border-border/20">
         {/* Desktop & Tablet: main row */}
-        <div className="hidden md:flex items-center gap-4 py-2 lg:py-2.5">
+        <div className="hidden md:flex items-center py-1.5 lg:py-2">
           {/* Column 1: Logo */}
-          <Link to="/" className="flex items-center shrink-0">
+          <div className="flex items-center shrink-0">
+            <Link to="/" className="flex items-center">
             <img 
               src={logo}
               alt="YUKON Lifestyle" 
-              className="h-10 lg:h-12 w-auto"
+              className="h-10 lg:h-11 w-auto"
               width="120"
               height="48"
               loading="eager"
               decoding="async"
             />
-          </Link>
+            </Link>
+          </div>
 
           {/* Column 2: Search Bar Container */}
-          <div className="flex-1 min-w-0 max-w-[620px]">
+          <div className="flex-1 min-w-0 flex justify-center px-4">
+            <div className="w-full max-w-[620px]">
             <form onSubmit={handleSearch} className="relative w-full">
               <Input
                 type="text"
@@ -168,10 +171,11 @@ export const Header = () => {
                 <Search className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </form>
+            </div>
           </div>
 
           {/* Column 3: Right Actions Container */}
-          <div className="flex items-center gap-3 lg:gap-4 whitespace-nowrap shrink-0">
+          <div className="flex items-center gap-3 lg:gap-4 whitespace-nowrap shrink-0 ml-auto pr-1">
             <div className="hidden lg:flex items-center gap-2 text-sm text-foreground">
               <span className="h-9 w-9 rounded-full border border-border flex items-center justify-center">
                 <PhoneCall className="h-4 w-4" />
