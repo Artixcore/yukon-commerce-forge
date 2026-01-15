@@ -64,7 +64,7 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
       if (!order || order.source !== 'regular') return [];
       const { data, error } = await supabase
         .from("order_items")
-        .select("*, products(name, image_url, product_code)")
+        .select("*, products(id, name, image_url)")
         .eq("order_id", order.id);
       if (error) throw error;
       return data;
@@ -101,7 +101,7 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
       if (ids.length === 0) return [];
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, image_url, product_code")
+        .select("id, name, image_url")
         .in("id", ids);
       if (error) throw error;
       return data;
@@ -223,19 +223,17 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
         const product = item.product_id ? landingProductMap[item.product_id] : null;
         return {
           id: item.id || item.product_id || item.product_name,
+          product_id: item.product_id || product?.id || null,
           product_name: item.product_name || item.name || product?.name || "Unknown Product",
           quantity: item.quantity || 1,
-          price: Number(item.price ?? item.unit_price ?? 0),
-          product_code: product?.product_code || null,
           image_url: product?.image_url || null,
         };
       })
     : (orderItems || []).map((item: any) => ({
         id: item.id,
+        product_id: item.product_id || item.products?.id || null,
         product_name: item.product_name || item.products?.name || "Unknown Product",
         quantity: item.quantity,
-        price: Number(item.price ?? 0),
-        product_code: item.products?.product_code || null,
         image_url: item.products?.image_url || null,
       }));
 
@@ -343,16 +341,14 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
-                    <TableHead>Code</TableHead>
+                    <TableHead>Product ID</TableHead>
                     <TableHead className="text-center">Qty</TableHead>
-                    <TableHead className="text-right">Unit Price</TableHead>
-                    <TableHead className="text-right">Subtotal</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isItemsLoading ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
                         Loading items...
                       </TableCell>
                     </TableRow>
@@ -378,20 +374,16 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
                         </TableCell>
                         <TableCell>
                           <span className="text-xs bg-muted px-2 py-1 rounded">
-                            {item.product_code || "—"}
+                            {item.product_id || "—"}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">{item.quantity}</TableCell>
-                        <TableCell className="text-right">৳{Number(item.price).toFixed(2)}</TableCell>
-                        <TableCell className="text-right">
-                          ৳{(Number(item.price) * Number(item.quantity)).toFixed(2)}
-                        </TableCell>
                       </TableRow>
                     ))
                   )}
                   {!isItemsLoading && displayItems.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
                         No items found
                       </TableCell>
                     </TableRow>
