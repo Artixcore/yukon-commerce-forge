@@ -91,6 +91,10 @@ export const Footer = () => {
               <p className="text-sm leading-relaxed text-white/70 mt-4">
                 YukonLifestyle brings curated everyday essentials with reliable service and value.
               </p>
+              <div className="mt-4 text-sm text-white/70 space-y-1">
+                <p>Uttarkhan, Uttara, Dhaka 1230</p>
+                <p>Phone: 01924492356</p>
+              </div>
             </div>
 
             {/* Quick Links */}

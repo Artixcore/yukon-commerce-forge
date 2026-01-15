@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, ChevronDown, ChevronRight, Heart, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { Input } from "@/components/ui/input";
@@ -121,7 +121,7 @@ export const Header = () => {
           <div className="flex items-center justify-between h-full text-xs text-muted-foreground">
             {/* Left: Site Label */}
             <Link to="/" className="hover:text-primary transition-colors font-medium">
-              Yukonlifestyle.com
+              yukonlifestyle.com
             </Link>
             
             {/* Right: Order Tracking */}
@@ -155,14 +155,15 @@ export const Header = () => {
               <Input
                 type="text"
                 placeholder="Search for something..."
-                className="w-full pr-12 h-10 md:h-11 lg:h-12 text-sm md:text-base rounded-r-none border-r-0"
+                className="w-full pr-12 h-11 lg:h-12 text-sm md:text-base"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Button
                 type="submit"
                 size="icon"
-                className="absolute right-0 top-0 h-10 md:h-11 lg:h-12 rounded-l-none"
+                variant="ghost"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9"
               >
                 <Search className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
@@ -170,13 +171,27 @@ export const Header = () => {
           </div>
 
           {/* Column 3: Right Actions Container */}
-          <div className="flex items-center gap-2 lg:gap-3 whitespace-nowrap">
-            {/* Cart Icon - Desktop Only */}
-            <Link to="/cart" className="hidden lg:block relative shrink-0">
-              <div className="flex flex-col items-center">
-                <ShoppingCart className="h-6 w-6 text-foreground" />
-                <span className="text-xs text-muted-foreground mt-1 whitespace-nowrap">{cartItemCount} items</span>
-              </div>
+          <div className="flex items-center gap-3 lg:gap-4 whitespace-nowrap">
+            <div className="hidden lg:flex items-center gap-2 text-sm text-foreground">
+              <span className="h-9 w-9 rounded-full border border-border flex items-center justify-center">
+                <PhoneCall className="h-4 w-4" />
+              </span>
+              <span className="font-medium">Call Us Now: 01924492356</span>
+            </div>
+            <button
+              type="button"
+              className="hidden md:flex h-9 w-9 rounded-full border border-border items-center justify-center text-foreground hover:text-primary transition-colors"
+              aria-label="Wishlist"
+            >
+              <Heart className="h-4 w-4" />
+            </button>
+            <Link to="/cart" className="relative shrink-0">
+              <ShoppingCart className="h-6 w-6 text-foreground" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                  {cartItemCount}
+                </span>
+              )}
             </Link>
           </div>
         </div>
@@ -198,6 +213,13 @@ export const Header = () => {
             </Link>
             
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="h-9 w-9 rounded-full border border-border flex items-center justify-center"
+                aria-label="Wishlist"
+              >
+                <Heart className="h-4 w-4" />
+              </button>
               <Link to="/cart" className="relative">
                 <ShoppingCart className="h-5 w-5" />
                 {cartItemCount > 0 && (
@@ -247,7 +269,7 @@ export const Header = () => {
       <nav className="bg-black border-t h-12 relative z-50">
         <div className="container mx-auto px-4 h-full">
           {/* Desktop & Tablet: Horizontal navigation */}
-          <div className="hidden md:flex items-center justify-center gap-1 lg:gap-2 h-full overflow-visible">
+          <div className="hidden md:flex items-center justify-start gap-1 lg:gap-4 h-full overflow-visible">
             <Link to="/" className="text-white hover:text-primary transition-colors font-medium text-sm whitespace-nowrap shrink-0 px-3 py-2">
               Home
             </Link>
