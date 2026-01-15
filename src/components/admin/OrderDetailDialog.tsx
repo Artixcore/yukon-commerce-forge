@@ -58,7 +58,7 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
   const [newStatus, setNewStatus] = useState<OrderStatus | "">("");
 
   // Fetch order items only for regular orders (LP orders have items embedded)
-  const { data: orderItems } = useQuery({
+  const { data: orderItems, isLoading: isOrderItemsLoading } = useQuery({
     queryKey: ["order-items", order?.id, order?.source],
     queryFn: async () => {
       if (!order || order.source !== 'regular') return [];
@@ -72,11 +72,30 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
     enabled: !!order && order.source === 'regular',
   });
 
-  const { data: landingProducts } = useQuery({
+  const normalizeLandingItems = (items: unknown): any[] => {
+    if (!items) return [];
+    if (Array.isArray(items)) return items;
+    if (typeof items === "string") {
+      try {
+        const parsed = JSON.parse(items);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    if (typeof items === "object") {
+      const values = Object.values(items as Record<string, any>);
+      return Array.isArray(values) ? values : [];
+    }
+    return [];
+  };
+
+  const { data: landingProducts, isLoading: isLandingProductsLoading } = useQuery({
     queryKey: ["landing-order-products", order?.id],
     queryFn: async () => {
       if (!order || order.source !== "landing_page") return [];
-      const ids = (order.items || [])
+      const normalizedItems = normalizeLandingItems(order.items);
+      const ids = normalizedItems
         .map((item: any) => item.product_id)
         .filter((id: string | null) => !!id);
       if (ids.length === 0) return [];
@@ -195,8 +214,12 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
   }, {});
 
   // Get items based on order source
+  const normalizedLandingItems = order.source === "landing_page"
+    ? normalizeLandingItems(order.items)
+    : [];
+
   const displayItems = order.source === 'landing_page'
-    ? (order.items || []).map((item: any) => {
+    ? normalizedLandingItems.map((item: any) => {
         const product = item.product_id ? landingProductMap[item.product_id] : null;
         return {
           id: item.id || item.product_id || item.product_name,
@@ -215,6 +238,18 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
         product_code: item.products?.product_code || null,
         image_url: item.products?.image_url || null,
       }));
+
+  const isItemsLoading = order.source === "regular" ? isOrderItemsLoading : isLandingProductsLoading;
+
+  if (import.meta.env.DEV) {
+    console.debug("[OrderDetailDialog] items", {
+      source: order.source,
+      orderId: order.id,
+      orderItems: orderItems?.length ?? 0,
+      landingItems: normalizedLandingItems.length,
+      displayItems: displayItems.length,
+    });
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -315,38 +350,46 @@ export const OrderDetailDialog = ({ order, open, onOpenChange }: OrderDetailDial
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayItems.map((item: any, index: number) => (
-                    <TableRow key={item.id || index}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
-                            {item.image_url ? (
-                              <img
-                                src={item.image_url}
-                                alt={item.product_name}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <span className="text-xs text-muted-foreground">No image</span>
-                            )}
-                          </div>
-                          <span className="font-medium">{item.product_name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-xs bg-muted px-2 py-1 rounded">
-                          {item.product_code || "—"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">{item.quantity}</TableCell>
-                      <TableCell className="text-right">৳{Number(item.price).toFixed(2)}</TableCell>
-                      <TableCell className="text-right">
-                        ৳{(Number(item.price) * Number(item.quantity)).toFixed(2)}
+                  {isItemsLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        Loading items...
                       </TableCell>
                     </TableRow>
-                  ))}
-                  {displayItems.length === 0 && (
+                  ) : (
+                    displayItems.map((item: any, index: number) => (
+                      <TableRow key={item.id || index}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="h-12 w-12 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
+                              {item.image_url ? (
+                                <img
+                                  src={item.image_url}
+                                  alt={item.product_name}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <span className="text-xs text-muted-foreground">No image</span>
+                              )}
+                            </div>
+                            <span className="font-medium">{item.product_name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs bg-muted px-2 py-1 rounded">
+                            {item.product_code || "—"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">{item.quantity}</TableCell>
+                        <TableCell className="text-right">৳{Number(item.price).toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          ৳{(Number(item.price) * Number(item.quantity)).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                  {!isItemsLoading && displayItems.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                         No items found
