@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { buildCategoryTree, CategoryTree } from "@/lib/categoryUtils";
 import { CategoryDropdown } from "@/components/layout/CategoryDropdown";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -43,8 +44,13 @@ export const Header = () => {
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setMobileMenuOpen(false);
+      setSearchSheetOpen(false);
       setSearchQuery("");
     }
+  };
+
+  const handleSearchIconClick = () => {
+    setSearchSheetOpen(true);
   };
 
   const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -203,15 +209,26 @@ export const Header = () => {
           </div>
         </div>
 
-        {/* Mobile: 2-row layout */}
+        {/* Mobile: Rongbazar-style compact header */}
         <div className="md:hidden">
-          {/* Row 1: Logo + Icons */}
-          <div className="flex items-center justify-between py-1">
-            <Link to="/" className="flex items-center shrink-0">
+          {/* Single row: Hamburger (left) → Centered Logo → Search Icon (right) */}
+          <div className="flex items-center justify-between py-2 h-12">
+            {/* Left: Hamburger Menu */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            
+            {/* Center: Logo */}
+            <Link to="/" className="flex items-center justify-center flex-1">
               <img 
                 src={logo}
                 alt="YUKON Lifestyle" 
-                className="h-8 w-auto"
+                className="h-7 w-auto"
                 width="120"
                 height="48"
                 loading="eager"
@@ -219,56 +236,16 @@ export const Header = () => {
               />
             </Link>
             
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="h-9 w-9 rounded-full border border-border flex items-center justify-center"
-                aria-label="Wishlist"
-              >
-                <Heart className="h-4 w-4" />
-              </button>
-              <Link to="/cart" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                    {cartItemCount}
-                  </span>
-                )}
-              </Link>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-            </div>
+            {/* Right: Search Icon */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              onClick={handleSearchIconClick}
+            >
+              <Search className="h-5 w-5" />
+            </Button>
           </div>
-          
-          {/* Row 2: Full-width Search Bar */}
-          {!mobileMenuOpen && (
-            <div className="pb-1">
-              <form onSubmit={handleSearch} className="relative w-full">
-                <Input
-                  type="text"
-                  placeholder="Search"
-                  className="w-full pr-10 h-9 text-sm"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="absolute right-0 top-0 h-9 w-9"
-                  variant="ghost"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </form>
-            </div>
-          )}
         </div>
       </div>
 
@@ -375,6 +352,35 @@ export const Header = () => {
           </div>
         </div>
       )}
+
+      {/* Mobile Search Sheet */}
+      <Sheet open={searchSheetOpen} onOpenChange={setSearchSheetOpen}>
+        <SheetContent side="top" className="pt-12">
+          <SheetHeader>
+            <SheetTitle>Search Products</SheetTitle>
+          </SheetHeader>
+          <form onSubmit={handleSearch} className="mt-4">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Search for products..."
+                className="w-full pr-10 h-11 text-base"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+              />
+              <Button
+                type="submit"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9"
+                variant="ghost"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            </div>
+          </form>
+        </SheetContent>
+      </Sheet>
     </header>
   );
 };

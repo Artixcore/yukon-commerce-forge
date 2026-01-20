@@ -21,32 +21,40 @@ export const CategoryGrid = () => {
   });
 
   return (
-    <section className="py-16">
+    <section className="py-8 md:py-16">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Shop by Category</h2>
-          <p className="text-muted-foreground">Browse our diverse range of product categories</p>
+        <div className="text-center mb-6 md:mb-12">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 md:mb-4">Categories</h2>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {/* Rongbazar-style: 2-column grid on mobile, responsive on larger screens */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
           {categories?.map((category) => (
-            <Link key={category.id} to={`/shop?category=${category.id}`}>
-              <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors overflow-hidden">
+            <Link key={category.id} to={`/shop?category=${category.id}`} className="block">
+              <Card className="aspect-square rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group border relative">
+                {/* Image container - fills card with square aspect ratio */}
+                <div className="w-full h-full absolute inset-0 overflow-hidden bg-muted">
                   {category.image_url ? (
                     <OptimizedImage
                       {...IMAGE_SIZES.categoryIcon}
                       src={category.image_url}
                       alt={category.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <span className="text-2xl font-semibold">{category.name.charAt(0)}</span>
+                    <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                      <span className="text-3xl md:text-4xl font-semibold text-primary">
+                        {category.name.charAt(0)}
+                      </span>
+                    </div>
                   )}
                 </div>
-                <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
-                  {category.name}
-                </h3>
+                {/* Category name - centered below image */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 md:p-3">
+                  <h3 className="font-semibold text-sm md:text-base text-white text-center line-clamp-2">
+                    {category.name}
+                  </h3>
+                </div>
               </Card>
             </Link>
           ))}

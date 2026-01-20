@@ -4,6 +4,7 @@ import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { FloatingCart } from "@/components/layout/FloatingCart";
 import { HeroSection } from "@/components/home/HeroSection";
+import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { Features } from "@/components/home/Features";
 
 // Lazy load below-fold sections
@@ -22,6 +23,7 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Header />
       <HeroSection />
+      <CategoryGrid />
       <Suspense fallback={<SectionLoader />}>
         <FeaturedProducts />
       </Suspense>

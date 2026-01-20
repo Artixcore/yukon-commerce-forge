@@ -91,9 +91,41 @@ export const Footer = () => {
               <p className="text-sm leading-relaxed text-white/70 mt-4">
                 YukonLifestyle brings curated everyday essentials with reliable service and value.
               </p>
-              <div className="mt-4 text-sm text-white/70 space-y-1">
-                <p>Uttarkhan, Uttara, Dhaka 1230</p>
-                <p>Phone: 01924492356</p>
+              <div className="mt-4 text-sm text-white/70 space-y-2">
+                <div>
+                  <p className="font-semibold text-white mb-1">Address:</p>
+                  <p>YUKON Lifestyle Head Office</p>
+                  <p>Masterbari, Uttarkhan, Uttara, Dhaka 1230</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-white mb-1">E-mail:</p>
+                  <a 
+                    href="mailto:yukonlifestyle06@gmail.com" 
+                    className="hover:text-primary transition-colors underline"
+                  >
+                    yukonlifestyle06@gmail.com
+                  </a>
+                </div>
+                <div>
+                  <p className="font-semibold text-white mb-1">Hotline:</p>
+                  <a 
+                    href="tel:01924492356" 
+                    className="hover:text-primary transition-colors underline"
+                  >
+                    01924492356
+                  </a>
+                  <span className="text-white/60"> (24 hours, 7 days a week)</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-white mb-1">WhatsApp / Imo:</p>
+                  <a 
+                    href="tel:01924492356" 
+                    className="hover:text-primary transition-colors underline"
+                  >
+                    01924492356
+                  </a>
+                  <span className="text-white/60"> (24 hours, 7 days a week)</span>
+                </div>
               </div>
             </div>
 

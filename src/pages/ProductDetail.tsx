@@ -270,6 +270,17 @@ const ProductDetail = () => {
               )}
             </div>
 
+            {/* bKash Payment Number */}
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <span className="text-sm font-semibold text-green-800">bKash Number:</span>
+              <a 
+                href="tel:01906192164" 
+                className="text-sm font-bold text-green-700 hover:text-green-900 underline"
+              >
+                01906192164
+              </a>
+            </div>
+
             {/* Size Selector */}
             {product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0 && (
               <div>
