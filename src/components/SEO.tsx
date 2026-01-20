@@ -49,30 +49,30 @@ export const SEO = ({
         }
       };
 
-    // Update description
-    updateOrCreateMeta('description', description || defaultDescription);
+      // Update description
+      updateOrCreateMeta('description', description || defaultDescription);
 
-    // Update Open Graph tags
-    updateOrCreateMeta('og:title', title || defaultTitle, true);
-    updateOrCreateMeta('og:description', description || defaultDescription, true);
-    updateOrCreateMeta('og:image', image || defaultImage, true);
-    updateOrCreateMeta('og:type', type, true);
-    updateOrCreateMeta('og:url', currentUrl, true);
+      // Update Open Graph tags
+      updateOrCreateMeta('og:title', title || defaultTitle, true);
+      updateOrCreateMeta('og:description', description || defaultDescription, true);
+      updateOrCreateMeta('og:image', image || defaultImage, true);
+      updateOrCreateMeta('og:type', type, true);
+      updateOrCreateMeta('og:url', currentUrl, true);
 
-    // Update Twitter Card tags
-    updateOrCreateMeta('twitter:card', 'summary_large_image');
-    updateOrCreateMeta('twitter:title', title || defaultTitle);
-    updateOrCreateMeta('twitter:description', description || defaultDescription);
-    updateOrCreateMeta('twitter:image', image || defaultImage);
+      // Update Twitter Card tags
+      updateOrCreateMeta('twitter:card', 'summary_large_image');
+      updateOrCreateMeta('twitter:title', title || defaultTitle);
+      updateOrCreateMeta('twitter:description', description || defaultDescription);
+      updateOrCreateMeta('twitter:image', image || defaultImage);
 
-    // Update canonical URL
-    let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
-    if (!canonicalLink) {
-      canonicalLink = document.createElement('link');
-      canonicalLink.setAttribute('rel', 'canonical');
-      document.head.appendChild(canonicalLink);
-    }
-    canonicalLink.setAttribute('href', currentUrl);
+      // Update canonical URL
+      let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+      if (!canonicalLink) {
+        canonicalLink = document.createElement('link');
+        canonicalLink.setAttribute('rel', 'canonical');
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.setAttribute('href', currentUrl);
 
       // Add structured data (JSON-LD)
       if (structuredData) {

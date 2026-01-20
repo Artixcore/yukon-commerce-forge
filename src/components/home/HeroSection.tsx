@@ -53,6 +53,30 @@ export const HeroSection = () => {
     };
   }, [emblaApi, onSelect]);
 
+  // Preload first banner image for LCP optimization
+  // Must be called before any early returns to comply with Rules of Hooks
+  useEffect(() => {
+    if (banners && banners.length > 0 && banners[0]?.image_url) {
+      const firstBannerUrl = banners[0].image_url;
+      // Generate optimized URL for preload
+      const preloadUrl = firstBannerUrl.includes('supabase.co/storage')
+        ? `${firstBannerUrl}${firstBannerUrl.includes('?') ? '&' : '?'}width=1920&quality=85&format=webp`
+        : firstBannerUrl;
+      
+      // Check if preload link already exists
+      let preloadLink = document.querySelector('link[rel="preload"][as="image"][data-hero-preload]');
+      if (!preloadLink) {
+        preloadLink = document.createElement('link');
+        preloadLink.setAttribute('rel', 'preload');
+        preloadLink.setAttribute('as', 'image');
+        preloadLink.setAttribute('fetchpriority', 'high');
+        preloadLink.setAttribute('data-hero-preload', 'true');
+        document.head.appendChild(preloadLink);
+      }
+      preloadLink.setAttribute('href', preloadUrl);
+    }
+  }, [banners]);
+
   if (isLoading) {
     return (
       <section className="w-full">
@@ -87,29 +111,6 @@ export const HeroSection = () => {
       </section>
     );
   }
-
-  // Preload first banner image for LCP optimization
-  useEffect(() => {
-    if (banners && banners.length > 0 && banners[0]?.image_url) {
-      const firstBannerUrl = banners[0].image_url;
-      // Generate optimized URL for preload
-      const preloadUrl = firstBannerUrl.includes('supabase.co/storage')
-        ? `${firstBannerUrl}${firstBannerUrl.includes('?') ? '&' : '?'}width=1920&quality=85&format=webp`
-        : firstBannerUrl;
-      
-      // Check if preload link already exists
-      let preloadLink = document.querySelector('link[rel="preload"][as="image"][data-hero-preload]');
-      if (!preloadLink) {
-        preloadLink = document.createElement('link');
-        preloadLink.setAttribute('rel', 'preload');
-        preloadLink.setAttribute('as', 'image');
-        preloadLink.setAttribute('fetchpriority', 'high');
-        preloadLink.setAttribute('data-hero-preload', 'true');
-        document.head.appendChild(preloadLink);
-      }
-      preloadLink.setAttribute('href', preloadUrl);
-    }
-  }, [banners]);
 
   return (
     <section className="w-full relative">
