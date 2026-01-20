@@ -28,7 +28,13 @@ export default defineConfig(({ mode }) => ({
         icons: [
           {
             src: '/favicon.png',
-            sizes: 'any',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/favicon.png',
+            sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
           }
@@ -109,6 +115,9 @@ export default defineConfig(({ mode }) => ({
               expiration: {
                 maxEntries: 60,
                 maxAgeSeconds: 7 * 24 * 60 * 60,
+              },
+              cacheableResponse: {
+                statuses: [200]
               }
             }
           }

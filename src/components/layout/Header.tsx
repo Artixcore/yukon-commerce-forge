@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchSheetOpen, setSearchSheetOpen] = useState(false);
   const [productMenuOpen, setProductMenuOpen] = useState(false);
   const [expandedMobileCategories, setExpandedMobileCategories] = useState<Set<string>>(new Set());
   const { items } = useCart();
