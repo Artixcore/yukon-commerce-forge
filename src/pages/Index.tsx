@@ -6,6 +6,7 @@ import { FloatingCart } from "@/components/layout/FloatingCart";
 import { HeroSection } from "@/components/home/HeroSection";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { Features } from "@/components/home/Features";
+import { SEO } from "@/components/SEO";
 
 // Lazy load below-fold sections
 const FeaturedProducts = lazy(() => import("@/components/home/FeaturedProducts").then(m => ({ default: m.FeaturedProducts })));
@@ -19,8 +20,34 @@ const SectionLoader = ({ height = "h-96" }: { height?: string }) => (
 );
 
 const Index = () => {
+  // Organization structured data
+  const organizationData = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Yukon Lifestyle',
+    url: 'https://yukonlifestyle.com',
+    logo: 'https://yukonlifestyle.com/favicon.png',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+880-1924-492356',
+      contactType: 'Customer Service',
+      areaServed: 'BD',
+      availableLanguage: ['en', 'bn'],
+    },
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Masterbari, Uttarkhan, Uttara',
+      addressLocality: 'Dhaka',
+      postalCode: '1230',
+      addressCountry: 'BD',
+    },
+  };
+
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
+      <SEO
+        structuredData={organizationData}
+      />
       <Header />
       <HeroSection />
       <CategoryGrid />

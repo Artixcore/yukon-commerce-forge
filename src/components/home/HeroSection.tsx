@@ -56,7 +56,7 @@ export const HeroSection = () => {
   if (isLoading) {
     return (
       <section className="w-full">
-        <div className="relative w-full h-[500px] bg-muted animate-pulse" />
+        <div className="relative w-full aspect-[1920/600] bg-muted animate-pulse" />
       </section>
     );
   }
@@ -65,7 +65,7 @@ export const HeroSection = () => {
   if (!banners || banners.length === 0) {
     return (
       <section className="w-full">
-        <div className="relative w-full h-[500px] overflow-hidden">
+        <div className="relative w-full aspect-[1920/600] overflow-hidden">
           <picture>
             <source
               type="image/webp"
@@ -75,6 +75,8 @@ export const HeroSection = () => {
             <img
               src="/images/hero-banner.png"
               alt="Yukon Lifestyle Store"
+              width={1920}
+              height={600}
               className="w-full h-full object-cover"
               loading="eager"
               decoding="async"
@@ -86,13 +88,36 @@ export const HeroSection = () => {
     );
   }
 
+  // Preload first banner image for LCP optimization
+  useEffect(() => {
+    if (banners && banners.length > 0 && banners[0]?.image_url) {
+      const firstBannerUrl = banners[0].image_url;
+      // Generate optimized URL for preload
+      const preloadUrl = firstBannerUrl.includes('supabase.co/storage')
+        ? `${firstBannerUrl}${firstBannerUrl.includes('?') ? '&' : '?'}width=1920&quality=85&format=webp`
+        : firstBannerUrl;
+      
+      // Check if preload link already exists
+      let preloadLink = document.querySelector('link[rel="preload"][as="image"][data-hero-preload]');
+      if (!preloadLink) {
+        preloadLink = document.createElement('link');
+        preloadLink.setAttribute('rel', 'preload');
+        preloadLink.setAttribute('as', 'image');
+        preloadLink.setAttribute('fetchpriority', 'high');
+        preloadLink.setAttribute('data-hero-preload', 'true');
+        document.head.appendChild(preloadLink);
+      }
+      preloadLink.setAttribute('href', preloadUrl);
+    }
+  }, [banners]);
+
   return (
     <section className="w-full relative">
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
           {banners.map((banner, index) => (
             <div key={banner.id} className="flex-[0_0_100%] min-w-0">
-              <div className="relative w-full h-[300px] md:h-[500px] overflow-hidden">
+              <div className="relative w-full aspect-[1920/600] md:aspect-[1920/600] overflow-hidden">
                 <OptimizedImage
                   src={banner.image_url}
                   alt={banner.title}

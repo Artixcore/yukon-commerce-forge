@@ -6,10 +6,10 @@
     <title>Yukon Lifestyle - Premium E-commerce Store</title>
     <meta name="description" content="Discover quality lifestyle products at Yukon - Your trusted destination for fashion, accessories, and more">
     <meta name="author" content="Yukon Lifestyle" />
-
-    
+    <link rel="canonical" href="https://yukonlifestyle.com/">
     
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://yukonlifestyle.com/">
     <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/BAcwIWg35vfca05h0vmsPFblsIj1/social-images/social-1761460493474-logo.png">
 
     <meta name="twitter:card" content="summary_large_image" />
@@ -19,6 +19,9 @@
   <meta property="og:description" content="Discover quality lifestyle products at Yukon - Your trusted destination for fashion, accessories, and more">
   <meta name="twitter:description" content="Discover quality lifestyle products at Yukon - Your trusted destination for fashion, accessories, and more">
   <link rel="icon" type="image/png" href="/favicon.png">
+  
+  <!-- Preload LCP image (fallback hero banner) -->
+  <link rel="preload" as="image" href="/images/hero-banner.png" fetchpriority="high">
   
   <!-- PWA Meta Tags -->
   <meta name="theme-color" content="#ffffff">
@@ -71,51 +74,26 @@
     
     /* Header skeleton to prevent CLS */
     header {
-      height: 80px;
+      min-height: 80px;
       background: #fff;
       border-bottom: 1px solid #e5e7eb;
     }
     
+    /* Mobile bottom nav spacing to prevent CLS */
+    @media (max-width: 768px) {
+      body {
+        padding-bottom: 64px;
+      }
+    }
+    
     /* Hero skeleton to prevent CLS */
     .hero-skeleton {
-      height: 500px;
+      aspect-ratio: 1920 / 600;
       background: #f3f4f6;
     }
   </style>
   
-  <!-- Meta Pixel Code - Deferred for performance -->
-  <script defer>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-  </script>
-  <!-- End Meta Pixel Code -->
-
-  <!-- Google Analytics - Dynamically Loaded -->
-  <script defer>
-    (function() {
-      const gaMeasurementId = localStorage.getItem('ga_measurement_id');
-      if (gaMeasurementId) {
-        // Load gtag.js script
-        const script = document.createElement('script');
-        script.async = true;
-        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaMeasurementId;
-        document.head.appendChild(script);
-        
-        // Initialize gtag
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', gaMeasurementId);
-      }
-    })();
-  </script>
-  <!-- End Google Analytics -->
+  <!-- Analytics will be loaded after idle time via loadAnalytics.ts -->
 </head>
 
   <body>

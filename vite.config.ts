@@ -144,21 +144,69 @@ export default defineConfig(({ mode }) => ({
     minify: 'esbuild',
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'radix-dialog': ['@radix-ui/react-dialog'],
-          'radix-dropdown': ['@radix-ui/react-dropdown-menu'],
-          'radix-select': ['@radix-ui/react-select'],
-          'radix-other': [
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-toast',
-          ],
-          'query': ['@tanstack/react-query'],
-          'embla': ['embla-carousel-react', 'embla-carousel-autoplay'],
-          'charts': ['recharts'],
-          'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+        manualChunks: (id) => {
+          // Supabase client in separate chunk
+          if (id.includes('@supabase') || id.includes('supabase')) {
+            return 'supabase';
+          }
+          
+          // React core
+          if (id.includes('react') || id.includes('react-dom')) {
+            return 'react-vendor';
+          }
+          
+          // Router
+          if (id.includes('react-router')) {
+            return 'router';
+          }
+          
+          // Radix UI components - split by usage
+          if (id.includes('@radix-ui/react-dialog')) {
+            return 'radix-dialog';
+          }
+          if (id.includes('@radix-ui/react-dropdown-menu')) {
+            return 'radix-dropdown';
+          }
+          if (id.includes('@radix-ui/react-select')) {
+            return 'radix-select';
+          }
+          if (id.includes('@radix-ui/react-accordion') || 
+              id.includes('@radix-ui/react-tabs') || 
+              id.includes('@radix-ui/react-toast')) {
+            return 'radix-other';
+          }
+          
+          // Query library
+          if (id.includes('@tanstack/react-query')) {
+            return 'query';
+          }
+          
+          // Carousel
+          if (id.includes('embla-carousel')) {
+            return 'embla';
+          }
+          
+          // Charts (admin only)
+          if (id.includes('recharts')) {
+            return 'charts';
+          }
+          
+          // Forms
+          if (id.includes('react-hook-form') || 
+              id.includes('@hookform/resolvers') || 
+              id.includes('zod')) {
+            return 'forms';
+          }
+          
+          // Zustand (state management)
+          if (id.includes('zustand')) {
+            return 'zustand';
+          }
+          
+          // Date utilities
+          if (id.includes('date-fns')) {
+            return 'date-fns';
+          }
         },
       },
     },

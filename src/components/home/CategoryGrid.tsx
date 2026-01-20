@@ -36,7 +36,7 @@ export const CategoryGrid = () => {
                 <div className="w-full h-full absolute inset-0 overflow-hidden bg-muted">
                   {category.image_url ? (
                     <OptimizedImage
-                      {...IMAGE_SIZES.categoryIcon}
+                      {...IMAGE_SIZES.categoryBanner}
                       src={category.image_url}
                       alt={category.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

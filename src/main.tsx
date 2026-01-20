@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { registerSW } from 'virtual:pwa-register';
+import { initAnalytics } from "@/lib/loadAnalytics";
 
 // Register service worker
 const updateSW = registerSW({
@@ -22,5 +23,8 @@ const updateSW = registerSW({
     }
   },
 });
+
+// Initialize analytics after idle time
+initAnalytics();
 
 createRoot(document.getElementById("root")!).render(<App />);

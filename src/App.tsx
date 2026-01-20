@@ -1,11 +1,13 @@
 import { lazy, Suspense } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { UpdateNotification } from "@/components/UpdateNotification";
 import { usePageViewTracking } from "@/hooks/usePageViewTracking";
+
+// Lazy load non-critical UI components
+const Toaster = lazy(() => import("@/components/ui/toaster").then(m => ({ default: m.Toaster })));
+const Sonner = lazy(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster })));
+const UpdateNotification = lazy(() => import("@/components/UpdateNotification").then(m => ({ default: m.UpdateNotification })));
 
 // Eager load critical routes
 import Index from "./pages/Index";
@@ -69,9 +71,11 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <UpdateNotification />
+      <Suspense fallback={null}>
+        <Toaster />
+        <Sonner />
+        <UpdateNotification />
+      </Suspense>
       <BrowserRouter>
         <PageViewTracker>
           <Suspense fallback={<PageLoader />}>

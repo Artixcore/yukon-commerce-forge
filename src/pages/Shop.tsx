@@ -11,6 +11,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { FloatingCart } from "@/components/layout/FloatingCart";
+import { SEO } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -76,6 +77,11 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
+      <SEO
+        title="Shop All Products"
+        description="Browse our complete collection of premium lifestyle products at Yukon Lifestyle"
+        canonical="https://yukonlifestyle.com/shop"
+      />
       <Header />
 
       {/* Breadcrumb */}

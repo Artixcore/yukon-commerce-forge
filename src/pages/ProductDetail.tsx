@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { trackMetaEvent } from "@/lib/metaTracking";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { ImageZoom } from "@/components/product/ImageZoom";
+import { SEO } from "@/components/SEO";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -106,6 +107,29 @@ const ProductDetail = () => {
     }
   }, [product, selectedColor, selectedSize]);
 
+  // Preload first product image for LCP optimization
+  useEffect(() => {
+    if (product && allImages.length > 0) {
+      const firstImageUrl = allImages[0];
+      // Generate optimized URL for preload
+      const preloadUrl = firstImageUrl.includes('supabase.co/storage')
+        ? `${firstImageUrl}${firstImageUrl.includes('?') ? '&' : '?'}width=800&quality=85&format=webp`
+        : firstImageUrl;
+      
+      // Check if preload link already exists
+      let preloadLink = document.querySelector('link[rel="preload"][as="image"][data-product-preload]');
+      if (!preloadLink) {
+        preloadLink = document.createElement('link');
+        preloadLink.setAttribute('rel', 'preload');
+        preloadLink.setAttribute('as', 'image');
+        preloadLink.setAttribute('fetchpriority', 'high');
+        preloadLink.setAttribute('data-product-preload', 'true');
+        document.head.appendChild(preloadLink);
+      }
+      preloadLink.setAttribute('href', preloadUrl);
+    }
+  }, [product, allImages]);
+
   // Track ViewContent event when product loads
   useEffect(() => {
     if (product) {
@@ -162,8 +186,47 @@ const ProductDetail = () => {
     );
   }
 
+  // Generate structured data for product
+  const structuredData = product ? {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description || `Buy ${product.name} from Yukon Lifestyle`,
+    image: allImages.length > 0 ? allImages : [product.image_url],
+    brand: {
+      '@type': 'Brand',
+      name: 'Yukon Lifestyle',
+    },
+    offers: {
+      '@type': 'Offer',
+      url: `https://yukonlifestyle.com/product/${product.slug}`,
+      priceCurrency: 'BDT',
+      price: product.price,
+      availability: product.stock_quantity > 0 
+        ? 'https://schema.org/InStock' 
+        : 'https://schema.org/OutOfStock',
+      seller: {
+        '@type': 'Organization',
+        name: 'Yukon Lifestyle',
+      },
+    },
+    aggregateRating: product.rating ? {
+      '@type': 'AggregateRating',
+      ratingValue: product.rating,
+      reviewCount: product.review_count || 0,
+    } : undefined,
+  } : undefined;
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={product?.name}
+        description={product?.description || `Buy ${product?.name} from Yukon Lifestyle. ${product?.categories?.name || 'Premium quality products'}.`}
+        image={allImages.length > 0 ? allImages[0] : product?.image_url}
+        type="product"
+        canonical={`https://yukonlifestyle.com/product/${product?.slug}`}
+        structuredData={structuredData}
+      />
       <Header />
       <div className="container mx-auto px-4 py-8">
         <Link to="/shop">
