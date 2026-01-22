@@ -555,7 +555,6 @@ export type Database = {
           name: string
           original_price: number | null
           price: number
-          product_code: string | null
           rating: number | null
           review_count: number
           size_chart: Json | null
@@ -582,7 +581,6 @@ export type Database = {
           name: string
           original_price?: number | null
           price: number
-          product_code?: string | null
           rating?: number | null
           review_count?: number
           size_chart?: Json | null
@@ -609,7 +607,6 @@ export type Database = {
           name?: string
           original_price?: number | null
           price?: number
-          product_code?: string | null
           rating?: number | null
           review_count?: number
           size_chart?: Json | null

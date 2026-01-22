@@ -74,9 +74,9 @@ export const Footer = () => {
       <footer className="bg-black text-white">
         <div className="container mx-auto px-4 py-10">
           {/* Main Footer Content - Multi-column layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-12">
             {/* About Section */}
-            <div className="lg:col-span-1">
+            <div className="col-span-2 md:col-span-1 lg:col-span-1">
               <Link to="/" className="inline-flex items-center">
                 <img
                   src={logo}
@@ -189,7 +189,7 @@ export const Footer = () => {
             </div>
 
             {/* Follow Us */}
-            <div>
+            <div className="col-span-2 md:col-span-1">
               <h3 className="font-bold text-lg mb-4 text-white">Follow Us</h3>
               <div className="flex items-center gap-3">
                 <a
