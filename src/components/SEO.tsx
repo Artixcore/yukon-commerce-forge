@@ -23,7 +23,7 @@ export const SEO = ({
   const currentUrl = canonical || `${baseUrl}${location.pathname}${location.search}`;
   const defaultTitle = 'Yukon Lifestyle - Premium E-commerce Store';
   const defaultDescription = 'Discover quality lifestyle products at Yukon - Your trusted destination for fashion, accessories, and more';
-  const defaultImage = 'https://storage.googleapis.com/gpt-engineer-file-uploads/BAcwIWg35vfca05h0vmsPFblsIj1/social-images/social-1761460493474-logo.png';
+  const defaultImage = `${baseUrl}/images/hero-banner.png`;
 
   useEffect(() => {
     try {
