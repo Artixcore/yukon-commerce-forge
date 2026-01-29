@@ -422,55 +422,69 @@ const ProductDetail = () => {
                         {/* Qty + Add to Cart inline */}
                         {product.stock_quantity > 0 && (
                             <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2 border rounded">
+
+                                {/* Qty + Add to Cart + Wishlist — same line even on mobile */}
+                                <div className="flex items-center gap-2 w-full">
+
+                                    {/* Quantity */}
+                                    <div className="flex items-center gap-1 border rounded shrink-0">
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
                                             disabled={quantity <= 1}
-                                            className="h-10 w-10"
+                                            className="h-9 w-9"
                                         >
                                             <Minus className="h-4 w-4"/>
                                         </Button>
-                                        <span className="w-12 text-center font-medium">{quantity}</span>
+
+                                        <span className="w-8 text-center text-sm font-medium">{quantity}</span>
+
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
                                             disabled={quantity >= product.stock_quantity}
-                                            className="h-10 w-10"
+                                            className="h-9 w-9"
                                         >
                                             <Plus className="h-4 w-4"/>
                                         </Button>
                                     </div>
+
+                                    {/* Add to Cart */}
                                     <Button
                                         onClick={handleAddToCart}
-                                        size="lg"
-                                        className="flex-1 h-10 bg-muted text-foreground hover:bg-muted/80"
+                                        size="sm"
+                                        className="flex-1 min-w-0 h-9 px-3 bg-muted text-foreground hover:bg-muted/80"
                                     >
-                                        <ShoppingCart className="mr-2 h-4 w-4"/>
-                                        Add to Cart
+                                        <ShoppingCart className="mr-1 h-4 w-4"/>
+                                        <span className="truncate">Add</span>
+                                        <span className="hidden xs:inline"> to Cart</span>
                                     </Button>
+
+                                    {/* Wishlist */}
                                     <Button
                                         variant="outline"
                                         size="icon"
-                                        className="h-10 w-10"
+                                        className="h-9 w-9 shrink-0"
                                         title="Add to Wishlist"
                                     >
                                         <Heart className="h-4 w-4"/>
                                     </Button>
+
                                 </div>
 
-                                {/* Big Order Now Button */}
+                                {/* Order Now */}
                                 <Button
                                     onClick={handleBuyNow}
                                     size="lg"
-                                    className="w-full h-12 bg-black text-white hover:bg-black/90 text-base font-semibold"
+                                    className="w-full h-12 bg-black text-white hover:bg-black/90 font-semibold"
                                 >
                                     Order Now
                                 </Button>
+
                             </div>
+
                         )}
                     </div>
 
